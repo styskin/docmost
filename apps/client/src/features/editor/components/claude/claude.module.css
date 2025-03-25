@@ -1,0 +1,12 @@
+.wrapper {
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.wrapper :global(.mantine-Paper-root) {
+  background-color: var(--mantine-color-body);
+}
+
+.wrapper :global(.mantine-Textarea-input) {
+  background-color: var(--mantine-color-white);
+} 

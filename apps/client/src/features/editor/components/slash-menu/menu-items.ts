@@ -18,6 +18,7 @@ import {
   IconTypography,
   IconMenu4,
   IconCalendar,
+  IconBrain,
 } from "@tabler/icons-react";
 import {
   CommandProps,
@@ -495,6 +496,15 @@ const CommandGroups: SlashMenuGroupedItemsType = {
           .deleteRange(range)
           .setEmbed({ provider: "gsheets" })
           .run();
+      },
+    },
+    {
+      title: "Claude Assistant",
+      description: "Add an AI assistant powered by Claude.",
+      searchTerms: ["claude", "ai", "assistant", "help", "chat"],
+      icon: IconBrain,
+      command: ({ editor, range }: CommandProps) => {
+        editor.chain().focus().deleteRange(range).setClaudeAgent().run();
       },
     },
   ],
