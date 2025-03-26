@@ -15,6 +15,17 @@ export class HistoryListener {
   constructor(private readonly pageHistoryRepo: PageHistoryRepo) {}
 
   @OnEvent('collab.page.updated')
+  async handleAgents(event: UpdatedPageEvent) {
+    const { page } = event;
+
+    const pageCreationTime = new Date(page.createdAt).getTime();
+    const currentTime = Date.now();
+
+    console.log(currentTime, page);
+  }
+
+
+  @OnEvent('collab.page.updated')
   async handleCreatePageHistory(event: UpdatedPageEvent) {
     const { page } = event;
 
