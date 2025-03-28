@@ -73,6 +73,7 @@ import { MarkdownClipboard } from "@/features/editor/extensions/markdown-clipboa
 import EmojiCommand from "./emoji-command";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import { Claude } from "./claude-extension";
+import AICommand from "./ai-command";
 
 
 const lowlight = createLowlight(common);
@@ -137,6 +138,7 @@ export const mainExtensions = [
   Color,
   SlashCommand,
   EmojiCommand,
+  AICommand,
   Comment.configure({
     HTMLAttributes: {
       class: "comment-mark",

@@ -15,18 +15,16 @@ export class ClaudeController {
   async check() {
       return {"message" : "Hello!"};
   }
-  
   @Post()
-  async query(@Body() body: { query: string }) {
-    console.debug('Received query:', body.query);
+  async query(@Body() body: any) {
+    console.debug('Received query:', body);
     try {
       const completion = await this.anthropic.messages.create({
         model: 'claude-3-sonnet-20240229',
         max_tokens: 1024,
-        messages: [{ role: 'user', content: body.query }],
+        messages: [{ role: 'user', content: JSON.stringify(body) }],
       });
       console.debug('Completion:', completion);
-
       return {
         response: completion.content[0].text,
       };
