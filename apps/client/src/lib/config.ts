@@ -8,7 +8,7 @@ declare global {
 }
 
 export function getAppName(): string {
-  return "Docmost";
+  return "Manul.ai";
 }
 
 export function getAppUrl(): string {
