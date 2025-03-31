@@ -11,6 +11,8 @@ const renderAIItems = () => {
       editor: ReturnType<typeof useEditor>;
       clientRect: DOMRect;
     }) => {
+
+
       component = new ReactRenderer(AIList, {
         props: { 
           isLoading: true, 
@@ -40,9 +42,6 @@ const renderAIItems = () => {
       editor: ReturnType<typeof useEditor>;
       clientRect: DOMRect;
     }) => {
-
-      props.editor.commands.deleteRange(props.editor.state.selection);
-      
       component?.updateProps({...props, isLoading: false});
 
       if (!props.clientRect) {
@@ -69,7 +68,7 @@ const renderAIItems = () => {
           getReferenceClientRect: props.clientRect,
         });
     },
-    onKeyDown: (props: { event: KeyboardEvent }) => {
+    onKeyDown: (props: { event: KeyboardEvent; editor: ReturnType<typeof useEditor>; }) => {
       if (props.event.key === "Escape") {
         popup?.[0].hide();
         component?.destroy()

@@ -20,12 +20,12 @@ const Command = Extension.create({
             .chain()
             .focus()
             .deleteRange(range)
-// Inster response?            .insertContent(emoji.skins[0].native + " ")
             .run();
           props.command({ editor, range, props });
         },
         allow: ({ state, range }) => {
-          return true;
+          const $pos = state.doc.resolve(range.from);
+          return $pos.parentOffset === 0;
         },
       } as Partial<SuggestionOptions>,
     };
