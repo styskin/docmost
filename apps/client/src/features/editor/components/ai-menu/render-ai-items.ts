@@ -68,7 +68,7 @@ const renderAIItems = () => {
           getReferenceClientRect: props.clientRect,
         });
     },
-    onKeyDown: (props: { event: KeyboardEvent; editor: ReturnType<typeof useEditor>; }) => {
+    onKeyDown: (props: { event: KeyboardEvent; }) => {
       if (props.event.key === "Escape") {
         popup?.[0].hide();
         component?.destroy()
