@@ -1,10 +1,6 @@
 name: Docker Compose CICD
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
   
 
@@ -30,4 +26,4 @@ jobs:
         script: |
           cd /home/ec2-user/docmost/
           docker-compose down
-          docker-compose up --pull -d 
+          docker-compose up -d 
