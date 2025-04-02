@@ -88,6 +88,8 @@ lowlight.register("fortran", fortran);
 lowlight.register("haskell", haskell);
 lowlight.register("scala", scala);
 
+export { lowlight }
+
 export const mainExtensions = [
   StarterKit.configure({
     history: false,
