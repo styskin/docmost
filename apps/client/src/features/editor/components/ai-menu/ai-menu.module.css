@@ -1,0 +1,25 @@
+.menuBtn {
+  border-radius: var(--mantine-radius-md); /* Increased border radius for a bigger border */
+  width: 100%;
+  font-size: larger; /* Increased font size by one step */
+
+  &:hover {
+    @mixin light {
+      background: var(--mantine-color-gray-1);
+    }
+
+    @mixin dark {
+      background: var(--mantine-color-dark-5);
+    }
+  }
+}
+
+.selectedItem {
+  @mixin light {
+    background: var(--mantine-color-gray-1);
+  }
+
+  @mixin dark {
+    background: var(--mantine-color-dark-5);
+  }
+} 

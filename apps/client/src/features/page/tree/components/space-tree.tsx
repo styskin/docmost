@@ -56,6 +56,7 @@ import { extractPageSlugId } from "@/lib";
 import { useDeletePageModal } from "@/features/page/hooks/use-delete-page-modal.tsx";
 import { useTranslation } from "react-i18next";
 import ExportModal from "@/components/common/export-modal";
+import { useGetSpaceBySlugQuery } from "@/features/space/queries/space-query";
 
 interface SpaceTreeProps {
   spaceId: string;
@@ -97,18 +98,9 @@ export default function SpaceTree({ spaceId, readOnly }: SpaceTreeProps) {
     if (pagesData?.pages && !hasNextPage) {
       const allItems = pagesData.pages.flatMap((page) => page.items);
       const treeData = buildTree(allItems);
-
-      if (data.length < 1 || data?.[0].spaceId !== spaceId) {
-        //Thoughts
-        // don't reset if there is data in state
-        // we only expect to call this once on initial load
-        // even if we decide to refetch, it should only update
-        // and append root pages instead of resetting the entire tree
-        // which looses async loaded children too
-        setData(treeData);
-        isDataLoaded.current = true;
-        setOpenTreeNodes({});
-      }
+      setData(treeData);
+      isDataLoaded.current = true;
+      setOpenTreeNodes({});
     }
   }, [pagesData, hasNextPage]);
 
@@ -265,7 +257,7 @@ function Node({ node, style, dragHandle, tree }: NodeRendererProps<any>) {
       };
 
       const newChildren = await queryClient.fetchQuery({
-        queryKey: ["sidebar-pages", params],
+        queryKey: ["sidebar-pages", params.spaceId],
         queryFn: () => getSidebarPages(params),
         staleTime: 10 * 60 * 1000,
       });
@@ -431,13 +423,15 @@ function NodeMenu({ node, treeApi }: NodeMenuProps) {
   const { t } = useTranslation();
   const clipboard = useClipboard({ timeout: 500 });
   const { spaceSlug } = useParams();
+  const { data: space } = useGetSpaceBySlugQuery(spaceSlug);
   const { openDeleteModal } = useDeletePageModal();
   const [exportOpened, { open: openExportModal, close: closeExportModal }] =
     useDisclosure(false);
 
-  const handleCopyLink = () => {
+  const handleCopyLink = (copyLinkOption?: { share?: boolean }) => {
+    const share = copyLinkOption?.share;
     const pageUrl =
-      getAppUrl() + buildPageUrl(spaceSlug, node.data.slugId, node.data.name);
+      getAppUrl() + buildPageUrl(spaceSlug, node.data.slugId, node.data.name, share);
     clipboard.copy(pageUrl);
     notifications.show({ message: t("Link copied") });
   };
@@ -472,6 +466,19 @@ function NodeMenu({ node, treeApi }: NodeMenuProps) {
           >
             {t("Copy link")}
           </Menu.Item>
+
+          {space.isPublished && (
+            <Menu.Item
+              leftSection={<IconLink size={16} />}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCopyLink({ share: true });
+              }}
+            >
+              {t("Copy shared link")}
+            </Menu.Item>
+          )}
 
           <Menu.Item
             leftSection={<IconFileExport size={16} />}

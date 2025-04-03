@@ -73,6 +73,7 @@ import { MarkdownClipboard } from "@/features/editor/extensions/markdown-clipboa
 import EmojiCommand from "./emoji-command";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import { Manul } from "./manul-extension";
+import AICommand from "./ai-command";
 
 
 const lowlight = createLowlight(common);
@@ -86,6 +87,8 @@ lowlight.register("clojure", clojure);
 lowlight.register("fortran", fortran);
 lowlight.register("haskell", haskell);
 lowlight.register("scala", scala);
+
+export { lowlight }
 
 export const mainExtensions = [
   StarterKit.configure({
@@ -137,6 +140,7 @@ export const mainExtensions = [
   Color,
   SlashCommand,
   EmojiCommand,
+  AICommand,
   Comment.configure({
     HTMLAttributes: {
       class: "comment-mark",
