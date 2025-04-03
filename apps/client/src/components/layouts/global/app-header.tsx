@@ -69,7 +69,7 @@ export function AppHeader() {
             component={Link}
             to="/home"
           >
-            Docmost
+            Manul.ai
           </Text>
 
           <Group ml={50} gap={5} className={classes.links} visibleFrom="sm">
