@@ -499,12 +499,12 @@ const CommandGroups: SlashMenuGroupedItemsType = {
       },
     },
     {
-      title: "Claude Assistant",
-      description: "Add an AI assistant powered by Claude.",
-      searchTerms: ["claude", "ai", "assistant", "help", "chat"],
+      title: "Manul Assistant",
+      description: "Add an AI assistant powered by Manul.",
+      searchTerms: ["manul", "ai", "assistant", "help", "chat"],
       icon: IconBrain,
       command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).setClaudeAgent().run();
+        editor.chain().focus().deleteRange(range).setManulAgent().run();
       },
     },
   ],

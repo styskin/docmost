@@ -16,7 +16,7 @@ import { ExportModule } from './integrations/export/export.module';
 import { ImportModule } from './integrations/import/import.module';
 import { SecurityModule } from './integrations/security/security.module';
 import { TelemetryModule } from './integrations/telemetry/telemetry.module';
-import { ClaudeModule } from './integrations/claude/claude.module';
+import { ManulModule } from './integrations/manul/manul.module';
 
 
 const enterpriseModules = [];
@@ -43,7 +43,7 @@ try {
     QueueModule,
     StaticModule,
     HealthModule,
-    ClaudeModule,
+    ManulModule,
     ImportModule,
     ExportModule,
     StorageModule.forRootAsync({

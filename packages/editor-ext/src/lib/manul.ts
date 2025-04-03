@@ -1,25 +1,30 @@
 import { Node } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 
-export interface ClaudeOptions {
+export interface ManulOptions {
   HTMLAttributes: Record<string, any>;
   view: any;
 }
 
+export interface ManulCommands<ReturnType> {
+  setManulAgent: () => ReturnType;
+}
+
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
-    claude: {
-      setClaudeAgent: () => ReturnType;
+    manul: {
+      setManulAgent: () => ReturnType;
     };
   }
 }
 
-export const Claude = Node.create<ClaudeOptions>({
-  name: 'claude',
+export const Manul = Node.create<ManulOptions>({
+  name: 'manul',
   group: 'block',
   atom: true,
-  defining: true,
+  selectable: true,
   draggable: true,
+  inline: false,
 
   addOptions() {
     return {
@@ -28,21 +33,29 @@ export const Claude = Node.create<ClaudeOptions>({
     };
   },
 
+  addAttributes() {
+    return {
+      class: {
+        default: 'manul-container',
+      },
+    };
+  },
+
   parseHTML() {
     return [
       {
-        tag: 'div[data-type="claude"]',
+        tag: 'div[class="manul-container"]',
       },
     ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', { 'data-type': 'claude', ...HTMLAttributes }, 0];
+    return ['div', HTMLAttributes, 0];
   },
 
   addCommands() {
     return {
-      setClaudeAgent:
+      setManulAgent:
         () =>
         ({ commands }) => {
           return commands.insertContent({
@@ -54,12 +67,11 @@ export const Claude = Node.create<ClaudeOptions>({
 
   addKeyboardShortcuts() {
     return {
-      'Mod-Alt-k': () => this.editor.commands.setClaudeAgent(),
+      'Mod-Alt-k': () => this.editor.commands.setManulAgent(),
     };
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(this.options.view);
   },
-
 }); 

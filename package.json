@@ -76,9 +76,12 @@
   "devDependencies": {
     "@nx/js": "20.4.5",
     "@types/bytes": "^3.1.5",
+    "@types/pg": "^8.11.11",
     "@types/uuid": "^10.0.0",
     "concurrently": "^9.1.2",
+    "kysely": "^0.27.5",
     "nx": "20.4.5",
+    "pg": "^8.13.3",
     "tsx": "^4.19.3"
   },
   "workspaces": {

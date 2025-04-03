@@ -72,7 +72,7 @@ import i18n from "@/i18n.ts";
 import { MarkdownClipboard } from "@/features/editor/extensions/markdown-clipboard.ts";
 import EmojiCommand from "./emoji-command";
 import { CharacterCount } from "@tiptap/extension-character-count";
-import { Claude } from "./claude-extension";
+import { Manul } from "./manul-extension";
 
 
 const lowlight = createLowlight(common);
@@ -215,7 +215,7 @@ export const mainExtensions = [
     transformPastedText: true,
   }),
   CharacterCount,
-  Claude
+  Manul
 ] as any;
 
 type CollabExtensions = (provider: HocuspocusProvider, user: IUser) => any[];

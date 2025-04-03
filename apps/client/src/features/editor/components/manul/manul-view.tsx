@@ -12,38 +12,37 @@ import {
 import { IconBrain, IconSend } from "@tabler/icons-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import classes from "./claude.module.css";
+import classes from "./manul.module.css";
 
-export default function ClaudeView(props: NodeViewProps) {
+export default function ManulView(props: NodeViewProps) {
   const { t } = useTranslation();
   const { editor } = props;
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    console.debug("Sending query to Claude 11");
-
     if (!query.trim() || isLoading) return;
 
     setIsLoading(true);
+    setError(null);
     try {
-      console.debug("Sending query to Claude:", query);
-
-      const response = await fetch("/api/claude", {
-        method: "POST",
+      const response = await fetch('/api/manul/query', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ query }),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to get response');
+      }
 
-      console.log("Response from Claude:", data.data.response);
-//      setResponse(data);
+      const data = await response.json();
       
-      // Insert Claude's response into the editor after the current node
+      // Insert the response into the editor after the current node
       const pos = props.getPos() + props.node.nodeSize;
       editor
         .chain()
@@ -57,7 +56,8 @@ export default function ClaudeView(props: NodeViewProps) {
         .run();
 
     } catch (error) {
-      console.error("Error querying Claude:", error);
+      console.error("Error querying Manul:", error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -72,17 +72,18 @@ export default function ClaudeView(props: NodeViewProps) {
               <IconBrain size={24} />
             </Avatar>
             <Text size="sm" fw={500}>
-              Claude Assistant
+              AI Assistant
             </Text>
           </Group>
 
           <Textarea
-            placeholder={t("Ask Claude anything...")}
+            placeholder={t("Ask anything...")}
             value={query}
             onChange={(e) => setQuery(e.currentTarget.value)}
             minRows={2}
             maxRows={4}
             autosize
+            error={error}
           />
 
           <Group justify="flex-end">
@@ -95,12 +96,6 @@ export default function ClaudeView(props: NodeViewProps) {
               {t("Send")}
             </Button>
           </Group>
-
-          {response && (
-            <Paper p="sm" withBorder bg="var(--mantine-color-gray-0)">
-              <Text size="sm">{response}</Text>
-            </Paper>
-          )}
         </Stack>
       </Paper>
     </NodeViewWrapper>

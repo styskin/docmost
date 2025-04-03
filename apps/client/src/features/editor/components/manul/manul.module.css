@@ -9,4 +9,8 @@
 
 .wrapper :global(.mantine-Textarea-input) {
   background-color: var(--mantine-color-white);
+}
+
+.manul-container {
+  /* Your styles here */
 } 

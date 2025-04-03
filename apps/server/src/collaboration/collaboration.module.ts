@@ -9,6 +9,10 @@ import { WebSocket } from 'ws';
 import { TokenModule } from '../core/auth/token.module';
 import { HistoryListener } from './listeners/history.listener';
 import { LoggerExtension } from './extensions/logger.extension';
+import { CommentListener } from './listeners/comment.listener';
+import { CommentModule } from '../core/comment/comment.module';
+import { ManulModule } from '../integrations/manul/manul.module';
+import { DatabaseModule } from '@docmost/db/database.module';
 
 @Module({
   providers: [
@@ -17,9 +21,10 @@ import { LoggerExtension } from './extensions/logger.extension';
     PersistenceExtension,
     LoggerExtension,
     HistoryListener,
+    CommentListener,
   ],
   exports: [CollaborationGateway],
-  imports: [TokenModule],
+  imports: [TokenModule, CommentModule, ManulModule, DatabaseModule],
 })
 export class CollaborationModule implements OnModuleInit, OnModuleDestroy {
   private collabWsAdapter: CollabWsAdapter;
