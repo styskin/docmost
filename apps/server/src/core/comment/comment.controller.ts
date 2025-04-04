@@ -118,16 +118,4 @@ export class CommentController {
     // TODO: only comment creators and admins can delete their comments
     return this.commentService.remove(input.commentId, user);
   }
-
-  @HttpCode(HttpStatus.OK)
-  @Post('resolve')
-  resolve(@Body() input: CommentIdDto, @AuthUser() user: User) {
-    return this.commentService.resolve(input.commentId, user);
-  }
-
-  @HttpCode(HttpStatus.OK)
-  @Post('unresolve')
-  unresolve(@Body() input: CommentIdDto, @AuthUser() user: User) {
-    return this.commentService.unresolve(input.commentId, user);
-  }
 }

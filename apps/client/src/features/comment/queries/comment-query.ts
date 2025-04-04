@@ -115,31 +115,25 @@ export function useResolveCommentMutation() {
   return useMutation({
     mutationFn: (data: IResolveComment) => resolveComment(data),
     onSuccess: (data: IComment, variables) => {
-      const comments = queryClient.getQueryData(
-        RQ_KEY(variables.pageId),
-      ) as IPagination<IComment>;
+      const currentComments = queryClient.getQueryData(
+        RQ_KEY(data.pageId),
+      ) as IComment[];
 
-      if (comments && comments.items) {
-        const updatedComments = comments.items.map((comment) =>
+      /*
+      if (currentComments) {
+        const updatedComments = currentComments.map((comment) =>
           comment.id === variables.commentId
-            ? { ...comment, resolvedAt: variables.resolved ? new Date() : null }
+            ? { ...comment, ...data }
             : comment,
         );
-        queryClient.setQueryData(RQ_KEY(variables.pageId), {
-          ...comments,
-          items: updatedComments,
-        });
-      }
+        queryClient.setQueryData(RQ_KEY(data.pageId), updatedComments);
+      }*/
 
-      notifications.show({ 
-        message: variables.resolved 
-          ? t("Comment resolved successfully") 
-          : t("Comment unresolved successfully") 
-      });
+      notifications.show({ message: t("Comment resolved successfully") });
     },
     onError: (error) => {
       notifications.show({
-        message: t("Failed to update comment status"),
+        message: t("Failed to resolve comment"),
         color: "red",
       });
     },

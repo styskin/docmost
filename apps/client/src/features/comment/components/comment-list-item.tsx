@@ -7,7 +7,6 @@ import CommentEditor from "@/features/comment/components/comment-editor";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms";
 import CommentActions from "@/features/comment/components/comment-actions";
 import CommentMenu from "@/features/comment/components/comment-menu";
-import ResolveComment from "@/features/comment/components/resolve-comment";
 import { useHover } from "@mantine/hooks";
 import {
   useDeleteCommentMutation,
@@ -16,7 +15,6 @@ import {
 import { IComment } from "@/features/comment/types/comment.types";
 import { CustomAvatar } from "@/components/ui/custom-avatar.tsx";
 import { currentUserAtom } from "@/features/user/atoms/current-user-atom.ts";
-import { AGENT_USER_ID } from "@/lib/constants";
 
 interface CommentListItemProps {
   comment: IComment;
@@ -80,12 +78,9 @@ function CommentListItem({ comment }: CommentListItemProps) {
             </Text>
 
             <div style={{ visibility: hovered ? "visible" : "hidden" }}>
-              {(() => {
-                const shouldShowResolve = !comment.parentCommentId && comment.creatorId === AGENT_USER_ID;
-                return shouldShowResolve && (
-                  <ResolveComment commentId={comment.id} pageId={comment.pageId} resolvedAt={comment.resolvedAt} />
-                );
-              })()}
+              {/*!comment.parentCommentId && (
+                <ResolveComment commentId={comment.id} pageId={comment.pageId} resolvedAt={comment.resolvedAt} />
+              )*/}
 
               {currentUser?.user?.id === comment.creatorId && (
                 <CommentMenu

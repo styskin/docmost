@@ -3,9 +3,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { PageHistoryRepo } from '@docmost/db/repos/page/page-history.repo';
 import { Page } from '@docmost/db/types/entity.types';
 import { isDeepStrictEqual } from 'node:util';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { QueueJob, QueueName } from '../../integrations/queue/constants';
 
 export class UpdatedPageEvent {
   page: Page;
@@ -15,10 +12,18 @@ export class UpdatedPageEvent {
 export class HistoryListener {
   private readonly logger = new Logger(HistoryListener.name);
 
-  constructor(
-    private readonly pageHistoryRepo: PageHistoryRepo,
-    @InjectQueue(QueueName.GENERAL_QUEUE) private generalQueue: Queue
-  ) {}
+  constructor(private readonly pageHistoryRepo: PageHistoryRepo) {}
+
+  @OnEvent('collab.page.updated')
+  async handleAgents(event: UpdatedPageEvent) {
+    const { page } = event;
+
+    const pageCreationTime = new Date(page.createdAt).getTime();
+    const currentTime = Date.now();
+
+    console.log(currentTime, page);
+  }
+
 
   @OnEvent('collab.page.updated')
   async handleCreatePageHistory(event: UpdatedPageEvent) {
@@ -42,17 +47,8 @@ export class HistoryListener {
       try {
         await this.pageHistoryRepo.saveHistory(page);
         this.logger.debug(`New history created for: ${page.id}`);
-
-        // Queue diff analysis job
-        await this.generalQueue.add(QueueJob.DIFF_ANALYSIS, {
-          pageId: page.id,
-          workspaceId: page.workspaceId,
-          userId: page.lastUpdatedById,
-          timestamp: new Date().toISOString()
-        });
-        this.logger.debug(`Queued diff analysis job for page: ${page.id}`);
       } catch (err) {
-        this.logger.error(`Failed to process page update for: ${page.id}`, err);
+        this.logger.error(`Failed to create history for page: ${page.id}`, err);
       }
     }
   }

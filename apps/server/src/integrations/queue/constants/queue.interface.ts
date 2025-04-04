@@ -10,10 +10,3 @@ export interface IPageBacklinkJob {
 export interface IStripeSeatsSyncJob {
   workspaceId: string;
 }
-
-export interface IDiffAnalysisJob {
-  pageId: string;
-  workspaceId: string;
-  userId: string;
-  timestamp: string;
-}
