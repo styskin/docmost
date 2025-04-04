@@ -19,6 +19,7 @@ services:
       APP_SECRET: '${APP_SECRET}'
       DATABASE_URL: 'postgresql://docmost:STRONG_DB_PASSWORD@db:5432/docmost?schema=public'
       REDIS_URL: 'redis://redis:6379'
+      MANUL_AGENTS_URL: 'http://manul_agent:8000'
       MAIL_DRIVER: smtp
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
@@ -54,6 +55,14 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+  manul_agent:
+    image: docker.io/styskin/manul_agents:latest
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    volumes:
+      - manul_agent:/logs
 
 volumes:
   docmost:
