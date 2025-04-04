@@ -3,33 +3,48 @@ import { IconCircleCheck } from "@tabler/icons-react";
 import { modals } from "@mantine/modals";
 import { useResolveCommentMutation } from "@/features/comment/queries/comment-query";
 import { useTranslation } from "react-i18next";
+import { useAtomValue } from "jotai";
+import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms";
 
-function ResolveComment({ commentId, pageId, resolvedAt }) {
+interface ResolveCommentProps {
+  commentId: string;
+  pageId: string;
+  resolvedAt: Date | null;
+}
+
+function ResolveComment({ commentId, pageId, resolvedAt }: ResolveCommentProps) {
   const { t } = useTranslation();
   const resolveCommentMutation = useResolveCommentMutation();
+  const editor = useAtomValue(pageEditorAtom);
 
-  const isResolved = resolvedAt != null;
-  const iconColor = isResolved ? "green" : "gray";
-
-  //@ts-ignore
-  const openConfirmModal = () =>
+  const openConfirmModal = () => {
     modals.openConfirmModal({
       title: t("Are you sure you want to resolve this comment thread?"),
       centered: true,
       labels: { confirm: t("Confirm"), cancel: t("Cancel") },
-      onConfirm: handleResolveToggle,
+      onConfirm: handleResolve,
     });
+  };
 
-  const handleResolveToggle = async () => {
+  const handleResolve = async () => {
     try {
       await resolveCommentMutation.mutateAsync({
         commentId,
-        resolved: !isResolved,
+        pageId,
+        resolved: true
       });
-      //TODO: remove comment mark
-      // Remove comment thread from state on resolve
+      try {
+        if (editor && editor.commands) {
+          editor.commands.unsetComment(commentId);
+        }
+      } catch (editorError) {
+        console.error("Failed to unset comment in editor:", editorError);
+        // Don't rethrow - the comment is still resolved on the server
+      }
+
+      console.log('Successfully resolved comment');
     } catch (error) {
-      console.error("Failed to toggle resolved state:", error);
+      console.error("Failed to resolve comment:", error);
     }
   };
 
@@ -38,8 +53,9 @@ function ResolveComment({ commentId, pageId, resolvedAt }) {
       onClick={openConfirmModal}
       variant="default"
       style={{ border: "none" }}
+      title={t("Resolve comment")}
     >
-      <IconCircleCheck size={20} stroke={2} color={iconColor} />
+      <IconCircleCheck size={20} stroke={2} color="gray" />
     </ActionIcon>
   );
 }

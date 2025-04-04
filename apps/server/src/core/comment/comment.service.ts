@@ -11,6 +11,7 @@ import { Comment, User } from '@docmost/db/types/entity.types';
 import { PaginationOptions } from '@docmost/db/pagination/pagination-options';
 import { PaginationResult } from '@docmost/db/pagination/pagination';
 import { PageRepo } from '@docmost/db/repos/page/page.repo';
+import { AGENT_USER_ID } from '../../common/helpers/constants';
 
 @Injectable()
 export class CommentService {
@@ -125,5 +126,33 @@ export class CommentService {
     }
 
     await this.commentRepo.deleteComment(commentId);
+  }
+
+  async resolve(commentId: string, authUser: User): Promise<void> {
+    const comment = await this.commentRepo.findById(commentId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    // Only allow resolving comments created by the Agent
+    if (comment.creatorId !== AGENT_USER_ID) {
+      throw new ForbiddenException('Can only resolve Agent comments');
+    }
+
+    await this.commentRepo.resolveComment(commentId);
+  }
+
+  async unresolve(commentId: string, authUser: User): Promise<void> {
+    const comment = await this.commentRepo.findById(commentId);
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    // Only allow unresolving comments created by the Agent
+    if (comment.creatorId !== AGENT_USER_ID) {
+      throw new ForbiddenException('Can only unresolve Agent comments');
+    }
+
+    await this.commentRepo.unresolveComment(commentId);
   }
 }

@@ -10,8 +10,7 @@ export enum QueueJob {
   DELETE_SPACE_ATTACHMENTS = 'delete-space-attachments',
   DELETE_PAGE_ATTACHMENTS = 'delete-page-attachments',
   PAGE_CONTENT_UPDATE = 'page-content-update',
-
   PAGE_BACKLINKS = 'page-backlinks',
-
   STRIPE_SEATS_SYNC = 'sync-stripe-seats',
+  DIFF_ANALYSIS = 'diff-analysis',
 }

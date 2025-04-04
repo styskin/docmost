@@ -4,6 +4,10 @@ import { EnvironmentService } from '../environment/environment.service';
 import { createRetryStrategy, parseRedisUrl } from '../../common/helpers';
 import { QueueName } from './constants';
 import { BacklinksProcessor } from './processors/backlinks.processor';
+import { DiffAnalysisProcessor } from './processors/diff_analysis.processor';
+import { ManulModule } from '../manul/manul.module';
+import { CommentModule } from '../../core/comment/comment.module';
+import { DatabaseModule } from '../../database/database.module';
 
 @Global()
 @Module({
@@ -49,8 +53,11 @@ import { BacklinksProcessor } from './processors/backlinks.processor';
     BullModule.registerQueue({
       name: QueueName.BILLING_QUEUE,
     }),
+    ManulModule,
+    CommentModule,
+    DatabaseModule,
   ],
   exports: [BullModule],
-  providers: [BacklinksProcessor],
+  providers: [BacklinksProcessor, DiffAnalysisProcessor],
 })
 export class QueueModule {}

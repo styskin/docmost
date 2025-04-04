@@ -28,6 +28,7 @@ export interface ICommentData {
 
 export interface IResolveComment {
   commentId: string;
+  pageId: string;
   resolved: boolean;
 }
 
