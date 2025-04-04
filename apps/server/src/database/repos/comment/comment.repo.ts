@@ -83,4 +83,20 @@ export class CommentRepo {
   async deleteComment(commentId: string): Promise<void> {
     await this.db.deleteFrom('comments').where('id', '=', commentId).execute();
   }
+
+  async resolveComment(commentId: string): Promise<void> {
+    await this.db
+      .updateTable('comments')
+      .set({ resolvedAt: new Date() })
+      .where('id', '=', commentId)
+      .execute();
+  }
+
+  async unresolveComment(commentId: string): Promise<void> {
+    await this.db
+      .updateTable('comments')
+      .set({ resolvedAt: null })
+      .where('id', '=', commentId)
+      .execute();
+  }
 }
