@@ -33,7 +33,7 @@ export function FullEditor({
   const fullPageWidth = user.settings?.preferences?.fullPageWidth;
 
   document.addEventListener("keydown", function (e) {
-    if (editable && os === 'macos' ? e.metaKey : e.ctrlKey && e.code.toLowerCase() === 'keys') {
+    if (editable && (os === 'macos' ? e.metaKey : e.ctrlKey) && e.code.toLowerCase() === 'keys') {
       e.preventDefault();
     }
   }, false);
