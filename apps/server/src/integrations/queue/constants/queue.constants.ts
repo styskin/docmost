@@ -3,6 +3,7 @@ export enum QueueName {
   ATTACHMENT_QUEUE = '{attachment-queue}',
   GENERAL_QUEUE = '{general-queue}',
   BILLING_QUEUE = '{billing-queue}',
+  DIFF_ANALYSIS_QUEUE = '{diff-analysis-queue}',
 }
 
 export enum QueueJob {

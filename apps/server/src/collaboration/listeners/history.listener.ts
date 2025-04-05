@@ -1,11 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
 import { PageHistoryRepo } from '@docmost/db/repos/page/page-history.repo';
 import { Page } from '@docmost/db/types/entity.types';
-import { isDeepStrictEqual } from 'node:util';
 import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable, Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
+import { isDeepStrictEqual } from 'node:util';
 import { QueueJob, QueueName } from '../../integrations/queue/constants';
+import { IDiffAnalysisJob } from '../../integrations/queue/constants/queue.interface';
 
 export class UpdatedPageEvent {
   page: Page;
@@ -17,39 +18,40 @@ export class HistoryListener {
 
   constructor(
     private readonly pageHistoryRepo: PageHistoryRepo,
-    @InjectQueue(QueueName.GENERAL_QUEUE) private generalQueue: Queue
+    @InjectQueue(QueueName.DIFF_ANALYSIS_QUEUE) private diffAnalysisQueue: Queue
   ) {}
 
   @OnEvent('collab.page.updated')
   async handleCreatePageHistory(event: UpdatedPageEvent) {
     const { page } = event;
 
-    const pageCreationTime = new Date(page.createdAt).getTime();
     const currentTime = Date.now();
     const FIVE_MINUTES = 5 * 60 * 1000;
 
-    if (currentTime - pageCreationTime < FIVE_MINUTES) {
-      return;
-    }
-
     const lastHistory = await this.pageHistoryRepo.findPageLastHistory(page.id);
+    const isTimeGap = !lastHistory || (currentTime - new Date(lastHistory.createdAt).getTime() >= FIVE_MINUTES);
+    const isDifferentContent = !lastHistory || !isDeepStrictEqual(lastHistory.content, page.content);
+    const isDifferentUser = !lastHistory || lastHistory.lastUpdatedById !== page.lastUpdatedById;
 
-    if (
-      !lastHistory ||
-      (!isDeepStrictEqual(lastHistory.content, page.content) &&
-        currentTime - new Date(lastHistory.createdAt).getTime() >= FIVE_MINUTES)
-    ) {
+    this.logger.debug(`Page ${page.id} - isTimeGap: ${isTimeGap}`);
+    this.logger.debug(`Page ${page.id} - isDifferentContent: ${isDifferentContent}`);
+    this.logger.debug(`Page ${page.id} - isDifferentUser: ${isDifferentUser}`);
+
+    if (isDifferentContent && (isTimeGap || isDifferentUser)) {
       try {
+        // Saving revision
         await this.pageHistoryRepo.saveHistory(page);
-        this.logger.debug(`New history created for: ${page.id}`);
+        this.logger.debug(`New entry created for: ${page.id}`);
 
-        // Queue diff analysis job
-        await this.generalQueue.add(QueueJob.DIFF_ANALYSIS, {
+        // Queueing diff analysis job
+        const jobData: IDiffAnalysisJob = {
           pageId: page.id,
           workspaceId: page.workspaceId,
           userId: page.lastUpdatedById,
-          timestamp: new Date().toISOString()
-        });
+          timestamp: Date.now()
+        };
+        this.logger.debug(`Queueing ${QueueJob.DIFF_ANALYSIS} with data: ${JSON.stringify(jobData)}`);
+        await this.diffAnalysisQueue.add(QueueJob.DIFF_ANALYSIS, jobData);
         this.logger.debug(`Queued diff analysis job for page: ${page.id}`);
       } catch (err) {
         this.logger.error(`Failed to process page update for: ${page.id}`, err);

@@ -11,6 +11,8 @@ import { HistoryListener } from './listeners/history.listener';
 import { LoggerExtension } from './extensions/logger.extension';
 import { ManulModule } from '../integrations/manul/manul.module';
 import { DatabaseModule } from '@docmost/db/database.module';
+import { BullModule } from '@nestjs/bullmq';
+import { QueueName } from '../integrations/queue/constants';
 
 @Module({
   providers: [
@@ -21,7 +23,12 @@ import { DatabaseModule } from '@docmost/db/database.module';
     HistoryListener,
   ],
   exports: [CollaborationGateway],
-  imports: [TokenModule, ManulModule, DatabaseModule],
+  imports: [
+    TokenModule,
+    ManulModule,
+    DatabaseModule,
+    BullModule.registerQueue({ name: QueueName.DIFF_ANALYSIS_QUEUE })
+  ],
 })
 export class CollaborationModule implements OnModuleInit, OnModuleDestroy {
   private collabWsAdapter: CollabWsAdapter;

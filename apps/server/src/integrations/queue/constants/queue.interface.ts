@@ -15,5 +15,5 @@ export interface IDiffAnalysisJob {
   pageId: string;
   workspaceId: string;
   userId: string;
-  timestamp: string;
+  timestamp: number;
 }

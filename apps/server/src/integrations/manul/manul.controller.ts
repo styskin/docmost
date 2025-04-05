@@ -6,9 +6,9 @@ export class ManulController {
   constructor(private readonly manulService: ManulService) {}
 
   @Post('query')
-  async handleQuery(@Body() body: { query: string }) {
+  async queryManul(@Body() body: { query: string }) {
     try {
-      const response = await this.manulService.callManulAgent("", body.query);
+      const response = await this.manulService.contextCall("", body.query);
       return { response };
     } catch (error) {
       if (error instanceof HttpException) {

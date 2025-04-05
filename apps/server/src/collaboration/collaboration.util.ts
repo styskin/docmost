@@ -81,6 +81,39 @@ export const tiptapExtensions = [
   Manul
 ] as any;
 
+// Function to recursively sanitize Tiptap JSON content
+function sanitizeNode(node: any): any {
+  if (!node) {
+    return null;
+  }
+
+  if (node.type === 'manul') {
+    return null; // Remove manul nodes
+  }
+
+  if (Array.isArray(node.content)) {
+    // Recursively sanitize content array, filtering out nulls from removed nodes
+    node.content = node.content.map(sanitizeNode).filter(n => n !== null);
+  }
+
+  if (Array.isArray(node.marks)) {
+      // Recursively check marks as well, although 'manul' is unlikely here
+      node.marks = node.marks.map(sanitizeNode).filter(n => n !== null);
+  }
+
+
+  return node;
+}
+
+export function sanitizeTiptapJson(tiptapJson: JSONContent | null): JSONContent | null {
+  if (!tiptapJson || typeof tiptapJson !== 'object') {
+    return tiptapJson;
+  }
+  // Deep clone to avoid modifying the original object
+  const clonedJson = JSON.parse(JSON.stringify(tiptapJson));
+  return sanitizeNode(clonedJson);
+}
+
 export function jsonToHtml(tiptapJson: any) {
   return generateHTML(tiptapJson, tiptapExtensions);
 }
