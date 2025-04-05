@@ -65,7 +65,6 @@ export class DiffAnalysisProcessor extends WorkerHost {
       this.logger.debug('Converted content from Tiptap JSON -> HTML -> Markdown format');
 
       const markdownDiff: Change[] = diffLines(previousMarkdown, currentMarkdown, { 
-        ignoreNewlineAtEof: true,
         newlineIsToken: true 
       });
       let addedChars = 0;
