@@ -27,11 +27,6 @@ const AI_PROMPTS = [
   },
 ];
 
-async function callClaude(prompt: string, text: string) {
-  // TODO: Implement Claude API call
-  // This is a placeholder that returns the text unchanged
-  return text;
-}
 
 export const getAIItems = async ({
   query,
@@ -41,33 +36,36 @@ export const getAIItems = async ({
   editor: any;
 }): Promise<AIMenuItemType[]> => {
   // Filter items based on query
-
-
-
-
   const filteredItems = AI_PROMPTS.filter(item =>
     item.title.toLowerCase().includes(query.toLowerCase()) ||
     item.description.toLowerCase().includes(query.toLowerCase())
   );
 
+  // FIXME: remove filteredItems
   const items = filteredItems.map((item) => ({
     ...item,
     command: async ({ editor, range }: CommandProps) => {
       const { from, to } = range;
-      const text = editor.state.doc.textBetween(from, to);
-
-      console.error("Text :", text);
-
+      const text = editor.state.doc.text;
       
       if (!text) return;
-
       try {
-        const result = await fetch("/api/claude", {
+
+
+        // const analysis = await this.manulService.callManulAgent(
+        //   JSON.stringify(context),
+        //   "Please analyze the changes made to this document by comparing the previous and current content. Provide constructive criticism focusing on content quality, structure, and potential improvements. Be concise, use at most 2 sentences."
+        // );
+
+        const result = await fetch("/api/manul/query", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ prompt: item.prompt, context: text }),
+          body: JSON.stringify({
+            query: query, 
+            context: text
+          })
         });
 
         const responseText = await result.text();
@@ -80,7 +78,7 @@ export const getAIItems = async ({
           .insertContent(responseText)
           .run();
       } catch (error) {
-        console.error("Error calling Claude API:", error);
+        console.error("Error calling Manul API:", error);
       }
     },
   }));

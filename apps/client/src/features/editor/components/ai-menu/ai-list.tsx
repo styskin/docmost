@@ -55,7 +55,7 @@ export default function AIList({
     
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/claude", {
+      const response = await fetch("/api/manul/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,7 @@ export default function AIList({
 
       setPreview("");
     } catch (error) {
-      console.error("Error querying Claude:", error);
+      console.error("Error querying Manul:", error);
     } finally {
       setIsSubmitting(false);
     }
