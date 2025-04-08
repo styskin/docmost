@@ -1,0 +1,12 @@
+/* Suggestion Mark Styling */
+.suggestionInsert {
+  background-color: rgba(0, 255, 0, 0.1);
+  text-decoration: underline;
+  text-decoration-color: green;
+}
+
+.suggestionDelete {
+  background-color: rgba(255, 0, 0, 0.1);
+  text-decoration: line-through;
+  text-decoration-color: red;
+} 

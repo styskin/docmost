@@ -32,7 +32,7 @@ import {
   Excalidraw,
   Embed,
   Mention,
-  Manul
+  Manul,
 } from '@docmost/editor-ext';
 import { generateText, getSchema, JSONContent } from '@tiptap/core';
 import { generateHTML } from '../common/helpers/prosemirror/html';

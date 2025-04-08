@@ -52,6 +52,8 @@ import { IPage } from "@/features/page/types/page.types.ts";
 import { useParams } from "react-router-dom";
 import { extractPageSlugId } from "@/lib";
 import { FIVE_MINUTES } from "@/lib/constants.ts";
+import { SuggestionHoverMenu } from "./extensions/suggestion-mode/hover-menu";
+import { suggestionModePluginKey, SuggestionPluginState } from "./extensions/suggestion-mode/plugin";
 
 interface PageEditorProps {
   pageId: string;
@@ -294,10 +296,35 @@ export default function PageEditor({
     return () => clearTimeout(collabReadyTimeout);
   }, [isRemoteSynced, isLocalSynced, remoteProvider?.status]);
 
+  // Read the plugin state
+  const [suggestionPluginState, setSuggestionPluginState] = useState<SuggestionPluginState | null>(null);
+
+  useEffect(() => {
+      if (!editor) return;
+      // Function to update local state when plugin state changes
+      const updateState = () => {
+          const currentState = suggestionModePluginKey.getState(editor.state);
+          setSuggestionPluginState(currentState);
+      };
+      // Initial update
+      updateState();
+      // Subscribe to editor changes
+      editor.on('transaction', updateState);
+      return () => {
+          editor.off('transaction', updateState);
+      };
+  }, [editor]);
+
   return isCollabReady ? (
     <div>
       <div ref={menuContainerRef}>
         <EditorContent editor={editor} />
+        {editor && suggestionPluginState && (
+           <SuggestionHoverMenu 
+              editor={editor} 
+              menuState={suggestionPluginState} 
+           />
+        )}
 
         {editor && editor.isEditable && (
           <div>
