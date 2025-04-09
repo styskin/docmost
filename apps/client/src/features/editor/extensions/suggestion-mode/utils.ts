@@ -61,7 +61,8 @@ function findDocumentRange(
 }
 
 function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\\]]/g, "\\$&");
+  const escaped = string.replace(/[.*+?^${}()]/g, "\\$&");
+  return escaped;
 }
 
 export function createSuggestionTransaction(
@@ -89,40 +90,43 @@ export function createSuggestionTransaction(
   const reason = suggestionInput.reason ?? "";
   const textBefore = suggestionInput.textBefore ?? "";
   const textAfter = suggestionInput.textAfter ?? "";
-  const patternText =
-    escapeRegExp(textBefore.replace(/\n/g, "\\s*")) +
-    "\\s*" + // Allow whitespace between before-text and replace-text
-    "(" +
-    escapeRegExp(textToReplace.replace(/\n/g, "\\s*")) +
-    ")" +
-    "\\s*" + // Allow whitespace between replace-text and after-text
-    escapeRegExp(textAfter.replace(/\n/g, "\\s*"));
+
+  const escapedBefore = escapeRegExp(textBefore);
+  const escapedReplace = escapeRegExp(textToReplace);
+  const escapedAfter = escapeRegExp(textAfter);
+
+  const processedBefore = escapedBefore.replace(/\n/g, "\\s*");
+  const processedReplace = escapedReplace.replace(/\n/g, "\\s*");
+  const processedAfter = escapedAfter.replace(/\n/g, "\\s*");
+
+
+  const patternText = processedBefore + "\\s*(" + processedReplace + ")\\s*" + processedAfter;
 
   console.log(
-    "createSuggestionTransaction - Constructed pattern:",
+    "[createSuggestionTransaction] Constructed pattern string:",
     patternText,
   );
 
-  // Check safe variables
   if (
-    textToReplace.length === 0 &&
-    textBefore.length === 0 &&
-    textAfter.length === 0
+    escapedReplace.length === 0 &&
+    escapedBefore.length === 0 &&
+    escapedAfter.length === 0
   ) {
     console.warn(
-      "createSuggestionTransaction: All context parts are empty after defaulting.",
+      "createSuggestionTransaction: All context parts are empty after escaping and defaulting."
     );
     return null;
   }
 
   const regex = new RegExp(patternText, "g");
+  console.log("[createSuggestionTransaction] Constructed Regex object:", regex);
   const docText = state.doc.textContent;
   console.log(
-    "createSuggestionTransaction - Searching within docText:",
+    "[createSuggestionTransaction] Searching within docText:",
     docText.substring(0, 500) + "...",
   );
 
-  let match;
+  let match = null;
   const matches: {
     index: number;
     length: number;
@@ -170,7 +174,7 @@ export function createSuggestionTransaction(
 
   if (matches.length === 0) {
     console.warn(
-      "createSuggestionTransaction: No match found for pattern:",
+      "[createSuggestionTransaction] No match found for pattern string:",
       patternText,
     );
     return null;
