@@ -47,8 +47,8 @@ const MemberRow = (props: MemberRowProps) => {
     memberEmail,
     groupMemberCount,
     spaceId,
-    readOnly
-  } = props
+    readOnly,
+  } = props;
   const { t } = useTranslation();
   const removeSpaceMember = useRemoveSpaceMemberMutation();
   const changeSpaceMemberRoleMutation = useChangeSpaceMemberRoleMutation();
@@ -119,10 +119,7 @@ const MemberRow = (props: MemberRowProps) => {
       <Table.Td>
         <Group gap="sm" wrap="nowrap">
           {memberType === "user" && (
-            <CustomAvatar
-              avatarUrl={memberAvatarUrl}
-              name={memberName}
-            />
+            <CustomAvatar avatarUrl={memberAvatarUrl} name={memberName} />
           )}
 
           {memberType === "group" && <IconGroupCircle />}
@@ -134,7 +131,8 @@ const MemberRow = (props: MemberRowProps) => {
             <Text fz="xs" c="dimmed">
               {memberType == "user" && memberEmail}
 
-              {memberType == "group" && groupMemberCount !== undefined &&
+              {memberType == "group" &&
+                groupMemberCount !== undefined &&
                 `${t("Group")} - ${formatMemberCount(groupMemberCount, t)}`}
             </Text>
           </div>
@@ -146,12 +144,7 @@ const MemberRow = (props: MemberRowProps) => {
           roles={spaceRoleData}
           roleName={getSpaceRoleLabel(memberRole)}
           onChange={(newRole) =>
-            handleRoleChange(
-              memberId,
-              memberType,
-              newRole,
-              memberRole,
-            )
+            handleRoleChange(memberId, memberType, newRole, memberRole)
           }
           disabled={readOnly}
         />
@@ -174,11 +167,7 @@ const MemberRow = (props: MemberRowProps) => {
             </Menu.Target>
 
             <Menu.Dropdown>
-              <Menu.Item
-                onClick={() =>
-                  openRemoveModal(memberId, memberType)
-                }
-              >
+              <Menu.Item onClick={() => openRemoveModal(memberId, memberType)}>
                 {t("Remove space member")}
               </Menu.Item>
             </Menu.Dropdown>
@@ -186,8 +175,8 @@ const MemberRow = (props: MemberRowProps) => {
         )}
       </Table.Td>
     </Table.Tr>
-  )
-}
+  );
+};
 
 interface SpaceMembersProps {
   spaceId: string;
@@ -228,9 +217,13 @@ export default function SpaceMembersList({
                 memberType={member.type}
                 memberRole={member.role}
                 memberName={member.name}
-                memberAvatarUrl={member.type === "user" ? member.avatarUrl : undefined}
+                memberAvatarUrl={
+                  member.type === "user" ? member.avatarUrl : undefined
+                }
                 memberEmail={member.type === "user" ? member.email : undefined}
-                groupMemberCount={member.type === "group" ? member.memberCount : undefined}
+                groupMemberCount={
+                  member.type === "group" ? member.memberCount : undefined
+                }
                 spaceId={spaceId}
                 readOnly={readOnly}
               />

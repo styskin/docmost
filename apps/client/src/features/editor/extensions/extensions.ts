@@ -74,10 +74,9 @@ import EmojiCommand from "./emoji-command";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import { Manul } from "./manul-extension";
 import AICommand from "./ai-command";
-import { GoReplacementExtension } from './go-replacement-plugin';
-import { SuggestionModeExtension } from './suggestion-mode/extension';
-import { SuggestionInsert, SuggestionDelete } from './suggestion-mode/marks';
-
+import { GoReplacementExtension } from "./go-replacement-plugin";
+import { SuggestionModeExtension } from "./suggestion-mode/extension";
+import { SuggestionInsert, SuggestionDelete } from "./suggestion-mode/marks";
 
 const lowlight = createLowlight(common);
 lowlight.register("mermaid", plaintext);
@@ -91,7 +90,7 @@ lowlight.register("fortran", fortran);
 lowlight.register("haskell", haskell);
 lowlight.register("scala", scala);
 
-export { lowlight }
+export { lowlight };
 
 export const mainExtensions = [
   StarterKit.configure({

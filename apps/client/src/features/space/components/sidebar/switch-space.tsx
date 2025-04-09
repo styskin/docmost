@@ -1,10 +1,10 @@
-import classes from './switch-space.module.css';
-import { useNavigate } from 'react-router-dom';
-import { SpaceSelect } from './space-select';
-import { getSpaceUrl } from '@/lib/config';
-import { Avatar, Button, Popover, Text } from '@mantine/core';
-import { IconChevronDown } from '@tabler/icons-react';
-import { useDisclosure } from '@mantine/hooks';
+import classes from "./switch-space.module.css";
+import { useNavigate } from "react-router-dom";
+import { SpaceSelect } from "./space-select";
+import { getSpaceUrl } from "@/lib/config";
+import { Avatar, Button, Popover, Text } from "@mantine/core";
+import { IconChevronDown } from "@tabler/icons-react";
+import { useDisclosure } from "@mantine/hooks";
 
 interface SwitchSpaceProps {
   spaceName: string;

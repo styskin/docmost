@@ -12,15 +12,11 @@ const Command = Extension.create({
   addOptions() {
     return {
       suggestion: {
-        char: ' ',
+        char: " ",
         startOfLine: true,
         insert: () => null,
         command: ({ editor, range, props }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .run();
+          editor.chain().focus().deleteRange(range).run();
           props.command({ editor, range, props });
         },
         allow: ({ state, range }) => {
@@ -49,4 +45,4 @@ const AICommand = Command.configure({
   },
 });
 
-export default AICommand; 
+export default AICommand;

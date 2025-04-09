@@ -13,7 +13,12 @@ import { queryClient } from "@/main.tsx";
 import { buildTree } from "@/features/page/tree/utils";
 import { useEffect } from "react";
 import { validate as isValidUuid } from "uuid";
-import { getSharedPageBreadcrumbs, getSharedPageById, getSharedRecentChanges, getSharedSidebarPages } from "@/features/page/services/shared-page-service";
+import {
+  getSharedPageBreadcrumbs,
+  getSharedPageById,
+  getSharedRecentChanges,
+  getSharedSidebarPages,
+} from "@/features/page/services/shared-page-service";
 
 export function useSharedPageQuery(
   pageInput: Partial<IPageInput>,

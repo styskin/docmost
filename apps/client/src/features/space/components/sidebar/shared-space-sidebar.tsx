@@ -1,14 +1,6 @@
-import {
-  Avatar,
-  Group,
-  Text,
-  UnstyledButton,
-} from "@mantine/core";
+import { Avatar, Group, Text, UnstyledButton } from "@mantine/core";
 import { spotlight } from "@mantine/spotlight";
-import {
-  IconHome,
-  IconSearch,
-} from "@tabler/icons-react";
+import { IconHome, IconSearch } from "@tabler/icons-react";
 import classes from "./space-sidebar.module.css";
 import switchSpaceClasses from "./switch-space.module.css";
 import { SharedSearchSpotlight } from "@/features/search/shared-search-spotlight.tsx";

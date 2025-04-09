@@ -16,7 +16,7 @@ export interface ReadonlyEditorProps {
 
 export function ReadonlyEditor({ title, content }: ReadonlyEditorProps) {
   const { t } = useTranslation();
-  
+
   const titleEditor = useEditor({
     extensions: [
       Document.extend({ content: "heading" }),
@@ -34,11 +34,7 @@ export function ReadonlyEditor({ title, content }: ReadonlyEditorProps) {
   });
 
   return (
-    <Container
-      fluid={false}
-      size={900}
-      className={classes.editor}
-    >
+    <Container fluid={false} size={900} className={classes.editor}>
       <EditorContent editor={titleEditor} />
       <EditorProvider
         editable={false}

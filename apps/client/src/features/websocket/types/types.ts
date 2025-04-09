@@ -41,15 +41,21 @@ export type MoveTreeNodeEvent = {
     parentId: string;
     index: number;
     position: string;
-  }
+  };
 };
 
 export type DeleteTreeNodeEvent = {
   operation: "deleteTreeNode";
   spaceId: string;
   payload: {
-    node: SpaceTreeNode
-  }
+    node: SpaceTreeNode;
+  };
 };
 
-export type WebSocketEvent = InvalidateEvent | UpdateEvent | DeleteEvent | AddTreeNodeEvent | MoveTreeNodeEvent | DeleteTreeNodeEvent;
+export type WebSocketEvent =
+  | InvalidateEvent
+  | UpdateEvent
+  | DeleteEvent
+  | AddTreeNodeEvent
+  | MoveTreeNodeEvent
+  | DeleteTreeNodeEvent;

@@ -2,15 +2,15 @@ import {
   BubbleMenu as BaseBubbleMenu,
   findParentNode,
   posToDOMRect,
-} from '@tiptap/react';
-import { useCallback } from 'react';
-import { sticky } from 'tippy.js';
-import { Node as PMNode } from 'prosemirror-model';
+} from "@tiptap/react";
+import { useCallback } from "react";
+import { sticky } from "tippy.js";
+import { Node as PMNode } from "prosemirror-model";
 import {
   EditorMenuProps,
   ShouldShowProps,
-} from '@/features/editor/components/table/types/types.ts';
-import { NodeWidthResize } from '@/features/editor/components/common/node-width-resize.tsx';
+} from "@/features/editor/components/table/types/types.ts";
+import { NodeWidthResize } from "@/features/editor/components/common/node-width-resize.tsx";
 
 export function DrawioMenu({ editor }: EditorMenuProps) {
   const shouldShow = useCallback(
@@ -19,14 +19,14 @@ export function DrawioMenu({ editor }: EditorMenuProps) {
         return false;
       }
 
-      return editor.isActive('drawio') && editor.getAttributes('drawio')?.src;
+      return editor.isActive("drawio") && editor.getAttributes("drawio")?.src;
     },
-    [editor]
+    [editor],
   );
 
   const getReferenceClientRect = useCallback(() => {
     const { selection } = editor.state;
-    const predicate = (node: PMNode) => node.type.name === 'drawio';
+    const predicate = (node: PMNode) => node.type.name === "drawio";
     const parent = findParentNode(predicate)(selection);
 
     if (parent) {
@@ -39,9 +39,9 @@ export function DrawioMenu({ editor }: EditorMenuProps) {
 
   const onWidthChange = useCallback(
     (value: number) => {
-      editor.commands.updateAttributes('drawio', { width: `${value}%` });
+      editor.commands.updateAttributes("drawio", { width: `${value}%` });
     },
-    [editor]
+    [editor],
   );
 
   return (
@@ -54,24 +54,24 @@ export function DrawioMenu({ editor }: EditorMenuProps) {
         offset: [0, 8],
         zIndex: 99,
         popperOptions: {
-          modifiers: [{ name: 'flip', enabled: false }],
+          modifiers: [{ name: "flip", enabled: false }],
         },
         plugins: [sticky],
-        sticky: 'popper',
+        sticky: "popper",
       }}
       shouldShow={shouldShow}
     >
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
         }}
       >
-        {editor.getAttributes('drawio')?.width && (
+        {editor.getAttributes("drawio")?.width && (
           <NodeWidthResize
             onChange={onWidthChange}
-            value={parseInt(editor.getAttributes('drawio').width)}
+            value={parseInt(editor.getAttributes("drawio").width)}
           />
         )}
       </div>

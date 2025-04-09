@@ -11,7 +11,8 @@ const AI_PROMPTS = [
     id: "improve",
     title: "Improve writing",
     description: "Improve the writing style and clarity",
-    prompt: "Please improve the writing style and clarity of the following text:\n\n",
+    prompt:
+      "Please improve the writing style and clarity of the following text:\n\n",
   },
   {
     id: "explain",
@@ -27,7 +28,6 @@ const AI_PROMPTS = [
   },
 ];
 
-
 export const getAIItems = async ({
   query,
   editor,
@@ -36,9 +36,10 @@ export const getAIItems = async ({
   editor: any;
 }): Promise<AIMenuItemType[]> => {
   // Filter items based on query
-  const filteredItems = AI_PROMPTS.filter(item =>
-    item.title.toLowerCase().includes(query.toLowerCase()) ||
-    item.description.toLowerCase().includes(query.toLowerCase())
+  const filteredItems = AI_PROMPTS.filter(
+    (item) =>
+      item.title.toLowerCase().includes(query.toLowerCase()) ||
+      item.description.toLowerCase().includes(query.toLowerCase()),
   );
 
   // FIXME: remove filteredItems
@@ -47,11 +48,9 @@ export const getAIItems = async ({
     command: async ({ editor, range }: CommandProps) => {
       const { from, to } = range;
       const text = editor.state.doc.text;
-      
+
       if (!text) return;
       try {
-
-
         // const analysis = await this.manulService.callManulAgent(
         //   JSON.stringify(context),
         //   "Please analyze the changes made to this document by comparing the previous and current content. Provide constructive criticism focusing on content quality, structure, and potential improvements. Be concise, use at most 2 sentences."
@@ -63,14 +62,14 @@ export const getAIItems = async ({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            query: query, 
-            context: text
-          })
+            query: query,
+            context: text,
+          }),
         });
 
         const responseText = await result.text();
         console.error("Response :", responseText);
-    
+
         editor
           .chain()
           .focus()
@@ -84,4 +83,4 @@ export const getAIItems = async ({
   }));
 
   return items;
-}; 
+};

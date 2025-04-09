@@ -87,14 +87,14 @@ export class DiffAnalysisProcessor extends WorkerHost {
       const markdownDiffStr = JSON.stringify(markdownDiff);
       this.logger.debug(`Calculated Markdown line diff (newlineIsToken=true): ${markdownDiffStr}`);
 
-      // Ask Manul to analyze the changes
-      this.logger.debug(`Requesting Manul analysis for page: ${pageId}`);
-      const analysis = await this.manulService.criticizeDiff(
+      // Ask Manul to analyze the changes and provide suggestions
+      this.logger.debug(`Requesting Manul suggestions for page: ${pageId}`);
+      const suggestionResponse = await this.manulService.suggestDiff(
         previousMarkdown,
         currentMarkdown,
         markdownDiffStr
       );
-      this.logger.debug(`Received Manul analysis for page: ${pageId}`);
+      this.logger.debug(`Received Manul suggestions for page: ${pageId}`);
 
       // Find the first added line for selection context text
       let selectionText: string | null = null;
@@ -104,7 +104,6 @@ export class DiffAnalysisProcessor extends WorkerHost {
       }
       this.logger.debug(`Selection context text: "${selectionText}"`);
 
-      // Construct comment content with mention
       const commentJsonContent: JSONContent = {
         type: 'doc',
         content: [
@@ -113,15 +112,14 @@ export class DiffAnalysisProcessor extends WorkerHost {
             content: [
               {
                 type: 'text',
-                text: analysis,
+                text: suggestionResponse.text || 'AI suggestions attached.',
               },
             ],
           },
         ],
       };
 
-      // Create a comment with the analysis and selection context
-      this.logger.debug(`Creating comment with analysis for page: ${pageId}`);
+      this.logger.debug(`Creating comment with suggestions for page: ${pageId}`);
       await this.commentService.create(
         AGENT_USER_ID,
         pageId,
@@ -130,7 +128,8 @@ export class DiffAnalysisProcessor extends WorkerHost {
           pageId: pageId,
           content: JSON.stringify(commentJsonContent),
           selection: selectionText,
-          parentCommentId: null
+          parentCommentId: null,
+          suggestions: suggestionResponse.suggestions,
         }
       );
       this.logger.debug(`Successfully completed diff analysis for page: ${pageId}`);

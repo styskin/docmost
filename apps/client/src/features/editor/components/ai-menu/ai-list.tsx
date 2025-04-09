@@ -52,7 +52,7 @@ export default function AIList({
 
   const handleSubmit = async () => {
     if (!preview.trim() || isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/manul/query", {
@@ -60,21 +60,21 @@ export default function AIList({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           query: preview,
-          context: editor.state.doc.textContent 
+          context: editor.state.doc.textContent,
         }),
       });
 
-      const data = await response.json();      
+      const data = await response.json();
       // Insert Claude's response into the editor after the current position
       editor
         .chain()
         .focus()
         .insertContentAt(getPos(), [
-          { 
-            type: 'paragraph', 
-            content: [{ type: 'text', text: data.data.response }]
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: data.data.response }],
           },
         ])
         .run();
@@ -94,15 +94,10 @@ export default function AIList({
         command(item);
       }
     },
-    [command, items]
+    [command, items],
   );
   return items.length > 0 || isLoading ? (
-    <Paper 
-      id="ai-command" 
-      p="0" 
-      shadow="md" 
-      withBorder
-    >
+    <Paper id="ai-command" p="0" shadow="md" withBorder>
       <Textarea
         minRows={1}
         autosize
@@ -111,7 +106,7 @@ export default function AIList({
         classNames={{ input: classes.textInput }}
         value={preview}
         placeholder={"Ask AI anything"}
-        style={{ marginTop: '-40px', width: '400px' }}
+        style={{ marginTop: "-40px", width: "400px" }}
         onFocus={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -152,7 +147,6 @@ export default function AIList({
           setPreview(e.target.value);
         }}
       />
-
     </Paper>
   ) : null;
 }

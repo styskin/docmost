@@ -90,7 +90,9 @@ function CommentList() {
   return (
     <>
       {comments.items
-        .filter((comment) => comment.parentCommentId === null && !comment.resolvedAt)
+        .filter(
+          (comment) => comment.parentCommentId === null && !comment.resolvedAt,
+        )
         .map(renderComments)}
     </>
   );

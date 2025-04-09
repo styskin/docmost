@@ -27,37 +27,38 @@ export default function ManulView(props: NodeViewProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/manul/query', {
-        method: 'POST',
+      const response = await fetch("/api/manul/query", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ query }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to get response');
+        throw new Error(errorData.message || "Failed to get response");
       }
 
       const data = await response.json();
-      
+
       // Insert the response into the editor after the current node
       const pos = props.getPos() + props.node.nodeSize;
       editor
         .chain()
         .focus()
         .insertContentAt(pos, [
-          { 
-            type: 'paragraph', 
-            content: [{ type: 'text', text: data.data.response }]
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: data.data.response }],
           },
         ])
         .run();
-
     } catch (error) {
       console.error("Error querying Manul:", error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      setError(
+        error instanceof Error ? error.message : "An unexpected error occurred",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -100,4 +101,4 @@ export default function ManulView(props: NodeViewProps) {
       </Paper>
     </NodeViewWrapper>
   );
-} 
+}

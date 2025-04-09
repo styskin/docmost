@@ -2,10 +2,10 @@ import { Outlet } from "react-router-dom";
 import { AppShell } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { useAtom } from "jotai";
-import { 
+import {
   desktopSidebarAtom,
   mobileSidebarAtom,
-  sidebarWidthAtom
+  sidebarWidthAtom,
 } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
 import classes from "./app-shell.module.css";
 import { useTrialEndAction } from "@/ee/hooks/use-trial-end-action.tsx";
@@ -63,14 +63,13 @@ export default function UserAgnosticLayout() {
     <AppShell
       header={{ height: 45 }}
       navbar={{
-          width: sidebarWidth,
-          breakpoint: "sm",
-          collapsed: {
-            mobile: !mobileOpened,
-            desktop: !desktopOpened,
-          },
-        }
-      }
+        width: sidebarWidth,
+        breakpoint: "sm",
+        collapsed: {
+          mobile: !mobileOpened,
+          desktop: !desktopOpened,
+        },
+      }}
       padding="md"
     >
       <AppShell.Header px="md" className={classes.header}>
@@ -85,7 +84,7 @@ export default function UserAgnosticLayout() {
         <SharedSpaceSidebar />
       </AppShell.Navbar>
       <AppShell.Main>
-          <Outlet />
+        <Outlet />
       </AppShell.Main>
     </AppShell>
   );

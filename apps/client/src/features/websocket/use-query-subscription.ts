@@ -31,7 +31,7 @@ export const useQuerySubscription = () => {
           }
 
           // only update if data was already in cache
-          if(queryClient.getQueryData([...data.entity, queryKeyId])){
+          if (queryClient.getQueryData([...data.entity, queryKeyId])) {
             queryClient.setQueryData([...data.entity, queryKeyId], {
               ...queryClient.getQueryData([...data.entity, queryKeyId]),
               ...data.payload,

@@ -1,5 +1,5 @@
 export enum SSO_PROVIDER {
-  OIDC = 'oidc',
-  SAML = 'saml',
-  GOOGLE = 'google',
+  OIDC = "oidc",
+  SAML = "saml",
+  GOOGLE = "google",
 }

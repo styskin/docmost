@@ -1,6 +1,6 @@
-import { Node, Mark, MarkType } from '@tiptap/pm/model';
-import { EditorState, Transaction } from '@tiptap/pm/state';
-import { EditorView } from '@tiptap/pm/view';
+import { Node, Mark, MarkType } from "@tiptap/pm/model";
+import { EditorState, Transaction } from "@tiptap/pm/state";
+import { EditorView } from "@tiptap/pm/view";
 
 export interface TextSuggestion {
   textToReplace: string;
@@ -13,7 +13,7 @@ export interface TextSuggestion {
 function findDocumentRange(
   doc: Node,
   textStart: number,
-  textEnd: number
+  textEnd: number,
 ): { from: number; to: number } | null {
   let currentTextPos = 0;
   let startPos: number | null = null;
@@ -53,49 +53,84 @@ function findDocumentRange(
     return { from: startPos, to: endPos };
   }
 
-  console.warn("Could not find document range for text positions:", { textStart, textEnd });
+  console.warn("Could not find document range for text positions:", {
+    textStart,
+    textEnd,
+  });
   return null;
 }
 
 function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\\]]/g, '\\$&');
+  return string.replace(/[.*+?^${}()|[\\]]/g, "\\$&");
 }
 
 export function createSuggestionTransaction(
   state: EditorState,
-  suggestion: TextSuggestion,
-  username: string
+  suggestionInput: TextSuggestion,
+  username: string,
 ): Transaction | null {
+  console.log(
+    "[createSuggestionTransaction] Received suggestionInput:",
+    suggestionInput,
+  );
+
   const { schema } = state;
 
   if (!schema.marks.suggestionDelete || !schema.marks.suggestionInsert) {
-      console.error("Schema is missing suggestion marks! Available marks:", Object.keys(schema.marks));
-      return null;
-  }
-
-  const {
-    textToReplace,
-    textReplacement = '',
-    reason = '',
-    textBefore = '',
-    textAfter = '',
-  } = suggestion;
-
-  const searchText = textBefore + textToReplace + textAfter;
-  
-  if (searchText.length === 0) {
-    console.warn('createSuggestionTransaction: Empty search text.');
+    console.error(
+      "Schema is missing suggestion marks! Available marks:",
+      Object.keys(schema.marks),
+    );
     return null;
   }
 
-  const pattern = escapeRegExp(searchText);
-  const regex = new RegExp(pattern, 'g');
+  const textToReplace = suggestionInput.textToReplace ?? "";
+  const textReplacement = suggestionInput.textReplacement ?? "";
+  const reason = suggestionInput.reason ?? "";
+  const textBefore = suggestionInput.textBefore ?? "";
+  const textAfter = suggestionInput.textAfter ?? "";
+  const patternText =
+    escapeRegExp(textBefore.replace(/\n/g, "\\s*")) +
+    "\\s*" + // Allow whitespace between before-text and replace-text
+    "(" +
+    escapeRegExp(textToReplace.replace(/\n/g, "\\s*")) +
+    ")" +
+    "\\s*" + // Allow whitespace between replace-text and after-text
+    escapeRegExp(textAfter.replace(/\n/g, "\\s*"));
+
+  console.log(
+    "createSuggestionTransaction - Constructed pattern:",
+    patternText,
+  );
+
+  // Check safe variables
+  if (
+    textToReplace.length === 0 &&
+    textBefore.length === 0 &&
+    textAfter.length === 0
+  ) {
+    console.warn(
+      "createSuggestionTransaction: All context parts are empty after defaulting.",
+    );
+    return null;
+  }
+
+  const regex = new RegExp(patternText, "g");
   const docText = state.doc.textContent;
-  
+  console.log(
+    "createSuggestionTransaction - Searching within docText:",
+    docText.substring(0, 500) + "...",
+  );
+
   let match;
-  let matches: { index: number; length: number }[] = [];
+  const matches: {
+    index: number;
+    length: number;
+    replaceIndex: number;
+    replaceLength: number;
+  }[] = [];
   let matchCount = 0;
-  const MAX_MATCHES = 1000; // Safety limit
+  const MAX_MATCHES = 1000;
 
   while ((match = regex.exec(docText)) !== null) {
     if (match.index === regex.lastIndex) {
@@ -103,61 +138,90 @@ export function createSuggestionTransaction(
     }
     matchCount++;
     if (matchCount > MAX_MATCHES) {
-      console.warn('createSuggestionTransaction: Too many matches found, stopping.');
+      console.warn(
+        "createSuggestionTransaction: Too many matches found, stopping.",
+      );
       break;
     }
-    matches.push({ index: match.index, length: match[0].length });
+
+    const fullMatchText = match[0];
+    const replaceMatchText = match[1] || "";
+    const replaceIndexInFull = fullMatchText.indexOf(replaceMatchText);
+
+    if (replaceIndexInFull === -1 && textToReplace.length > 0) {
+      console.warn(
+        "createSuggestionTransaction: Regex matched, but could not reliably locate the capture group for textToReplace within the full match. Skipping.",
+        {
+          fullMatchText,
+          pattern: patternText,
+          expectedCapture: textToReplace.replace(/\n/g, "\\s*"),
+        },
+      );
+      continue;
+    }
+
+    matches.push({
+      index: match.index,
+      length: fullMatchText.length,
+      replaceIndex: Math.max(0, replaceIndexInFull),
+      replaceLength: replaceMatchText.length,
+    });
   }
 
   if (matches.length === 0) {
-    console.warn('createSuggestionTransaction: No match found for pattern:', searchText);
+    console.warn(
+      "createSuggestionTransaction: No match found for pattern:",
+      patternText,
+    );
     return null;
   }
 
   if (matches.length > 1) {
-    console.warn('createSuggestionTransaction: Multiple matches found, applying only the first.');
+    console.warn(
+      "createSuggestionTransaction: Multiple matches found, applying only the first valid one.",
+    );
   }
 
   const applyingMatch = matches[0];
-  const textMatchStart = applyingMatch.index + textBefore.length;
+  const textMatchStart = applyingMatch.index + applyingMatch.replaceIndex;
   const textMatchEnd = textMatchStart + textToReplace.length;
 
+  console.log(
+    `Mapping text positions ${textMatchStart}-${textMatchEnd} to doc range...`,
+  );
   const docRange = findDocumentRange(state.doc, textMatchStart, textMatchEnd);
 
   if (!docRange) {
-    console.error('createSuggestionTransaction: Failed to map text positions to document range.');
+    console.error(
+      "createSuggestionTransaction: Failed to map text positions to document range.",
+    );
     return null;
   }
 
   const { from, to } = docRange;
 
-  // Prepare transaction
   let tr = state.tr;
-  const suggestionData = reason ? { reason } : undefined;
-  const attributes = { username, data: suggestionData };
+  const markAttributesData = reason ? { reason } : undefined;
+  const attributes = { username, data: markAttributesData };
 
-  // 1. Mark the text to be replaced as 'suggestionDelete'
-  if (from !== to) { // Only add delete mark if text is actually being replaced
+  if (from !== to) {
     tr = tr.addMark(from, to, schema.marks.suggestionDelete.create(attributes));
   }
 
-  // 2. Insert the replacement text marked as 'suggestionInsert'
   if (textReplacement.length > 0) {
-    const insertNode = schema.text(
-      textReplacement,
-      [schema.marks.suggestionInsert.create(attributes)]
-    );
-    // Insert *after* the marked-for-deletion text
+    const insertNode = schema.text(textReplacement, [
+      schema.marks.suggestionInsert.create(attributes),
+    ]);
     tr = tr.insert(to, insertNode);
   } else if (from === to) {
-      console.warn('createSuggestionTransaction: Skipping suggestion with empty replace/replacement at the same position.');
-      return null;
+    console.warn(
+      "createSuggestionTransaction: Skipping suggestion with empty replace/replacement at the same position.",
+    );
+    return null;
   }
 
-  // Add meta to potentially prevent this transaction from being re-processed by other plugins
-  tr = tr.setMeta('suggestionApplied', true);
-
-  return tr; 
+  tr = tr.setMeta("suggestionApplied", true);
+  return tr;
 }
 
 interface MarkedRange {
@@ -169,15 +233,15 @@ interface MarkedRange {
 const findSuggestionsInRange = (
   state: EditorState,
   from: number,
-  to: number
+  to: number,
 ): MarkedRange[] => {
   const markRanges = new Map<Mark, { from: number; to: number }>();
 
   state.doc.nodesBetween(from, to, (node, pos) => {
     node.marks.forEach((mark) => {
       if (
-        mark.type.name === 'suggestionInsert' ||
-        mark.type.name === 'suggestionDelete'
+        mark.type.name === "suggestionInsert" ||
+        mark.type.name === "suggestionDelete"
       ) {
         const range = markRanges.get(mark) || { from: pos, to: pos };
         range.from = Math.min(range.from, pos);
@@ -196,7 +260,7 @@ const findSuggestionsInRange = (
 
 export const findHoverTarget = (
   view: EditorView,
-  event: MouseEvent
+  event: MouseEvent,
 ): { from: number; to: number; markType: MarkType } | null => {
   const coords = { left: event.clientX, top: event.clientY };
   const posData = view.posAtCoords(coords);
@@ -215,4 +279,4 @@ export const findHoverTarget = (
   }
 
   return null;
-}; 
+};

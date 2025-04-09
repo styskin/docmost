@@ -12,7 +12,11 @@ interface ResolveCommentProps {
   resolvedAt: Date | null;
 }
 
-function ResolveComment({ commentId, pageId, resolvedAt }: ResolveCommentProps) {
+function ResolveComment({
+  commentId,
+  pageId,
+  resolvedAt,
+}: ResolveCommentProps) {
   const { t } = useTranslation();
   const resolveCommentMutation = useResolveCommentMutation();
   const editor = useAtomValue(pageEditorAtom);
@@ -31,7 +35,7 @@ function ResolveComment({ commentId, pageId, resolvedAt }: ResolveCommentProps) 
       await resolveCommentMutation.mutateAsync({
         commentId,
         pageId,
-        resolved: true
+        resolved: true,
       });
       try {
         if (editor && editor.commands) {
@@ -42,7 +46,7 @@ function ResolveComment({ commentId, pageId, resolvedAt }: ResolveCommentProps) 
         // Don't rethrow - the comment is still resolved on the server
       }
 
-      console.log('Successfully resolved comment');
+      console.log("Successfully resolved comment");
     } catch (error) {
       console.error("Failed to resolve comment:", error);
     }

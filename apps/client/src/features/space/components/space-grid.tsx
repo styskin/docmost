@@ -1,5 +1,5 @@
 import { Text, Avatar, SimpleGrid, Card, rem } from "@mantine/core";
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 import {
   prefetchSpace,
   useGetSpacesQuery,

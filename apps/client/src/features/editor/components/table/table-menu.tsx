@@ -113,8 +113,7 @@ export const TableMenu = React.memo(
         shouldShow={shouldShow}
       >
         <ActionIcon.Group>
-          <Tooltip position="top" label={t("Add left column")}
-          >
+          <Tooltip position="top" label={t("Add left column")}>
             <ActionIcon
               onClick={addColumnLeft}
               variant="default"

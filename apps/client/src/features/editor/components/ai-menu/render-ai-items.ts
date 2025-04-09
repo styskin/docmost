@@ -11,14 +11,12 @@ const renderAIItems = () => {
       editor: ReturnType<typeof useEditor>;
       clientRect: DOMRect;
     }) => {
-
-
       component = new ReactRenderer(AIList, {
-        props: { 
-          isLoading: true, 
+        props: {
+          isLoading: true,
           items: [],
           editor: props.editor,
-          autoFocus: true
+          autoFocus: true,
         },
         editor: props.editor,
       });
@@ -42,7 +40,7 @@ const renderAIItems = () => {
       editor: ReturnType<typeof useEditor>;
       clientRect: DOMRect;
     }) => {
-      component?.updateProps({...props, isLoading: false});
+      component?.updateProps({ ...props, isLoading: false });
 
       if (!props.clientRect) {
         return;
@@ -68,10 +66,10 @@ const renderAIItems = () => {
           getReferenceClientRect: props.clientRect,
         });
     },
-    onKeyDown: (props: { event: KeyboardEvent; }) => {
+    onKeyDown: (props: { event: KeyboardEvent }) => {
       if (props.event.key === "Escape") {
         popup?.[0].hide();
-        component?.destroy()
+        component?.destroy();
 
         return true;
       }
@@ -91,4 +89,4 @@ const renderAIItems = () => {
   };
 };
 
-export default renderAIItems; 
+export default renderAIItems;

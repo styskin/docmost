@@ -24,7 +24,7 @@ export function buildTree(pages: IPage[]): SpaceTreeNode[] {
       hasChildren: page.hasChildren,
       spaceId: page.spaceId,
       parentPageId: page.parentPageId,
-      children: []
+      children: [],
     };
   });
 
@@ -120,7 +120,6 @@ export const deleteTreeNode = (
     })
     .filter((node) => node !== null);
 };
-
 
 export function buildTreeWithChildren(items: SpaceTreeNode[]): SpaceTreeNode[] {
   const nodeMap = {};

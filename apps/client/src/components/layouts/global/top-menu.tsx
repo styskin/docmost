@@ -75,7 +75,7 @@ export default function TopMenu() {
               name={user.name}
             />
 
-            <div style={{width: 190}}>
+            <div style={{ width: 190 }}>
               <Text size="sm" fw={500} lineClamp={1}>
                 {user.name}
               </Text>

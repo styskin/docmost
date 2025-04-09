@@ -125,5 +125,5 @@ export const readonlyEditorExtensions = [
   Drawio.configure({ view: SharedDrawioView }),
   Excalidraw.configure({ view: SharedImageView }),
   Embed.configure({ view: SharedEmbedView }),
-  CharacterCount
+  CharacterCount,
 ] as any;

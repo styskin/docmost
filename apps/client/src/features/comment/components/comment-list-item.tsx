@@ -1,4 +1,4 @@
-import { Group, Text, Box } from "@mantine/core";
+import { Group, Text, Box, Button } from "@mantine/core";
 import React, { useState } from "react";
 import classes from "./comment.module.css";
 import { useAtom, useAtomValue } from "jotai";
@@ -13,10 +13,23 @@ import {
   useDeleteCommentMutation,
   useUpdateCommentMutation,
 } from "@/features/comment/queries/comment-query";
-import { IComment } from "@/features/comment/types/comment.types";
+import { IComment, ISuggestion } from "@/features/comment/types/comment.types";
 import { CustomAvatar } from "@/components/ui/custom-avatar.tsx";
 import { currentUserAtom } from "@/features/user/atoms/current-user-atom.ts";
 import { AGENT_USER_ID } from "@/lib/constants";
+import { Editor } from "@tiptap/react";
+
+interface SuggestionCommands {
+  setSuggestionMode: (
+    suggestions: ISuggestion[] | undefined | null,
+    username: string,
+  ) => void;
+  unsetSuggestionMode: () => void;
+}
+
+type EditorWithSuggestionCommands = Editor & {
+  commands: Editor["commands"] & SuggestionCommands;
+};
 
 interface CommentListItemProps {
   comment: IComment;
@@ -26,18 +39,22 @@ function CommentListItem({ comment }: CommentListItemProps) {
   const { hovered, ref } = useHover();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const editor = useAtomValue(pageEditorAtom);
+  const editor = useAtomValue(
+    pageEditorAtom,
+  ) as EditorWithSuggestionCommands | null;
   const [content, setContent] = useState<string>(comment.content);
   const updateCommentMutation = useUpdateCommentMutation();
   const deleteCommentMutation = useDeleteCommentMutation(comment.pageId);
   const [currentUser] = useAtom(currentUserAtom);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   async function handleUpdateComment() {
     try {
       setIsLoading(true);
       const commentToUpdate = {
         commentId: comment.id,
-        content: JSON.stringify(content),
+        content:
+          typeof content === "string" ? content : JSON.stringify(content),
       };
       await updateCommentMutation.mutateAsync(commentToUpdate);
       setIsEditing(false);
@@ -51,6 +68,10 @@ function CommentListItem({ comment }: CommentListItemProps) {
   async function handleDeleteComment() {
     try {
       await deleteCommentMutation.mutateAsync(comment.id);
+      if (showSuggestions && editor?.commands?.unsetSuggestionMode) {
+        editor.commands.unsetSuggestionMode();
+        setShowSuggestions(false);
+      }
       editor?.commands.unsetComment(comment.id);
     } catch (error) {
       console.error("Failed to delete comment:", error);
@@ -58,11 +79,41 @@ function CommentListItem({ comment }: CommentListItemProps) {
   }
 
   function handleEditToggle() {
+    if (showSuggestions && editor?.commands?.unsetSuggestionMode) {
+      editor.commands.unsetSuggestionMode();
+      setShowSuggestions(false);
+    }
     setIsEditing(true);
   }
   function cancelEdit() {
     setIsEditing(false);
   }
+
+  function handleToggleSuggestions() {
+    if (
+      !editor?.commands?.setSuggestionMode ||
+      !editor?.commands?.unsetSuggestionMode
+    )
+      return;
+
+    const username = currentUser?.user?.name || "AI Assistant";
+
+    if (showSuggestions) {
+      editor.commands.unsetSuggestionMode();
+    } else {
+      if (comment.suggestions && comment.suggestions.length > 0) {
+        console.log(
+          "[CommentListItem] Passing suggestions to command:",
+          comment.suggestions,
+        );
+        editor.commands.setSuggestionMode(comment.suggestions, username);
+      }
+    }
+    setShowSuggestions(!showSuggestions);
+  }
+
+  const canShowSuggestionsButton =
+    comment.suggestions && comment.suggestions.length > 0;
 
   return (
     <Box ref={ref} pb="xs">
@@ -81,13 +132,21 @@ function CommentListItem({ comment }: CommentListItemProps) {
 
             <div style={{ visibility: hovered ? "visible" : "hidden" }}>
               {(() => {
-                const shouldShowResolve = !comment.parentCommentId && comment.creatorId === AGENT_USER_ID;
-                return shouldShowResolve && (
-                  <ResolveComment commentId={comment.id} pageId={comment.pageId} resolvedAt={comment.resolvedAt} />
+                const shouldShowResolve =
+                  !comment.parentCommentId &&
+                  comment.creatorId === AGENT_USER_ID;
+                return (
+                  shouldShowResolve && (
+                    <ResolveComment
+                      commentId={comment.id}
+                      pageId={comment.pageId}
+                      resolvedAt={comment.resolvedAt}
+                    />
+                  )
                 );
               })()}
 
-              {currentUser?.user?.id === comment.creatorId && (
+              {currentUser?.user?.id === comment.creatorId && !isEditing && (
                 <CommentMenu
                   onEditComment={handleEditToggle}
                   onDeleteComment={handleDeleteComment}
@@ -127,6 +186,17 @@ function CommentListItem({ comment }: CommentListItemProps) {
               isCommentEditor={true}
             />
           </>
+        )}
+
+        {canShowSuggestionsButton && !isEditing && (
+          <Button
+            variant="light"
+            size="xs"
+            mt="xs"
+            onClick={handleToggleSuggestions}
+          >
+            {showSuggestions ? "Hide Suggestions" : "Show Suggestions"}
+          </Button>
         )}
       </div>
     </Box>

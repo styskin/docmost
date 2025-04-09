@@ -6,7 +6,9 @@ import { ISpace } from "@/features/space/types/space.types";
 import { getSharedSpaceById } from "@/features/space/services/shared-space-service";
 import { getSharedRecentChanges } from "@/features/page/services/shared-page-service";
 
-export function useSharedSpaceQuery(spaceId: string): UseQueryResult<ISpace, Error> {
+export function useSharedSpaceQuery(
+  spaceId: string,
+): UseQueryResult<ISpace, Error> {
   const query = useQuery({
     queryKey: ["space", spaceId],
     queryFn: () => getSharedSpaceById(spaceId),

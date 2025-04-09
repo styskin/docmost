@@ -18,9 +18,10 @@ export function SharedSearchSpotlight({ spaceId }: SharedSearchSpotlightProps) {
   const [query, setQuery] = useState("");
   const [debouncedSearchQuery] = useDebouncedValue(query, 300);
 
-  const {
-    data: searchResults
-  } = useSharedPageSearchQuery({ query: debouncedSearchQuery, spaceId });
+  const { data: searchResults } = useSharedPageSearchQuery({
+    query: debouncedSearchQuery,
+    spaceId,
+  });
 
   const pages = (
     searchResults && searchResults.length > 0 ? searchResults : []

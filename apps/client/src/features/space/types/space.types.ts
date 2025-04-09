@@ -69,7 +69,10 @@ export interface SpaceGroupInfo {
   type: "group";
 }
 
-export type ISpaceMember = { role: SpaceRole } & (SpaceUserInfo | SpaceGroupInfo);
+export type ISpaceMember = { role: SpaceRole } & (
+  | SpaceUserInfo
+  | SpaceGroupInfo
+);
 
 export interface IExportSpaceParams {
   spaceId: string;

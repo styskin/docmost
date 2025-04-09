@@ -131,10 +131,10 @@ export function useResolveCommentMutation() {
         });
       }
 
-      notifications.show({ 
-        message: variables.resolved 
-          ? t("Comment resolved successfully") 
-          : t("Comment unresolved successfully") 
+      notifications.show({
+        message: variables.resolved
+          ? t("Comment resolved successfully")
+          : t("Comment unresolved successfully"),
       });
     },
     onError: (error) => {

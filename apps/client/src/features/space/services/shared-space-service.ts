@@ -7,7 +7,9 @@ export async function getSharedSpaceById(spaceId: string): Promise<ISpace> {
   return req.data;
 }
 
-export async function exportSharedSpace(data: IExportSpaceParams): Promise<void> {
+export async function exportSharedSpace(
+  data: IExportSpaceParams,
+): Promise<void> {
   const req = await api.post("/share/spaces/export", data, {
     responseType: "blob",
   });

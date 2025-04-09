@@ -25,7 +25,9 @@ const renderMultiSelectOption: MultiSelectProps["renderOption"] = ({
     )}
     {option["type"] === "group" && <IconGroupCircle />}
     <div>
-      <Text size="sm" lineClamp={1}>{option.label}</Text>
+      <Text size="sm" lineClamp={1}>
+        {option.label}
+      </Text>
     </div>
   </Group>
 );

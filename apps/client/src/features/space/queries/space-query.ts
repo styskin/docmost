@@ -242,10 +242,11 @@ export function usePublishMutation() {
   const queryClient = useQueryClient();
 
   return useMutation<ISpace, Error, IPublishSpace>({
-    mutationFn: ({ spaceId, publish }) => updateSpace({
-      spaceId,
-      isPublished: publish
-    }),
+    mutationFn: ({ spaceId, publish }) =>
+      updateSpace({
+        spaceId,
+        isPublished: publish,
+      }),
     onSuccess: (data, variables) => {
       notifications.show({ message: "Published space successfully" });
       queryClient.invalidateQueries({

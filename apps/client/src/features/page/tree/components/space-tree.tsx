@@ -431,7 +431,8 @@ function NodeMenu({ node, treeApi }: NodeMenuProps) {
   const handleCopyLink = (copyLinkOption?: { share?: boolean }) => {
     const share = copyLinkOption?.share;
     const pageUrl =
-      getAppUrl() + buildPageUrl(spaceSlug, node.data.slugId, node.data.name, share);
+      getAppUrl() +
+      buildPageUrl(spaceSlug, node.data.slugId, node.data.name, share);
     clipboard.copy(pageUrl);
     notifications.show({ message: t("Link copied") });
   };

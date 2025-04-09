@@ -16,6 +16,9 @@ export async function searchSharedPage(
 export async function sharedSearchSuggestions(
   params: SearchSuggestionParams,
 ): Promise<ISuggestionResult> {
-  const req = await api.post<ISuggestionResult>("/share/search/suggest", params);
+  const req = await api.post<ISuggestionResult>(
+    "/share/search/suggest",
+    params,
+  );
   return req.data;
 }

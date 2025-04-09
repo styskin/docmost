@@ -211,12 +211,7 @@ export default function SettingsSidebar() {
 
       {isCloud() && (
         <div className={classes.text}>
-          <Text
-            size="sm"
-            c="dimmed"
-            component="a"
-            href="mailto:help@manul.ai"
-          >
+          <Text size="sm" c="dimmed" component="a" href="mailto:help@manul.ai">
             help@manul.ai
           </Text>
         </div>

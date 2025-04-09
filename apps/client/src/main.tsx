@@ -3,7 +3,7 @@ import "@mantine/spotlight/styles.css";
 import "@mantine/notifications/styles.css";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
-import { mantineCssResolver, theme } from '@/theme';
+import { mantineCssResolver, theme } from "@/theme";
 import { MantineProvider } from "@mantine/core";
 import { BrowserRouter } from "react-router-dom";
 import { ModalsProvider } from "@mantine/modals";
@@ -23,9 +23,8 @@ export const queryClient = new QueryClient({
   },
 });
 
-
 const root = ReactDOM.createRoot(
-  document.getElementById("root") as HTMLElement
+  document.getElementById("root") as HTMLElement,
 );
 
 root.render(
@@ -40,5 +39,5 @@ root.render(
         </QueryClientProvider>
       </ModalsProvider>
     </MantineProvider>
-  </BrowserRouter>
+  </BrowserRouter>,
 );

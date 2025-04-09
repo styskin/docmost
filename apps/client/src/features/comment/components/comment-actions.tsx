@@ -15,7 +15,7 @@ function CommentActions({
   isCommentEditor,
 }: CommentActionsProps) {
   const { t } = useTranslation();
-  
+
   return (
     <Group justify="flex-end" pt="sm" wrap="nowrap">
       {isCommentEditor && (

@@ -1,8 +1,29 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 interface ErrorWithMessage {
   message: string;
   status?: number;
+}
+
+interface Suggestion {
+  text_to_replace: string;
+  text_replacement: string;
+  reason: string;
+  text_before: string;
+  text_after: string;
+}
+
+interface SuggestDiffResponse {
+  text: string;
+  suggestions: Suggestion[];
+}
+
+interface ChatCompletionResponse {
+  choices: {
+    message: {
+      content: string;
+    };
+  }[];
 }
 
 class ManulServiceError extends HttpException {
@@ -11,8 +32,9 @@ class ManulServiceError extends HttpException {
   }
 }
 
+@Injectable()
 export class ManulService {
-  private async makeManulRequest<T extends Record<string, any>>(endpoint: string, body: T): Promise<string> {
+  private async makeManulRequest<T extends Record<string, any>, R = any>(endpoint: string, body: T): Promise<R> {
     try {
       const response = await fetch(`${process.env.MANUL_AGENTS_URL}${endpoint}`, {
         method: 'POST',
@@ -25,10 +47,10 @@ export class ManulService {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = `Manul request to ${endpoint} failed with status ${response.status}`;
-        
+
         try {
           const errorJson = JSON.parse(errorText);
-          errorMessage += `: ${errorJson.message || errorJson.error || errorText}`;
+          errorMessage += `: ${errorJson.detail || errorJson.message || errorJson.error || errorText}`; // Check for 'detail' too
         } catch {
           errorMessage += `: ${errorText}`;
         }
@@ -36,16 +58,16 @@ export class ManulService {
         throw new ManulServiceError(errorMessage, response.status);
       }
 
-      const data = await response.json();
-      
-      if (!data?.choices?.[0]?.message?.content) {
-        throw new ManulServiceError(
-          `Invalid response format from Manul service at ${endpoint}. Expected response to contain choices[0].message.content`,
+      const data: R = await response.json(); // Return the full parsed data
+
+      if (typeof data !== 'object' || data === null) {
+         throw new ManulServiceError(
+          `Invalid response format from Manul service at ${endpoint}. Expected an object.`,
           HttpStatus.BAD_GATEWAY
         );
       }
 
-      return data.choices[0].message.content;
+      return data;
     } catch (error) {
       console.error(`Manul API error at ${endpoint}:`, error);
       if (error instanceof ManulServiceError) {
@@ -60,23 +82,40 @@ export class ManulService {
   }
 
   async contextCall(context: string, task: string): Promise<string> {
-    return this.makeManulRequest('/context_call', {
+    const response = await this.makeManulRequest<any, ChatCompletionResponse>('/context_call', {
       input_variables: {
         context,
         task
       },
       prompt_name: "general_context",
     });
+
+    if (!response?.choices?.[0]?.message?.content) {
+       throw new ManulServiceError(
+        `Invalid response format from Manul service at /context_call. Expected choices[0].message.content`,
+        HttpStatus.BAD_GATEWAY
+      );
+    }
+    return response.choices[0].message.content;
   }
 
-  async criticizeDiff(previousContent: string, currentContent: string, diff: string): Promise<string> {
+  async suggestDiff(previousContent: string, currentContent: string, diff: string): Promise<SuggestDiffResponse> {
     const previous_content = previousContent;
     const current_content = currentContent;
-    return this.makeManulRequest('/criticize_diff', {
-      previous_content,
-      current_content,
-      diff,
-      prompt_name: "criticize_diff",
-    });
+    const response = await this.makeManulRequest<any, SuggestDiffResponse>('/suggest_diff', {
+        previous_content,
+        current_content,
+        diff,
+        prompt_name: "suggest_diff",
+      }
+    );
+
+    if (!response || typeof response !== 'object' || !Array.isArray(response.suggestions)) {
+      throw new ManulServiceError(
+        `Invalid response format from Manul service at /suggest_diff. Expected an object with a 'suggestions' array.`,
+        HttpStatus.BAD_GATEWAY
+      );
+    }
+    return response;
   }
 } 

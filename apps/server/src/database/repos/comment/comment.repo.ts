@@ -8,7 +8,7 @@ import {
   UpdatableComment,
 } from '@docmost/db/types/entity.types';
 import { PaginationOptions } from '@docmost/db/pagination/pagination-options';
-import { executeWithPagination } from '@docmost/db/pagination/pagination';
+import { executeWithPagination, PaginationResult } from '@docmost/db/pagination/pagination';
 import { ExpressionBuilder } from 'kysely';
 import { DB } from '@docmost/db/types/db';
 import { jsonObjectFrom } from 'kysely/helpers/postgres';
@@ -17,28 +17,30 @@ import { jsonObjectFrom } from 'kysely/helpers/postgres';
 export class CommentRepo {
   constructor(@InjectKysely() private readonly db: KyselyDB) {}
 
-  // todo, add workspaceId
   async findById(
     commentId: string,
     opts?: { includeCreator: boolean },
-  ): Promise<Comment> {
-    return await this.db
+  ): Promise<Comment | undefined> {
+    let query = this.db
       .selectFrom('comments')
       .selectAll('comments')
-      .$if(opts?.includeCreator, (qb) => qb.select(this.withCreator))
-      .where('id', '=', commentId)
-      .executeTakeFirst();
+      .where('id', '=', commentId);
+
+    if (opts?.includeCreator) {
+      query = query.select((eb) => this.withCreator(eb));
+    }
+    return await query.executeTakeFirst(); 
   }
 
-  async findPageComments(pageId: string, pagination: PaginationOptions) {
-    const query = this.db
+  async findPageComments(pageId: string, pagination: PaginationOptions): Promise<PaginationResult<Comment>> {
+    let query = this.db
       .selectFrom('comments')
       .selectAll('comments')
       .select((eb) => this.withCreator(eb))
       .where('pageId', '=', pageId)
       .orderBy('createdAt', 'asc');
 
-    const result = executeWithPagination(query, {
+    const result = await executeWithPagination<Comment, DB, 'comments'>(query, {
       page: pagination.page,
       perPage: pagination.limit,
     });
@@ -52,9 +54,13 @@ export class CommentRepo {
     trx?: KyselyTransaction,
   ) {
     const db = dbOrTx(this.db, trx);
+    const valuesToUpdate: Record<string, any> = { ...updatableComment };
+    if (valuesToUpdate.suggestions && typeof valuesToUpdate.suggestions !== 'string') {
+        valuesToUpdate.suggestions = JSON.stringify(valuesToUpdate.suggestions);
+    }
     await db
       .updateTable('comments')
-      .set(updatableComment)
+      .set(valuesToUpdate)
       .where('id', '=', commentId)
       .execute();
   }
@@ -64,9 +70,15 @@ export class CommentRepo {
     trx?: KyselyTransaction,
   ): Promise<Comment> {
     const db = dbOrTx(this.db, trx);
+
+    const valuesToInsert: Record<string, any> = { ...insertableComment };
+    if (valuesToInsert.suggestions && typeof valuesToInsert.suggestions !== 'string') {
+        valuesToInsert.suggestions = JSON.stringify(valuesToInsert.suggestions);
+    }
+
     return db
       .insertInto('comments')
-      .values(insertableComment)
+      .values(valuesToInsert)
       .returningAll()
       .executeTakeFirst();
   }

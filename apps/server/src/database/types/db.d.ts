@@ -27,17 +27,6 @@ export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
-export interface Atlases {
-  createdAt: Timestamp;
-  description: string | null;
-  id: string;
-  name: string | null;
-  navigationTree: Json | null;
-  teamId: string;
-  type: string | null;
-  updatedAt: Timestamp;
-}
-
 export interface Attachments {
   createdAt: Generated<Timestamp>;
   creatorId: string;
@@ -129,24 +118,9 @@ export interface Comments {
   parentCommentId: string | null;
   resolvedAt: Timestamp | null;
   selection: string | null;
+  suggestions: Json | null;
   type: string | null;
   workspaceId: string;
-}
-
-export interface Documents {
-  atlasId: string | null;
-  createdAt: Timestamp;
-  html: string | null;
-  id: string;
-  parentDocumentId: string | null;
-  preview: string | null;
-  private: Generated<boolean>;
-  teamId: string | null;
-  text: string | null;
-  title: string;
-  updatedAt: Timestamp;
-  urlId: string;
-  userId: string | null;
 }
 
 export interface Groups {
@@ -209,10 +183,6 @@ export interface Pages {
   ydoc: Buffer | null;
 }
 
-export interface SequelizeMeta {
-  name: string;
-}
-
 export interface SpaceMembers {
   addedById: string | null;
   createdAt: Generated<Timestamp>;
@@ -232,7 +202,6 @@ export interface Spaces {
   deletedAt: Timestamp | null;
   description: string | null;
   id: Generated<string>;
-  isPublised: boolean | null;
   isPublished: Generated<boolean>;
   logo: string | null;
   name: string | null;
@@ -240,15 +209,6 @@ export interface Spaces {
   updatedAt: Generated<Timestamp>;
   visibility: Generated<string>;
   workspaceId: string;
-}
-
-export interface Teams {
-  createdAt: Timestamp;
-  id: string;
-  name: string | null;
-  slackData: Json | null;
-  slackId: string | null;
-  updatedAt: Timestamp;
 }
 
 export interface Users {
@@ -319,22 +279,18 @@ export interface Workspaces {
 }
 
 export interface DB {
-  atlases: Atlases;
   attachments: Attachments;
   authAccounts: AuthAccounts;
   authProviders: AuthProviders;
   backlinks: Backlinks;
   billing: Billing;
   comments: Comments;
-  documents: Documents;
   groups: Groups;
   groupUsers: GroupUsers;
   pageHistory: PageHistory;
   pages: Pages;
-  SequelizeMeta: SequelizeMeta;
   spaceMembers: SpaceMembers;
   spaces: Spaces;
-  teams: Teams;
   users: Users;
   userTokens: UserTokens;
   workspaceInvitations: WorkspaceInvitations;

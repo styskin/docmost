@@ -4,10 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateCommentDto, SuggestionDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CommentRepo } from '@docmost/db/repos/comment/comment.repo';
-import { Comment, User } from '@docmost/db/types/entity.types';
+import { Comment, User, UpdatableComment } from '@docmost/db/types/entity.types';
 import { PaginationOptions } from '@docmost/db/pagination/pagination-options';
 import { PaginationResult } from '@docmost/db/pagination/pagination';
 import { PageRepo } from '@docmost/db/repos/page/page.repo';
@@ -20,14 +20,35 @@ export class CommentService {
     private pageRepo: PageRepo,
   ) {}
 
-  async findById(commentId: string) {
+  // Helper function to safely parse suggestions JSON
+  private parseSuggestions(suggestionsJson: unknown): SuggestionDto[] | null {
+    if (!suggestionsJson) {
+      return null;
+    }
+    try {
+      const suggestions = typeof suggestionsJson === 'string' 
+                          ? JSON.parse(suggestionsJson) 
+                          : suggestionsJson;
+      if (Array.isArray(suggestions)) {
+         return suggestions as SuggestionDto[];
+      }
+      console.error('Parsed suggestions is not an array:', suggestions);
+      return null;
+    } catch (error) {
+      console.error('Failed to parse suggestions JSON:', error, suggestionsJson);
+      return null;
+    }
+  }
+
+  async findById(commentId: string): Promise<Omit<Comment, 'suggestions'> & { suggestions?: SuggestionDto[] | null } | undefined> {
     const comment = await this.commentRepo.findById(commentId, {
       includeCreator: true,
     });
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
-    return comment;
+    const parsedSuggestions = this.parseSuggestions(comment.suggestions);
+    return { ...comment, suggestions: parsedSuggestions };
   }
 
   async create(
@@ -35,8 +56,10 @@ export class CommentService {
     pageId: string,
     workspaceId: string,
     createCommentDto: CreateCommentDto,
-  ) {
-    const commentContent = JSON.parse(createCommentDto.content);
+  ): Promise<Omit<Comment, 'suggestions'> & { suggestions?: SuggestionDto[] | null }> {
+    const commentContent = typeof createCommentDto.content === 'string' 
+      ? JSON.parse(createCommentDto.content)
+      : createCommentDto.content;
 
     if (createCommentDto.parentCommentId) {
       const parentComment = await this.commentRepo.findById(
@@ -60,15 +83,20 @@ export class CommentService {
       parentCommentId: createCommentDto?.parentCommentId,
       creatorId: userId,
       workspaceId: workspaceId,
+      suggestions: createCommentDto.suggestions as any,
     });
 
-    return createdComment;
+    // Parse suggestions
+    const parsedSuggestions = this.parseSuggestions(createdComment.suggestions);
+    // Return new object with correct type
+    return { ...createdComment, suggestions: parsedSuggestions };
   }
 
+  // Return type reflects the structure with parsed suggestions
   async findByPageId(
     pageId: string,
     pagination: PaginationOptions,
-  ): Promise<PaginationResult<Comment>> {
+  ): Promise<PaginationResult<Omit<Comment, 'suggestions'> & { suggestions?: SuggestionDto[] | null }>> {
     const page = await this.pageRepo.findById(pageId);
 
     if (!page) {
@@ -80,14 +108,23 @@ export class CommentService {
       pagination,
     );
 
-    return pageComments;
+    // Map items to the correct return structure
+    const itemsWithParsedSuggestions = pageComments.items.map(comment => ({
+      ...comment,
+      suggestions: this.parseSuggestions(comment.suggestions),
+    }));
+
+    return {
+      ...pageComments,
+      items: itemsWithParsedSuggestions,
+    };
   }
 
   async update(
     commentId: string,
     updateCommentDto: UpdateCommentDto,
     authUser: User,
-  ): Promise<Comment> {
+  ): Promise<Omit<Comment, 'suggestions'> & { suggestions?: SuggestionDto[] | null }> {
     const commentContent = JSON.parse(updateCommentDto.content);
 
     const comment = await this.commentRepo.findById(commentId);
@@ -100,18 +137,17 @@ export class CommentService {
     }
 
     const editedAt = new Date();
+    const updateData: UpdatableComment = {
+      content: commentContent,
+      editedAt: editedAt,
+    };
 
-    await this.commentRepo.updateComment(
-      {
-        content: commentContent,
-        editedAt: editedAt,
-      },
-      commentId,
-    );
-    comment.content = commentContent;
-    comment.editedAt = editedAt;
-
-    return comment;
+    await this.commentRepo.updateComment(updateData, commentId);    
+    const updatedComment = await this.findById(commentId);
+    if (!updatedComment) { 
+        throw new NotFoundException('Comment disappeared after update');
+    }
+    return updatedComment; 
   }
 
   async remove(commentId: string, authUser: User): Promise<void> {

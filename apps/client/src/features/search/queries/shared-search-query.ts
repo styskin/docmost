@@ -1,6 +1,9 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { searchSharedPage } from "@/features/search/services/shared-search-service";
-import { IPageSearch, IPageSearchParams } from "@/features/search/types/search.types";
+import {
+  IPageSearch,
+  IPageSearchParams,
+} from "@/features/search/types/search.types";
 
 export function useSharedPageSearchQuery(
   params: IPageSearchParams,

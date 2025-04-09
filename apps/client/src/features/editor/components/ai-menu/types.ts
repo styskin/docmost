@@ -11,4 +11,4 @@ export type AIMenuItemType = {
   title: string;
   description: string;
   command: (props: CommandProps) => Promise<void>;
-}; 
+};

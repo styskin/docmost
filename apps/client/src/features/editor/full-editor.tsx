@@ -32,11 +32,19 @@ export function FullEditor({
 
   const fullPageWidth = user.settings?.preferences?.fullPageWidth;
 
-  document.addEventListener("keydown", function (e) {
-    if (editable && (os === 'macos' ? e.metaKey : e.ctrlKey) && e.code.toLowerCase() === 'keys') {
-      e.preventDefault();
-    }
-  }, false);
+  document.addEventListener(
+    "keydown",
+    function (e) {
+      if (
+        editable &&
+        (os === "macos" ? e.metaKey : e.ctrlKey) &&
+        e.code.toLowerCase() === "keys"
+      ) {
+        e.preventDefault();
+      }
+    },
+    false,
+  );
 
   return (
     <Container
@@ -51,7 +59,11 @@ export function FullEditor({
         spaceSlug={spaceSlug}
         editable={editable}
       />
-      <MemoizedPageEditor pageId={pageId} editable={editable} content={content} />
+      <MemoizedPageEditor
+        pageId={pageId}
+        editable={editable}
+        content={content}
+      />
     </Container>
   );
 }

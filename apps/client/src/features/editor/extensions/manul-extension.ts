@@ -1,5 +1,5 @@
-import ManulView from '../components/manul/manul-view';
-import { Node, NodeViewProps, ReactNodeViewRenderer } from '@tiptap/react';
+import ManulView from "../components/manul/manul-view";
+import { Node, NodeViewProps, ReactNodeViewRenderer } from "@tiptap/react";
 
 export interface ManulOptions {
   HTMLAttributes: Record<string, any>;
@@ -9,7 +9,7 @@ export interface ManulCommands<ReturnType> {
   setManulAgent: () => ReturnType;
 }
 
-declare module '@tiptap/core' {
+declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     manul: {
       setManulAgent: () => ReturnType;
@@ -18,8 +18,8 @@ declare module '@tiptap/core' {
 }
 
 export const Manul = Node.create<ManulOptions>({
-  name: 'manul',
-  group: 'block',
+  name: "manul",
+  group: "block",
   atom: true,
   selectable: true,
   draggable: true,
@@ -34,7 +34,7 @@ export const Manul = Node.create<ManulOptions>({
   addAttributes() {
     return {
       class: {
-        default: 'manul-container',
+        default: "manul-container",
       },
     };
   },
@@ -48,7 +48,7 @@ export const Manul = Node.create<ManulOptions>({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', HTMLAttributes, 0];
+    return ["div", HTMLAttributes, 0];
   },
 
   addCommands() {
@@ -65,11 +65,11 @@ export const Manul = Node.create<ManulOptions>({
 
   addKeyboardShortcuts() {
     return {
-      'Mod-Alt-k': () => this.editor.commands.setManulAgent(),
+      "Mod-Alt-k": () => this.editor.commands.setManulAgent(),
     };
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(ManulView);
   },
-}); 
+});

@@ -1,6 +1,15 @@
 import { IUser } from "@/features/user/types/user.types";
 import { QueryParams } from "@/lib/types.ts";
 
+// Define the structure for suggestions received from the backend
+export interface ISuggestion {
+  textToReplace: string;
+  textReplacement: string;
+  reason: string;
+  textBefore: string;
+  textAfter: string;
+}
+
 export interface IComment {
   id: string;
   content: string;
@@ -16,6 +25,7 @@ export interface IComment {
   editedAt?: Date;
   deletedAt?: Date;
   creator: IUser;
+  suggestions?: ISuggestion[]; // Add the optional suggestions field
 }
 
 export interface ICommentData {
