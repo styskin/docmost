@@ -99,8 +99,8 @@ export function createSuggestionTransaction(
   const processedReplace = escapedReplace.replace(/\n/g, "\\s*");
   const processedAfter = escapedAfter.replace(/\n/g, "\\s*");
 
-
-  const patternText = processedBefore + "\\s*(" + processedReplace + ")\\s*" + processedAfter;
+  const patternText =
+    processedBefore + "\\s*(" + processedReplace + ")\\s*" + processedAfter;
 
   console.log(
     "[createSuggestionTransaction] Constructed pattern string:",
@@ -113,7 +113,7 @@ export function createSuggestionTransaction(
     escapedAfter.length === 0
   ) {
     console.warn(
-      "createSuggestionTransaction: All context parts are empty after escaping and defaulting."
+      "createSuggestionTransaction: All context parts are empty after escaping and defaulting.",
     );
     return null;
   }
