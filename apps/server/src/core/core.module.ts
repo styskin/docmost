@@ -29,7 +29,7 @@ import { ShareModule } from './share/share.module';
     SpaceModule,
     GroupModule,
     CaslModule,
-    ShareModule
+    ShareModule,
   ],
 })
 export class CoreModule implements NestModule {

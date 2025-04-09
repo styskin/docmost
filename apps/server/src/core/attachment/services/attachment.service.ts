@@ -281,10 +281,11 @@ export class AttachmentService {
         }),
       );
 
-      if(failedDeletions.length === attachments.length){
-        throw new Error(`Failed to delete any attachments for spaceId: ${spaceId}`);
+      if (failedDeletions.length === attachments.length) {
+        throw new Error(
+          `Failed to delete any attachments for spaceId: ${spaceId}`,
+        );
       }
-
     } catch (err) {
       throw err;
     }

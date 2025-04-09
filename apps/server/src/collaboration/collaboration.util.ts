@@ -104,19 +104,20 @@ function sanitizeNode(node: any): any {
 
   if (Array.isArray(node.content)) {
     // Recursively sanitize content array, filtering out nulls from removed nodes
-    node.content = node.content.map(sanitizeNode).filter(n => n !== null);
+    node.content = node.content.map(sanitizeNode).filter((n) => n !== null);
   }
 
   if (Array.isArray(node.marks)) {
-      // Recursively check marks as well, although 'manul' is unlikely here
-      node.marks = node.marks.map(sanitizeNode).filter(n => n !== null);
+    // Recursively check marks as well, although 'manul' is unlikely here
+    node.marks = node.marks.map(sanitizeNode).filter((n) => n !== null);
   }
-
 
   return node;
 }
 
-export function sanitizeTiptapJson(tiptapJson: JSONContent | null): JSONContent | null {
+export function sanitizeTiptapJson(
+  tiptapJson: JSONContent | null,
+): JSONContent | null {
   if (!tiptapJson || typeof tiptapJson !== 'object') {
     return tiptapJson;
   }

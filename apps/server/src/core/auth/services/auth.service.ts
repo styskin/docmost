@@ -43,13 +43,9 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto, workspaceId: string) {
-    const user = await this.userRepo.findByEmail(
-      loginDto.email,
-      workspaceId,
-      {
-        includePassword: true
-      }
-    );
+    const user = await this.userRepo.findByEmail(loginDto.email, workspaceId, {
+      includePassword: true,
+    });
 
     if (
       !user ||

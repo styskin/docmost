@@ -27,8 +27,8 @@ export class SpaceRepo {
     let query = db
       .selectFrom('spaces')
       .selectAll('spaces')
-      .$if(opts?.includeMemberCount, (qb) => qb.select(this.withMemberCount))
-    
+      .$if(opts?.includeMemberCount, (qb) => qb.select(this.withMemberCount));
+
     if (workspaceId) {
       query = query.where('workspaceId', '=', workspaceId);
     }
@@ -50,8 +50,8 @@ export class SpaceRepo {
       .selectFrom('spaces')
       .selectAll('spaces')
       .$if(opts?.includeMemberCount, (qb) => qb.select(this.withMemberCount))
-      .where(sql`LOWER(slug)`, '=', sql`LOWER(${slug})`)
-    
+      .where(sql`LOWER(slug)`, '=', sql`LOWER(${slug})`);
+
     if (workspaceId) {
       query = query.where('workspaceId', '=', workspaceId);
     }

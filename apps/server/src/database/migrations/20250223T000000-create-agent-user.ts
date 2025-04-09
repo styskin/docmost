@@ -45,14 +45,8 @@ export async function up(db: Kysely<any>): Promise<void> {
 
 export async function down(db: Kysely<any>): Promise<void> {
   // Delete agent user
-  await db
-    .deleteFrom('users')
-    .where('id', '=', AGENT_USER_ID)
-    .execute();
+  await db.deleteFrom('users').where('id', '=', AGENT_USER_ID).execute();
 
   // Delete agent workspace
-  await db
-    .deleteFrom('workspaces')
-    .where('id', '=', AGENT_USER_ID)
-    .execute();
-} 
+  await db.deleteFrom('workspaces').where('id', '=', AGENT_USER_ID).execute();
+}

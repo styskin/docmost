@@ -10,4 +10,5 @@ export const LOCAL_STORAGE_PATH = path.resolve(
   LOCAL_STORAGE_DIR,
 );
 
-export const AGENT_USER_ID = process.env.AGENT_USER_ID || '00000000-0000-7000-8000-000000000000';
+export const AGENT_USER_ID =
+  process.env.AGENT_USER_ID || '00000000-0000-7000-8000-000000000000';

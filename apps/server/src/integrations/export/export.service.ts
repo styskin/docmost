@@ -76,8 +76,11 @@ export class ExportService {
       </html>`;
     }
 
-    if (format === ExportFormat.Markdown) { 
-      const newPageHtml = pageHtml.replace(/<colgroup[^>]*>[\s\S]*?<\/colgroup>/gmi, '');
+    if (format === ExportFormat.Markdown) {
+      const newPageHtml = pageHtml.replace(
+        /<colgroup[^>]*>[\s\S]*?<\/colgroup>/gim,
+        '',
+      );
       return turndown(newPageHtml);
     }
 
@@ -260,14 +263,7 @@ export class ExportService {
 
     const pages = await this.db
       .selectFrom('pages')
-      .select([
-        'id',
-        'slugId',
-        'title',
-        'creatorId',
-        'spaceId',
-        'workspaceId',
-      ])
+      .select(['id', 'slugId', 'title', 'creatorId', 'spaceId', 'workspaceId'])
       .select((eb) => this.pageRepo.withSpace(eb))
       .where('id', 'in', pageMentionIds)
       .where('workspaceId', '=', workspaceId)

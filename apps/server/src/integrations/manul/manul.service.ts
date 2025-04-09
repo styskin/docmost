@@ -27,22 +27,31 @@ interface ChatCompletionResponse {
 }
 
 class ManulServiceError extends HttpException {
-  constructor(message: string, status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR) {
+  constructor(
+    message: string,
+    status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
+  ) {
     super(message, status);
   }
 }
 
 @Injectable()
 export class ManulService {
-  private async makeManulRequest<T extends Record<string, any>, R = any>(endpoint: string, body: T): Promise<R> {
+  private async makeManulRequest<T extends Record<string, any>, R = any>(
+    endpoint: string,
+    body: T,
+  ): Promise<R> {
     try {
-      const response = await fetch(`${process.env.MANUL_AGENTS_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `${process.env.MANUL_AGENTS_URL}${endpoint}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -61,9 +70,9 @@ export class ManulService {
       const data: R = await response.json(); // Return the full parsed data
 
       if (typeof data !== 'object' || data === null) {
-         throw new ManulServiceError(
+        throw new ManulServiceError(
           `Invalid response format from Manul service at ${endpoint}. Expected an object.`,
-          HttpStatus.BAD_GATEWAY
+          HttpStatus.BAD_GATEWAY,
         );
       }
 
@@ -76,46 +85,59 @@ export class ManulService {
       const typedError = error as ErrorWithMessage;
       throw new ManulServiceError(
         `Failed to process query with Manul service at ${endpoint}: ${typedError.message}`,
-        typedError.status || HttpStatus.INTERNAL_SERVER_ERROR
+        typedError.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   async contextCall(context: string, task: string): Promise<string> {
-    const response = await this.makeManulRequest<any, ChatCompletionResponse>('/context_call', {
-      input_variables: {
-        context,
-        task
+    const response = await this.makeManulRequest<any, ChatCompletionResponse>(
+      '/context_call',
+      {
+        input_variables: {
+          context,
+          task,
+        },
+        prompt_name: 'general_context',
       },
-      prompt_name: "general_context",
-    });
+    );
 
     if (!response?.choices?.[0]?.message?.content) {
-       throw new ManulServiceError(
+      throw new ManulServiceError(
         `Invalid response format from Manul service at /context_call. Expected choices[0].message.content`,
-        HttpStatus.BAD_GATEWAY
+        HttpStatus.BAD_GATEWAY,
       );
     }
     return response.choices[0].message.content;
   }
 
-  async suggestDiff(previousContent: string, currentContent: string, diff: string): Promise<SuggestDiffResponse> {
+  async suggestDiff(
+    previousContent: string,
+    currentContent: string,
+    diff: string,
+  ): Promise<SuggestDiffResponse> {
     const previous_content = previousContent;
     const current_content = currentContent;
-    const response = await this.makeManulRequest<any, SuggestDiffResponse>('/suggest_diff', {
+    const response = await this.makeManulRequest<any, SuggestDiffResponse>(
+      '/suggest_diff',
+      {
         previous_content,
         current_content,
         diff,
-        prompt_name: "suggest_diff",
-      }
+        prompt_name: 'suggest_diff',
+      },
     );
 
-    if (!response || typeof response !== 'object' || !Array.isArray(response.suggestions)) {
+    if (
+      !response ||
+      typeof response !== 'object' ||
+      !Array.isArray(response.suggestions)
+    ) {
       throw new ManulServiceError(
         `Invalid response format from Manul service at /suggest_diff. Expected an object with a 'suggestions' array.`,
-        HttpStatus.BAD_GATEWAY
+        HttpStatus.BAD_GATEWAY,
       );
     }
     return response;
   }
-} 
+}

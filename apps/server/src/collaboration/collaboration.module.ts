@@ -27,7 +27,7 @@ import { QueueName } from '../integrations/queue/constants';
     TokenModule,
     ManulModule,
     DatabaseModule,
-    BullModule.registerQueue({ name: QueueName.DIFF_ANALYSIS_QUEUE })
+    BullModule.registerQueue({ name: QueueName.DIFF_ANALYSIS_QUEUE }),
   ],
 })
 export class CollaborationModule implements OnModuleInit, OnModuleDestroy {

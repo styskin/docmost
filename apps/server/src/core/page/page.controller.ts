@@ -81,7 +81,7 @@ export class PageController {
   @HttpCode(HttpStatus.OK)
   @Post('update')
   async update(@Body() updatePageDto: UpdatePageDto, @AuthUser() user: User) {
-    console.log("updatePageDto");
+    console.log('updatePageDto');
 
     const page = await this.pageRepo.findById(updatePageDto.pageId);
 

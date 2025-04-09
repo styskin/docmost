@@ -33,14 +33,13 @@ export async function executeWithPagination<O, DB, TB extends keyof DB>(
       .select((eb) => eb.ref(deferredJoinPrimaryKey).as('primaryKey'))
       .execute()
       // @ts-expect-error TODO: Fix the type here later
-       
+
       .then((rows) => rows.map((row) => row.primaryKey));
 
     qb = qb
       .where((eb) =>
         primaryKeys.length > 0
-          ?  
-            eb(deferredJoinPrimaryKey, 'in', primaryKeys as any)
+          ? eb(deferredJoinPrimaryKey, 'in', primaryKeys as any)
           : eb(sql`1`, '=', 0),
       )
       .clearOffset()

@@ -8,7 +8,10 @@ import {
   UpdatableComment,
 } from '@docmost/db/types/entity.types';
 import { PaginationOptions } from '@docmost/db/pagination/pagination-options';
-import { executeWithPagination, PaginationResult } from '@docmost/db/pagination/pagination';
+import {
+  executeWithPagination,
+  PaginationResult,
+} from '@docmost/db/pagination/pagination';
 import { ExpressionBuilder } from 'kysely';
 import { DB } from '@docmost/db/types/db';
 import { jsonObjectFrom } from 'kysely/helpers/postgres';
@@ -29,10 +32,13 @@ export class CommentRepo {
     if (opts?.includeCreator) {
       query = query.select((eb) => this.withCreator(eb));
     }
-    return await query.executeTakeFirst(); 
+    return await query.executeTakeFirst();
   }
 
-  async findPageComments(pageId: string, pagination: PaginationOptions): Promise<PaginationResult<Comment>> {
+  async findPageComments(
+    pageId: string,
+    pagination: PaginationOptions,
+  ): Promise<PaginationResult<Comment>> {
     let query = this.db
       .selectFrom('comments')
       .selectAll('comments')
@@ -55,8 +61,11 @@ export class CommentRepo {
   ) {
     const db = dbOrTx(this.db, trx);
     const valuesToUpdate: Record<string, any> = { ...updatableComment };
-    if (valuesToUpdate.suggestions && typeof valuesToUpdate.suggestions !== 'string') {
-        valuesToUpdate.suggestions = JSON.stringify(valuesToUpdate.suggestions);
+    if (
+      valuesToUpdate.suggestions &&
+      typeof valuesToUpdate.suggestions !== 'string'
+    ) {
+      valuesToUpdate.suggestions = JSON.stringify(valuesToUpdate.suggestions);
     }
     await db
       .updateTable('comments')
@@ -72,8 +81,11 @@ export class CommentRepo {
     const db = dbOrTx(this.db, trx);
 
     const valuesToInsert: Record<string, any> = { ...insertableComment };
-    if (valuesToInsert.suggestions && typeof valuesToInsert.suggestions !== 'string') {
-        valuesToInsert.suggestions = JSON.stringify(valuesToInsert.suggestions);
+    if (
+      valuesToInsert.suggestions &&
+      typeof valuesToInsert.suggestions !== 'string'
+    ) {
+      valuesToInsert.suggestions = JSON.stringify(valuesToInsert.suggestions);
     }
 
     return db

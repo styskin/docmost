@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 import { CreateUserDto } from './create-user.dto';
-import {Transform, TransformFnParams} from "class-transformer";
+import { Transform, TransformFnParams } from 'class-transformer';
 
 export class CreateAdminUserDto extends CreateUserDto {
   @IsNotEmpty()

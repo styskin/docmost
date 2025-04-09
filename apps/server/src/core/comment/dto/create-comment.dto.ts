@@ -1,21 +1,28 @@
-import { IsJSON, IsOptional, IsString, IsUUID, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsJSON,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SuggestionDto {
-    @IsString()
-    text_to_replace: string;
+  @IsString()
+  text_to_replace: string;
 
-    @IsString()
-    text_replacement: string;
+  @IsString()
+  text_replacement: string;
 
-    @IsString()
-    reason: string;
+  @IsString()
+  reason: string;
 
-    @IsString()
-    text_before: string;
+  @IsString()
+  text_before: string;
 
-    @IsString()
-    text_after: string;
+  @IsString()
+  text_after: string;
 }
 
 export class CreateCommentDto {

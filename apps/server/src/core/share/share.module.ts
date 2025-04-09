@@ -7,6 +7,6 @@ import { ExportModule } from 'src/integrations/export/export.module';
 
 @Module({
   controllers: [ShareController],
-  imports: [SpaceModule, PageModule, SearchModule, ExportModule]
+  imports: [SpaceModule, PageModule, SearchModule, ExportModule],
 })
 export class ShareModule {}

@@ -85,5 +85,5 @@ export const anonymous: User = {
   emailVerifiedAt: undefined,
   lastActiveAt: undefined,
   lastLoginAt: undefined,
-  updatedAt: undefined
-}
+  updatedAt: undefined,
+};

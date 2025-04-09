@@ -18,7 +18,8 @@ export class HistoryListener {
 
   constructor(
     private readonly pageHistoryRepo: PageHistoryRepo,
-    @InjectQueue(QueueName.DIFF_ANALYSIS_QUEUE) private diffAnalysisQueue: Queue
+    @InjectQueue(QueueName.DIFF_ANALYSIS_QUEUE)
+    private diffAnalysisQueue: Queue,
   ) {}
 
   @OnEvent('collab.page.updated')
@@ -29,12 +30,18 @@ export class HistoryListener {
     const FIVE_MINUTES = 5 * 60 * 1000;
 
     const lastHistory = await this.pageHistoryRepo.findPageLastHistory(page.id);
-    const isTimeGap = !lastHistory || (currentTime - new Date(lastHistory.createdAt).getTime() >= FIVE_MINUTES);
-    const isDifferentContent = !lastHistory || !isDeepStrictEqual(lastHistory.content, page.content);
-    const isDifferentUser = !lastHistory || lastHistory.lastUpdatedById !== page.lastUpdatedById;
+    const isTimeGap =
+      !lastHistory ||
+      currentTime - new Date(lastHistory.createdAt).getTime() >= FIVE_MINUTES;
+    const isDifferentContent =
+      !lastHistory || !isDeepStrictEqual(lastHistory.content, page.content);
+    const isDifferentUser =
+      !lastHistory || lastHistory.lastUpdatedById !== page.lastUpdatedById;
 
     this.logger.debug(`Page ${page.id} - isTimeGap: ${isTimeGap}`);
-    this.logger.debug(`Page ${page.id} - isDifferentContent: ${isDifferentContent}`);
+    this.logger.debug(
+      `Page ${page.id} - isDifferentContent: ${isDifferentContent}`,
+    );
     this.logger.debug(`Page ${page.id} - isDifferentUser: ${isDifferentUser}`);
 
     if (isDifferentContent && (isTimeGap || isDifferentUser)) {
@@ -48,9 +55,11 @@ export class HistoryListener {
           pageId: page.id,
           workspaceId: page.workspaceId,
           userId: page.lastUpdatedById,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
-        this.logger.debug(`Queueing ${QueueJob.DIFF_ANALYSIS} with data: ${JSON.stringify(jobData)}`);
+        this.logger.debug(
+          `Queueing ${QueueJob.DIFF_ANALYSIS} with data: ${JSON.stringify(jobData)}`,
+        );
         await this.diffAnalysisQueue.add(QueueJob.DIFF_ANALYSIS, jobData);
         this.logger.debug(`Queued diff analysis job for page: ${page.id}`);
       } catch (err) {
