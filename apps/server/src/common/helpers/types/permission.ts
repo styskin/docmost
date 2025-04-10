@@ -2,7 +2,6 @@ export enum UserRole {
   OWNER = 'owner',
   ADMIN = 'admin', // can have owner permissions but cannot delete workspace
   MEMBER = 'member',
-  GUEST = 'guest',
 }
 
 export enum SpaceRole {

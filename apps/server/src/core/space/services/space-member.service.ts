@@ -66,7 +66,7 @@ export class SpaceMemberService {
    */
   async getSpaceMembers(
     spaceId: string,
-    workspaceId: string | undefined,
+    workspaceId: string,
     pagination: PaginationOptions,
   ) {
     const space = await this.spaceRepo.findById(spaceId, workspaceId);

@@ -1,8 +1,7 @@
-import React from "react";
 import { Modal, Tabs, rem, Group, Text } from "@mantine/core";
 import SpaceMembersList from "@/features/space/components/space-members.tsx";
 import AddSpaceMembersModal from "@/features/space/components/add-space-members-modal.tsx";
-import PublishSpaceButton from "@/features/space/components/publish-space-button";
+import React, {useMemo} from "react";
 import SpaceDetails from "@/features/space/components/space-details.tsx";
 import { useSpaceQuery } from "@/features/space/queries/space-query.ts";
 import { useSpaceAbility } from "@/features/space/permissions/use-space-ability.ts";
@@ -80,7 +79,6 @@ export default function SpaceSettingsModal({
                     ) && (
                       <>
                         <AddSpaceMembersModal spaceId={space?.id} />
-                        <PublishSpaceButton spaceId={space?.id} />
                       </>
                     )}
                   </Group>

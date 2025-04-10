@@ -13,7 +13,6 @@ export interface ISpace {
   slug: string;
   hostname: string;
   creatorId: string;
-  isPublished: boolean;
   createdAt: Date;
   updatedAt: Date;
   memberCount?: number;
@@ -69,18 +68,10 @@ export interface SpaceGroupInfo {
   type: "group";
 }
 
-export type ISpaceMember = { role: SpaceRole } & (
-  | SpaceUserInfo
-  | SpaceGroupInfo
-);
+export type ISpaceMember = { role: string } & (SpaceUserInfo | SpaceGroupInfo);
 
 export interface IExportSpaceParams {
   spaceId: string;
   format: ExportFormat;
   includeAttachments?: boolean;
-}
-
-export interface IPublishSpace {
-  spaceId: string;
-  publish: boolean;
 }

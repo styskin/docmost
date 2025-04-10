@@ -49,9 +49,7 @@ export function getAvatarUrl(avatarUrl: string) {
 }
 
 export function getSpaceUrl(spaceSlug: string) {
-  const isSharedPrefixed = window.location.pathname.startsWith("/share");
-  const sharedPrefix = isSharedPrefixed ? "/share" : "";
-  return sharedPrefix + "/s/" + spaceSlug;
+  return "/s/" + spaceSlug;
 }
 
 export function getFileUrl(src: string) {
@@ -65,24 +63,6 @@ export function getFileUrl(src: string) {
     return getBackendUrl() + src;
   }
   return src;
-}
-
-export function getSharedFileUrl(src: string) {
-  if (!src) return src;
-
-  let url = src;
-  if (!src.startsWith("http")) {
-    if (src.startsWith("/api/")) {
-      // Remove the '/api' prefix
-      url = getBackendUrl() + src.substring(4);
-    } else {
-      url = getBackendUrl() + src;
-    }
-  }
-
-  url = url.replace("/api/files/", "/api/share/files/");
-
-  return url;
 }
 
 export function getFileUploadSizeLimit() {

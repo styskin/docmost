@@ -19,7 +19,7 @@ export class SpaceRepo {
 
   async findById(
     spaceId: string,
-    workspaceId?: string,
+    workspaceId: string,
     opts?: { includeMemberCount?: boolean; trx?: KyselyTransaction },
   ): Promise<Space> {
     const db = dbOrTx(this.db, opts?.trx);
@@ -27,11 +27,8 @@ export class SpaceRepo {
     let query = db
       .selectFrom('spaces')
       .selectAll('spaces')
-      .$if(opts?.includeMemberCount, (qb) => qb.select(this.withMemberCount));
-
-    if (workspaceId) {
-      query = query.where('workspaceId', '=', workspaceId);
-    }
+      .$if(opts?.includeMemberCount, (qb) => qb.select(this.withMemberCount))
+      .where('workspaceId', '=', workspaceId);
 
     if (isValidUUID(spaceId)) {
       query = query.where('id', '=', spaceId);
@@ -43,20 +40,16 @@ export class SpaceRepo {
 
   async findBySlug(
     slug: string,
-    workspaceId?: string,
+    workspaceId: string,
     opts?: { includeMemberCount: boolean },
   ): Promise<Space> {
-    let query = this.db
+    return await this.db
       .selectFrom('spaces')
       .selectAll('spaces')
       .$if(opts?.includeMemberCount, (qb) => qb.select(this.withMemberCount))
-      .where(sql`LOWER(slug)`, '=', sql`LOWER(${slug})`);
-
-    if (workspaceId) {
-      query = query.where('workspaceId', '=', workspaceId);
-    }
-
-    return await query.executeTakeFirst();
+      .where(sql`LOWER(slug)`, '=', sql`LOWER(${slug})`)
+      .where('workspaceId', '=', workspaceId)
+      .executeTakeFirst();
   }
 
   async slugExists(
