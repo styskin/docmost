@@ -18,6 +18,7 @@ export async function executeWithPagination<O, DB, TB extends keyof DB>(
     perPage: number;
     page: number;
     experimental_deferredJoinPrimaryKey?: StringReference<DB, TB>;
+    hasEmptyIds?: boolean; // in cases where we pass empty whereIn ids
   },
 ): Promise<PaginationResult<O>> {
   if (opts.page < 1) {
@@ -46,7 +47,7 @@ export async function executeWithPagination<O, DB, TB extends keyof DB>(
       .clearLimit();
   }
 
-  const rows = await qb.execute();
+  const rows = opts.hasEmptyIds ? [] : await qb.execute();
   const hasNextPage = rows.length > 0 ? rows.length > opts.perPage : false;
   const hasPrevPage = rows.length > 0 ? opts.page > 1 : false;
 

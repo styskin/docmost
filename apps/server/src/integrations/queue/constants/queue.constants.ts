@@ -11,7 +11,13 @@ export enum QueueJob {
   DELETE_SPACE_ATTACHMENTS = 'delete-space-attachments',
   DELETE_PAGE_ATTACHMENTS = 'delete-page-attachments',
   PAGE_CONTENT_UPDATE = 'page-content-update',
+
+  DELETE_USER_AVATARS = 'delete-user-avatars',
+
   PAGE_BACKLINKS = 'page-backlinks',
   STRIPE_SEATS_SYNC = 'sync-stripe-seats',
   DIFF_ANALYSIS = 'diff-analysis',
+  TRIAL_ENDED = 'trial-ended',
+  WELCOME_EMAIL = 'welcome-email',
+  FIRST_PAYMENT_EMAIL = 'first-payment-email',
 }
