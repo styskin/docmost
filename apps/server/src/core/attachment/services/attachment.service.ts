@@ -290,4 +290,35 @@ export class AttachmentService {
       throw err;
     }
   }
+
+  async handleDeleteUserAvatars(userId: string) {
+    try {
+      const userAvatars = await this.db
+        .selectFrom('attachments')
+        .select(['id', 'filePath'])
+        .where('creatorId', '=', userId)
+        .where('type', '=', AttachmentType.Avatar)
+        .execute();
+
+      if (!userAvatars || userAvatars.length === 0) {
+        return;
+      }
+
+      await Promise.all(
+        userAvatars.map(async (attachment) => {
+          try {
+            await this.storageService.delete(attachment.filePath);
+            await this.attachmentRepo.deleteAttachmentById(attachment.id);
+          } catch (err) {
+            this.logger.log(
+              `DeleteUserAvatar: failed to delete user avatar ${attachment.id}:`,
+              err,
+            );
+          }
+        }),
+      );
+    } catch (err) {
+      throw err;
+    }
+  }
 }
