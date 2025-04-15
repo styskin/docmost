@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Box, Button, ScrollArea, Stack, Text, TextInput } from "@mantine/core";
 import { IconSend } from "@tabler/icons-react";
+import { MarkdownRenderer } from "../../../components/markdown-renderer";
 
 // Message type definition
 interface Message {
@@ -148,7 +149,11 @@ export function AIChat() {
               <Text size="sm" fw={500} mb={4}>
                 {message.role === "user" ? "You" : "AI Assistant"}
               </Text>
-              <Text size="sm">{message.content}</Text>
+              {message.role === "user" ? (
+                <Text size="sm">{message.content}</Text>
+              ) : (
+                <MarkdownRenderer content={message.content} />
+              )}
             </Box>
           ))}
           {isLoading && (
