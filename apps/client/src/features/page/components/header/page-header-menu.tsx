@@ -2,6 +2,7 @@ import { ActionIcon, Group, Menu, Text, Tooltip } from "@mantine/core";
 import {
   IconArrowRight,
   IconArrowsHorizontal,
+  IconBrain,
   IconDots,
   IconFileExport,
   IconHistory,
@@ -75,6 +76,16 @@ export default function PageHeaderMenu({ readOnly }: PageHeaderMenuProps) {
           onClick={() => toggleAside("toc")}
         >
           <IconList size={20} stroke={2} />
+        </ActionIcon>
+      </Tooltip>
+
+      <Tooltip label={t("AI Assistant")} openDelay={250} withArrow>
+        <ActionIcon
+          variant="default"
+          style={{ border: "none" }}
+          onClick={() => toggleAside("ai")}
+        >
+          <IconBrain size={20} stroke={2} />
         </ActionIcon>
       </Tooltip>
 

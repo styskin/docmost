@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { TableOfContents } from "@/features/editor/components/table-of-contents/table-of-contents.tsx";
 import { useAtomValue } from "jotai";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms.ts";
+import { AIChat } from "@/features/ai/components/ai-chat.tsx";
 
 export default function Aside() {
   const [{ tab }] = useAtom(asideStateAtom);
@@ -24,6 +25,10 @@ export default function Aside() {
     case "toc":
       component = <TableOfContents editor={pageEditor} />;
       title = "Table of contents";
+      break;
+    case "ai":
+      component = <AIChat />;
+      title = "AI Assistant";
       break;
     default:
       component = null;

@@ -11,7 +11,7 @@ export const desktopSidebarAtom = atomWithWebStorage<boolean>(
 export const desktopAsideAtom = atom<boolean>(false);
 
 type AsideStateType = {
-  tab: string;
+  tab: string; // "toc" | "comments" | "ai" | "";
   isAsideOpen: boolean;
 };
 
