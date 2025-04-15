@@ -21,11 +21,37 @@
   right: 0;
   top: 0;
   bottom: 0;
+  background: transparent;
+  z-index: 10;
+}
 
-  &:hover, &:active {
-    width: 5px;
-    background: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-5))
-  }
+.resizeHandle:hover,
+.resizeHandle:active {
+  width: 5px;
+  background: light-dark(
+    var(--mantine-color-gray-4),
+    var(--mantine-color-dark-5)
+  );
+}
+
+.asideResizeHandle {
+  width: 3px;
+  cursor: col-resize;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 10;
+}
+
+.asideResizeHandle:hover,
+.asideResizeHandle:active {
+  width: 5px;
+  background: light-dark(
+    var(--mantine-color-gray-4),
+    var(--mantine-color-dark-5)
+  );
 }
 
 

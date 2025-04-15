@@ -8,6 +8,7 @@ import {
   desktopSidebarAtom,
   mobileSidebarAtom,
   sidebarWidthAtom,
+  asideWidthAtom,
 } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
 import { SpaceSidebar } from "@/features/space/components/sidebar/space-sidebar.tsx";
 import { AppHeader } from "@/components/layouts/global/app-header.tsx";
@@ -25,21 +26,24 @@ export default function GlobalAppShell({
   const [desktopOpened] = useAtom(desktopSidebarAtom);
   const [{ isAsideOpen }] = useAtom(asideStateAtom);
   const [sidebarWidth, setSidebarWidth] = useAtom(sidebarWidthAtom);
-  const [isResizing, setIsResizing] = useState(false);
-  const sidebarRef = useRef(null);
+  const [asideWidth, setAsideWidth] = useAtom(asideWidthAtom);
+  const [isSidebarResizing, setIsSidebarResizing] = useState(false);
+  const [isAsideResizing, setIsAsideResizing] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const asideRef = useRef<HTMLDivElement>(null);
 
-  const startResizing = React.useCallback((mouseDownEvent) => {
+  const startSidebarResizing = React.useCallback((mouseDownEvent) => {
     mouseDownEvent.preventDefault();
-    setIsResizing(true);
+    setIsSidebarResizing(true);
   }, []);
 
-  const stopResizing = React.useCallback(() => {
-    setIsResizing(false);
+  const stopSidebarResizing = React.useCallback(() => {
+    setIsSidebarResizing(false);
   }, []);
 
-  const resize = React.useCallback(
+  const resizeSidebar = React.useCallback(
     (mouseMoveEvent) => {
-      if (isResizing) {
+      if (isSidebarResizing && sidebarRef.current) {
         const newWidth =
           mouseMoveEvent.clientX -
           sidebarRef.current.getBoundingClientRect().left;
@@ -54,18 +58,58 @@ export default function GlobalAppShell({
         setSidebarWidth(newWidth);
       }
     },
-    [isResizing],
+    [isSidebarResizing, setSidebarWidth],
+  );
+
+  const startAsideResizing = React.useCallback((mouseDownEvent) => {
+    mouseDownEvent.preventDefault();
+    setIsAsideResizing(true);
+  }, []);
+
+  const stopAsideResizing = React.useCallback(() => {
+    setIsAsideResizing(false);
+  }, []);
+
+  const resizeAside = React.useCallback(
+    (mouseMoveEvent) => {
+      if (isAsideResizing && asideRef.current) {
+        const newWidth =
+          window.innerWidth - mouseMoveEvent.clientX;
+        const minWidth = 250;
+        const maxWidth = 600;
+
+        if (newWidth < minWidth) {
+          setAsideWidth(minWidth);
+          return;
+        }
+        if (newWidth > maxWidth) {
+          setAsideWidth(maxWidth);
+          return;
+        }
+        setAsideWidth(newWidth);
+      }
+    },
+    [isAsideResizing, setAsideWidth],
   );
 
   useEffect(() => {
-    //https://codesandbox.io/p/sandbox/kz9de
-    window.addEventListener("mousemove", resize);
-    window.addEventListener("mouseup", stopResizing);
-    return () => {
-      window.removeEventListener("mousemove", resize);
-      window.removeEventListener("mouseup", stopResizing);
+    const handleMouseMove = (event: MouseEvent) => {
+      resizeSidebar(event);
+      resizeAside(event);
     };
-  }, [resize, stopResizing]);
+
+    const handleMouseUp = () => {
+      stopSidebarResizing();
+      stopAsideResizing();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [resizeSidebar, stopSidebarResizing, resizeAside, stopAsideResizing]);
 
   const location = useLocation();
   const isSettingsRoute = location.pathname.startsWith("/settings");
@@ -88,7 +132,7 @@ export default function GlobalAppShell({
       }
       aside={
         isPageRoute && {
-          width: 350,
+          width: asideWidth,
           breakpoint: "sm",
           collapsed: { mobile: !isAsideOpen, desktop: !isAsideOpen },
         }
@@ -104,7 +148,9 @@ export default function GlobalAppShell({
           withBorder={false}
           ref={sidebarRef}
         >
-          <div className={classes.resizeHandle} onMouseDown={startResizing} />
+          {desktopOpened && isSpaceRoute && (
+             <div className={classes.resizeHandle} onMouseDown={startSidebarResizing} />
+          )}
           {isSpaceRoute && <SpaceSidebar />}
           {isSettingsRoute && <SettingsSidebar />}
         </AppShell.Navbar>
@@ -118,8 +164,18 @@ export default function GlobalAppShell({
       </AppShell.Main>
 
       {isPageRoute && (
-        <AppShell.Aside className={classes.aside} p="md" withBorder={false}>
-          <Aside />
+        <AppShell.Aside
+          className={classes.aside}
+          p={0}
+          withBorder={false}
+          ref={asideRef}
+        >
+          {isAsideOpen && (
+            <div className={classes.asideResizeHandle} onMouseDown={startAsideResizing} />
+          )}
+          <div style={{ padding: 'var(--mantine-spacing-md)' }}>
+             <Aside />
+          </div>
         </AppShell.Aside>
       )}
     </AppShell>
