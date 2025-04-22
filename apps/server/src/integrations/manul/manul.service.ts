@@ -142,13 +142,15 @@ export class ManulService {
   }
 
   async suggest(
+    parents: string,
     content: string,
     prompt: string,
   ): Promise<SuggestDiffResponse> {
     const response = await this.makeManulRequest<any, SuggestDiffResponse>(
       '/suggest',
       {
-        input_variables: {  
+        input_variables: { 
+          parents, 
           content,
           prompt,
         },

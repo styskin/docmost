@@ -247,4 +247,63 @@ export class PageRepo {
       .selectAll()
       .execute();
   }
+
+  async getPageAncestors(pageId: string, with_content = true) {
+    // First, get the page to find its parent ID
+    const page = await this.findById(pageId, { includeContent: false });
+    
+    // If page doesn't exist or doesn't have a parent, return empty array
+    if (!page || !page.parentPageId) {
+      return [];
+    }
+    
+    // Start the recursive query with the parent page
+    return this.db
+      .withRecursive('page_hierarchy', (db) => {
+        let query = db
+          .selectFrom('pages')
+          .select([
+            'id',
+            'slugId',
+            'title',
+            'icon',
+            'parentPageId',
+            'spaceId',
+            'workspaceId',
+          ]);
+
+        if (with_content) {
+          query = query.select('content');
+        }
+
+        return query
+          .where('id', '=', page.parentPageId)
+          .unionAll((exp) => {
+            let ancestorQuery = exp
+              .selectFrom('pages as p')
+              .select([
+                'p.id',
+                'p.slugId',
+                'p.title',
+                'p.icon',
+                'p.parentPageId',
+                'p.spaceId',
+                'p.workspaceId',
+              ]);
+
+            if (with_content) {
+              ancestorQuery = ancestorQuery.select('p.content');
+            }
+
+            return ancestorQuery.innerJoin(
+              'page_hierarchy as ph',
+              'ph.parentPageId',
+              'p.id',
+            );
+          });
+      })
+      .selectFrom('page_hierarchy')
+      .selectAll()
+      .execute();
+  }
 }

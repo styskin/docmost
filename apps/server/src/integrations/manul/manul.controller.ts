@@ -49,17 +49,41 @@ export class ManulController {
       const page = await this.pageRepo.findById(body.pageId, {
         includeContent: true,
       });
-      
+
       if (!page) {
         throw new NotFoundException('Page not found');
+      }
+      
+      // Get all ancestors of the page (excluding the page itself)
+      const pageHierarchy = await this.pageRepo.getPageAncestors(body.pageId, true);
+      
+      // Build a markdown string with all pages in the hierarchy
+      let combinedMarkdown = '';
+      
+      // Process pages in reverse order (from root to current page)
+      for (const hierarchyPage of pageHierarchy.reverse()) {
+        // Add page title as heading
+        combinedMarkdown += `# ${hierarchyPage.title || 'Untitled'}\n\n`;
+        
+        // Add page content if it exists
+        // content might be missing in the database schema response
+        const pageContent = hierarchyPage['content'];
+        if (pageContent) {
+          const sanitizedContent = sanitizeTiptapJson(pageContent as JSONContent);
+          const pageMarkdown = sanitizedContent ? jsonToText(sanitizedContent) : '';
+          combinedMarkdown += `${pageMarkdown}\n\n`;
+        }
       }
       
       // Convert page content to markdown
       const sanitizedContent = sanitizeTiptapJson(page.content as JSONContent);
       // const html = sanitizedContent ? jsonToHtml(sanitizedContent) : '';
       // const markdown = turndown(html);    
-      const markdown = sanitizedContent ? jsonToText(sanitizedContent) : '';      
-      const response = await this.manulService.suggest(markdown, body.prompt);
+      const markdown = sanitizedContent ? jsonToText(sanitizedContent) : '';     
+
+      console.log(combinedMarkdown + "\n Document (to incorporate chages): \n" + markdown);
+      
+      const response = await this.manulService.suggest(combinedMarkdown, markdown, body.prompt);
       return response;
     } catch (error) {
       if (error instanceof HttpException) {
