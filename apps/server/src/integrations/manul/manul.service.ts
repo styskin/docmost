@@ -5,7 +5,7 @@ interface ErrorWithMessage {
   status?: number;
 }
 
-interface Suggestion {
+export interface Suggestion {
   text_to_replace: string;
   text_replacement: string;
   reason: string;
@@ -13,7 +13,7 @@ interface Suggestion {
   text_after: string;
 }
 
-interface SuggestDiffResponse {
+export interface SuggestDiffResponse {
   text: string;
   suggestions: Suggestion[];
 }
@@ -135,6 +135,34 @@ export class ManulService {
     ) {
       throw new ManulServiceError(
         `Invalid response format from Manul service at /suggest_diff. Expected an object with a 'suggestions' array.`,
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+    return response;
+  }
+
+  async suggest(
+    content: string,
+    prompt: string,
+  ): Promise<SuggestDiffResponse> {
+    const response = await this.makeManulRequest<any, SuggestDiffResponse>(
+      '/suggest',
+      {
+        input_variables: {  
+          content,
+          prompt,
+        },
+        prompt_name: 'suggest',
+      },
+    );
+
+    if (
+      !response ||
+      typeof response !== 'object' ||
+      !Array.isArray(response.suggestions)
+    ) {
+      throw new ManulServiceError(
+        `Invalid response format from Manul service at /suggest. Expected an object with a 'suggestions' array.`,
         HttpStatus.BAD_GATEWAY,
       );
     }

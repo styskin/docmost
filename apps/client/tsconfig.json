@@ -22,12 +22,16 @@
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
 
+    /* Jest support */
+    "types": ["jest", "node"],
+
     "paths": {
       "@/*": ["./src/*"]
     }
   },
   "include": [
-    "src"
+    "src",
+    "**/*.spec.ts"
   ],
   "references": [{ "path": "./tsconfig.node.json"}]
 }

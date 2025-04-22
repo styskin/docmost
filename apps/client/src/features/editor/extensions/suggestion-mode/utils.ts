@@ -1,6 +1,8 @@
 import { Node, Mark, MarkType } from "@tiptap/pm/model";
 import { EditorState, Transaction } from "@tiptap/pm/state";
 import { EditorView } from "@tiptap/pm/view";
+import { defaultMarkdownSerializer } from 'prosemirror-markdown';
+// import taskLists from 'markdown-it-task-lists';
 
 export interface TextSuggestion {
   textToReplace: string;
@@ -15,7 +17,7 @@ function findDocumentRange(
   textStart: number,
   textEnd: number,
 ): { from: number; to: number } | null {
-  let currentTextPos = 0;
+  let curLength = 0;
   let startPos: number | null = null;
   let endPos: number | null = null;
 
@@ -24,27 +26,28 @@ function findDocumentRange(
     if (startPos !== null && endPos !== null) return false;
 
     if (node.isText) {
-      const nodeTextEndPos = currentTextPos + (node.text?.length || 0);
+      // const nodeTextEndPos = currentTextPos + (node.text?.length || 0);
+      const nodeTextEndPos = nodeStartPos + (node.text?.length || 0);
 
+      const curStart = textStart - curLength;
+      const curEnd = textEnd - curLength;
       if (
         startPos === null &&
-        textStart >= currentTextPos &&
-        textStart <= nodeTextEndPos
+        curStart >= 0 &&
+        curStart <= nodeTextEndPos - nodeStartPos
       ) {
-        const offsetInNode = textStart - currentTextPos;
-        startPos = nodeStartPos + offsetInNode;
+        startPos = nodeStartPos + curStart;
       }
 
       if (
         endPos === null &&
-        textEnd >= currentTextPos &&
-        textEnd <= nodeTextEndPos
+        curEnd >= 0 &&
+        curEnd <= nodeTextEndPos - nodeStartPos
       ) {
-        const offsetInNode = textEnd - currentTextPos;
-        endPos = nodeStartPos + offsetInNode;
+        endPos = nodeStartPos + curEnd;
       }
 
-      currentTextPos = nodeTextEndPos;
+      curLength += (node.text?.length || 0);
     }
     return true;
   });
@@ -99,8 +102,8 @@ export function createSuggestionTransaction(
   const processedReplace = escapedReplace.replace(/\n/g, "\\s*");
   const processedAfter = escapedAfter.replace(/\n/g, "\\s*");
 
-  const patternText =
-    processedBefore + "\\s*(" + processedReplace + ")\\s*" + processedAfter;
+  const patternText = processedBefore + "\\s*(" + processedReplace + ")\\s*" + processedAfter;
+  // const patternText = "(" + processedReplace + ")";
 
   console.log(
     "[createSuggestionTransaction] Constructed pattern string:",
@@ -120,7 +123,13 @@ export function createSuggestionTransaction(
 
   const regex = new RegExp(patternText, "g");
   console.log("[createSuggestionTransaction] Constructed Regex object:", regex);
+
+  // HERE: mismatch doc presentation make everything harder
+
   const docText = state.doc.textContent;
+  // defaultMarkdownSerializer.use(taskLists, { enabled: true });
+  // const docText = defaultMarkdownSerializer.serialize(state.doc, );
+
   console.log(
     "[createSuggestionTransaction] Searching within docText:",
     docText.substring(0, 500) + "...",
