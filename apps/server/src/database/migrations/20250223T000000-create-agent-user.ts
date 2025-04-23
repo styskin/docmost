@@ -5,6 +5,7 @@ import { AGENT_USER_ID } from '../../common/helpers/constants';
 
 export async function up(db: Kysely<any>): Promise<void> {
   // Create agent workspace
+  // TODO: impopsible to SETUP WORKSPACE
   const workspace = await db
     .insertInto('workspaces')
     .values({

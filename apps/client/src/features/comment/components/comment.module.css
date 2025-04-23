@@ -19,18 +19,15 @@
         box-shadow: 0 0 0 2px var(--mantine-color-blue-3);
     }
 
-    :global(.ProseMirror) {
-        width: 100%;
+    .ProseMirror :global(.ProseMirror){
         max-width: 100%;
         white-space: pre-wrap;
         word-break: break-word;
         max-height: 20vh;
-        padding-left: 6px !important;
-        padding-right: 6px !important;
-        margin-top: 4px !important;
-        margin-bottom: 2px !important;
-        font-size: 13px !important;
-        line-height: 1.2 !important;
+        padding-left: 6px;
+        padding-right: 6px;
+        margin-top: 2px;
+        margin-bottom: 2px;
         overflow: hidden auto;
     }
 

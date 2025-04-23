@@ -9,7 +9,7 @@ const buildPageSlug = (pageSlugId: string, pageTitle?: string): string => {
     ],
   });
 
-  return `p/${titleSlug}-${pageSlugId}`;
+  return `${titleSlug}-${pageSlugId}`;
 };
 
 export const buildPageUrl = (
@@ -18,7 +18,20 @@ export const buildPageUrl = (
   pageTitle?: string,
 ): string => {
   if (spaceName === undefined) {
-    return `/${buildPageSlug(pageSlugId, pageTitle)}`;
+    return `/p/${buildPageSlug(pageSlugId, pageTitle)}`;
   }
-  return `/s/${spaceName}/${buildPageSlug(pageSlugId, pageTitle)}`;
+  return `/s/${spaceName}/p/${buildPageSlug(pageSlugId, pageTitle)}`;
+};
+
+export const buildSharedPageUrl = (opts: {
+  shareId: string;
+  pageSlugId: string;
+  pageTitle?: string;
+}): string => {
+  const { shareId, pageSlugId, pageTitle } = opts;
+  if (!shareId) {
+    return `/share/p/${buildPageSlug(pageSlugId, pageTitle)}`;
+  }
+
+  return `/share/${shareId}/p/${buildPageSlug(pageSlugId, pageTitle)}`;
 };
