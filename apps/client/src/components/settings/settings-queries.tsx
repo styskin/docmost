@@ -9,6 +9,7 @@ import { QueryParams } from "@/lib/types.ts";
 import { getWorkspaceMembers } from "@/features/workspace/services/workspace-service.ts";
 import { getLicenseInfo } from "@/ee/licence/services/license-service.ts";
 import { getSsoProviders } from "@/ee/security/services/security-service.ts";
+import { getShares } from "@/features/share/services/share-service.ts";
 
 export const prefetchWorkspaceMembers = () => {
   const params = { limit: 100, page: 1, query: "" } as QueryParams;
@@ -55,5 +56,12 @@ export const prefetchSsoProviders = () => {
   queryClient.prefetchQuery({
     queryKey: ["sso-providers"],
     queryFn: () => getSsoProviders(),
+  });
+};
+
+export const prefetchShares = () => {
+  queryClient.prefetchQuery({
+    queryKey: ["share-list", { page: 1 }],
+    queryFn: () => getShares({ page: 1, limit: 100 }),
   });
 };

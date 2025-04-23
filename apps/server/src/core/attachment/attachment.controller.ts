@@ -9,6 +9,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -47,6 +48,8 @@ import { PageRepo } from '@docmost/db/repos/page/page.repo';
 import { AttachmentRepo } from '@docmost/db/repos/attachment/attachment.repo';
 import { validate as isValidUUID } from 'uuid';
 import { EnvironmentService } from '../../integrations/environment/environment.service';
+import { TokenService } from '../auth/services/token.service';
+import { JwtAttachmentPayload, JwtType } from '../auth/dto/jwt-payload';
 
 @Controller()
 export class AttachmentController {
@@ -60,6 +63,7 @@ export class AttachmentController {
     private readonly pageRepo: PageRepo,
     private readonly attachmentRepo: AttachmentRepo,
     private readonly environmentService: EnvironmentService,
+    private readonly tokenService: TokenService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -178,6 +182,66 @@ export class AttachmentController {
       res.headers({
         'Content-Type': attachment.mimeType,
         'Cache-Control': 'private, max-age=3600',
+      });
+
+      if (!inlineFileExtensions.includes(attachment.fileExt)) {
+        res.header(
+          'Content-Disposition',
+          `attachment; filename="${encodeURIComponent(attachment.fileName)}"`,
+        );
+      }
+
+      return res.send(fileStream);
+    } catch (err) {
+      this.logger.error(err);
+      throw new NotFoundException('File not found');
+    }
+  }
+
+  @Get('/files/public/:fileId/:fileName')
+  async getPublicFile(
+    @Res() res: FastifyReply,
+    @AuthWorkspace() workspace: Workspace,
+    @Param('fileId') fileId: string,
+    @Param('fileName') fileName?: string,
+    @Query('jwt') jwtToken?: string,
+  ) {
+    let jwtPayload: JwtAttachmentPayload = null;
+    try {
+      jwtPayload = await this.tokenService.verifyJwt(
+        jwtToken,
+        JwtType.ATTACHMENT,
+      );
+    } catch (err) {
+      throw new BadRequestException(
+        'Expired or invalid attachment access token',
+      );
+    }
+
+    if (
+      !isValidUUID(fileId) ||
+      fileId !== jwtPayload.attachmentId ||
+      jwtPayload.workspaceId !== workspace.id
+    ) {
+      throw new NotFoundException('File not found');
+    }
+
+    const attachment = await this.attachmentRepo.findById(fileId);
+    if (
+      !attachment ||
+      attachment.workspaceId !== workspace.id ||
+      !attachment.pageId ||
+      !attachment.spaceId ||
+      jwtPayload.pageId !== attachment.pageId
+    ) {
+      throw new NotFoundException('File not found');
+    }
+
+    try {
+      const fileStream = await this.storageService.read(attachment.filePath);
+      res.headers({
+        'Content-Type': attachment.mimeType,
+        'Cache-Control': 'public, max-age=3600',
       });
 
       if (!inlineFileExtensions.includes(attachment.fileExt)) {
