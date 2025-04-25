@@ -22,4 +22,30 @@
   @mixin dark {
     background: var(--mantine-color-dark-5);
   }
-} 
+}
+
+.menuItem {
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    @mixin light {
+      background-color: var(--mantine-color-gray-0);
+    }
+
+    @mixin dark {
+      background-color: var(--mantine-color-dark-5);
+    }
+  }
+}
+
+.textInput {
+  border: none;
+  padding: 10px;
+  
+  &:focus {
+    border: none;
+    outline: none;
+  }
+}

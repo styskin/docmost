@@ -42,6 +42,12 @@ const renderAIItems = () => {
     }) => {
       component?.updateProps({ ...props, isLoading: false });
 
+
+      const range = {
+        from: component.editor.state.selection.from-1, 
+        to: component.editor.state.selection.to
+      };
+      
       if (!props.clientRect) {
         return;
       }
@@ -67,7 +73,13 @@ const renderAIItems = () => {
         });
     },
     onKeyDown: (props: { event: KeyboardEvent }) => {
-      if (props.event.key === "Escape") {
+      if (props.event.key === "Escape") {        
+        const range = {
+          from: component.editor.state.selection.from-1, 
+          to: component.editor.state.selection.to
+        };
+        component.editor.chain().focus().deleteRange(range).run();
+
         popup?.[0].hide();
         component?.destroy();
 
@@ -78,6 +90,13 @@ const renderAIItems = () => {
       return component?.ref?.onKeyDown(props);
     },
     onExit: () => {
+      // TODO: remove range
+      const range = {
+        from: component.editor.state.selection.from-1, 
+        to: component.editor.state.selection.to
+      };
+      // component.editor.chain().focus().deleteRange(range).run();
+
       if (popup && !popup[0]?.state.isDestroyed) {
         popup[0]?.destroy();
       }
