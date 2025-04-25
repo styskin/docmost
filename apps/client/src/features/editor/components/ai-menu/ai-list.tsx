@@ -24,6 +24,7 @@ import {
   IconChartBar, 
   IconTable 
 } from "@tabler/icons-react";
+import { markdownToTiptap } from "./markdown-to-tiptap";
 
 interface AIListProps {
   items: AIMenuItemType[];
@@ -140,10 +141,15 @@ export default function AIList({
       });
 
       const data = await response.json();
+      
+      // Convert markdown to TipTap JSON
+      const tiptapJson = markdownToTiptap(data.data.response);
+      console.log("JSON:", tiptapJson, "from", data.data.response);
+      
       editor
         .chain()
         .focus()
-        .insertContentAt(getPos(), data.data.response)
+        .insertContentAt(getPos(), tiptapJson)
         .run();
 
       setPreview("");
