@@ -72,7 +72,7 @@ export function AIChat() {
       
       const data = await response.json();
 
-      // console.log("Response: ", data.data);
+      // console.log("Response: ", JSON.stringify(data, null, 2));
 
       // Convert snake_case to camelCase for suggestions
       // const formattedSuggestions = data.data.suggestions.map(suggestion => ({
@@ -85,7 +85,7 @@ export function AIChat() {
       
       // setSuggestions(formattedSuggestions);
       
-      return data.text;
+      return data.data.text;
     } catch (error) {
       console.error("Error fetching suggestions:", error);
       return null;
