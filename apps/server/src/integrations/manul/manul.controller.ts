@@ -12,8 +12,8 @@ import { ManulService, SuggestDiffResponse } from './manul.service';
 import { PageRepo } from '@docmost/db/repos/page/page.repo';
 import { JSONContent } from '@tiptap/core';
 
-//export const AGENT_USER_ID = "00000000-0000-7000-8000-000000000000";
-export const AGENT_USER_ID = "0195fc99-bd95-7b48-9efe-4541582f9adf";
+export const AGENT_USER_ID = "00000000-0000-7000-8000-000000000000";
+// export const AGENT_USER_ID = "0195fc99-bd95-7b48-9efe-4541582f9adf";
 
 import {
   jsonToHtml,
