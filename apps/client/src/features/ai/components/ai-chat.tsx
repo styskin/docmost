@@ -72,17 +72,20 @@ export function AIChat() {
       
       const data = await response.json();
 
+      // console.log("Response: ", data.data);
+
       // Convert snake_case to camelCase for suggestions
-      const formattedSuggestions = data.data.suggestions.map(suggestion => ({
-        textToReplace: suggestion.text_to_replace,
-        textReplacement: suggestion.text_replacement,
-        reason: suggestion.reason,
-        textBefore: suggestion.text_before,
-        textAfter: suggestion.text_after,
-      }));
+      // const formattedSuggestions = data.data.suggestions.map(suggestion => ({
+      //   textToReplace: suggestion.text_to_replace,
+      //   textReplacement: suggestion.text_replacement,
+      //   reason: suggestion.reason,
+      //   textBefore: suggestion.text_before,
+      //   textAfter: suggestion.text_after,
+      // }));
       
-      setSuggestions(formattedSuggestions);
-      return data.data.text;
+      // setSuggestions(formattedSuggestions);
+      
+      return data.text;
     } catch (error) {
       console.error("Error fetching suggestions:", error);
       return null;

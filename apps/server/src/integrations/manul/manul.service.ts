@@ -18,6 +18,11 @@ export interface SuggestDiffResponse {
   suggestions: Suggestion[];
 }
 
+export interface SuggestResponse {
+  text: string;
+  doc: any;
+}
+
 interface ChatCompletionResponse {
   choices: {
     message: {
@@ -145,8 +150,8 @@ export class ManulService {
     parents: string,
     content: string,
     prompt: string,
-  ): Promise<SuggestDiffResponse> {
-    const response = await this.makeManulRequest<any, SuggestDiffResponse>(
+  ): Promise<SuggestResponse> {
+    const response = await this.makeManulRequest<any, SuggestResponse>(
       '/suggest',
       {
         input_variables: { 
@@ -158,10 +163,12 @@ export class ManulService {
       },
     );
 
+    console.log("Suggest Response:", response);
+
     if (
-      !response ||
-      typeof response !== 'object' ||
-      !Array.isArray(response.suggestions)
+      !response
+      // || typeof response !== 'object'
+      // || !Array.isArray(response.doc)
     ) {
       throw new ManulServiceError(
         `Invalid response format from Manul service at /suggest. Expected an object with a 'suggestions' array.`,

@@ -40,7 +40,6 @@ export class ImportService {
     const fileContent = fileBuffer.toString();
 
     let prosemirrorState = null;
-    let createdPage = null;
 
     try {
       if (fileExtension.endsWith('.md')) {
@@ -59,16 +58,23 @@ export class ImportService {
       this.logger.error(message);
       throw new BadRequestException(message);
     }
-
-    const { title, prosemirrorJson } =
-      this.extractTitleAndRemoveHeading(prosemirrorState);
-
+    const { title, prosemirrorJson } = this.extractTitleAndRemoveHeading(prosemirrorState);
     const pageTitle = title || fileName;
+    return this.importJson(pageTitle, prosemirrorState, userId, spaceId, workspaceId);
+  }
 
+  async importJson(
+    pageTitle: string,
+    prosemirrorJson: any,
+    userId: string,
+    spaceId: string,
+    workspaceId: string,
+  ): Promise<void> {
+  
+    let createdPage = null;
     if (prosemirrorJson) {
       try {
         const pagePosition = await this.getNewPagePosition(spaceId);
-
         createdPage = await this.pageRepo.insertPage({
           slugId: generateSlugId(),
           title: pageTitle,
@@ -83,15 +89,16 @@ export class ImportService {
         });
 
         this.logger.debug(
-          `Successfully imported "${title}${fileExtension}. ID: ${createdPage.id} - SlugId: ${createdPage.slugId}"`,
+          `Successfully imported "${pageTitle}. ID: ${createdPage.id} - SlugId: ${createdPage.slugId}"`,
         );
       } catch (err) {
         const message = 'Failed to create imported page';
         this.logger.error(message, err);
-        throw new BadRequestException(message);
+        // throw new BadRequestException(message);
       }
     }
 
+    console.log("Page created:", createdPage);
     return createdPage;
   }
 

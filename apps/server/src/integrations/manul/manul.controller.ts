@@ -6,9 +6,14 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
+
+import { ImportService } from '../import/import.service';
 import { ManulService, SuggestDiffResponse } from './manul.service';
 import { PageRepo } from '@docmost/db/repos/page/page.repo';
 import { JSONContent } from '@tiptap/core';
+
+//export const AGENT_USER_ID = "00000000-0000-7000-8000-000000000000";
+export const AGENT_USER_ID = "0195fc99-bd95-7b48-9efe-4541582f9adf";
 
 import {
   jsonToHtml,
@@ -22,6 +27,8 @@ export class ManulController {
   constructor(
     private readonly manulService: ManulService,
     private readonly pageRepo: PageRepo,
+
+    private readonly importService: ImportService,
   ) {}
 
   @Post('query')
@@ -74,18 +81,16 @@ export class ManulController {
           combinedMarkdown += `${pageMarkdown}\n\n`;
         }
       }
-      
       // Convert page content to markdown
       const sanitizedContent = sanitizeTiptapJson(page.content as JSONContent);
       // const html = sanitizedContent ? jsonToHtml(sanitizedContent) : '';
       // const markdown = turndown(html);    
-      const markdown = sanitizedContent ? jsonToText(sanitizedContent) : '';     
-
-      console.log(combinedMarkdown + "\n Document (to incorporate chages): \n" + markdown);
-      
-      const response = await this.manulService.suggest(combinedMarkdown, markdown, body.prompt);
+      const markdown = sanitizedContent ? jsonToText(sanitizedContent) : '';       
+      const response = await this.manulService.suggest(combinedMarkdown, JSON.stringify(sanitizedContent), body.prompt);
+      this.importService.importJson(page.title + "_agent", response.doc, AGENT_USER_ID, page.spaceId, page.workspaceId);
       return response;
     } catch (error) {
+      console.error("Error", error);
       if (error instanceof HttpException) {
         throw error;
       }
