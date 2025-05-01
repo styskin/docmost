@@ -33,6 +33,7 @@ import {
   Embed,
   Mention,
   Manul,
+  Handsontable,
 } from '@docmost/editor-ext';
 import { generateText, getSchema, JSONContent, Mark } from '@tiptap/core';
 import { generateHTML } from '../common/helpers/prosemirror/html';
@@ -88,6 +89,7 @@ export const tiptapExtensions = [
   Embed,
   Mention,
   Manul,
+  Handsontable,
   SuggestionInsertMark,
   SuggestionDeleteMark,
 ] as any;

@@ -15,6 +15,7 @@ import {
   IconPaperclip,
   IconPhoto,
   IconTable,
+  IconTableOptions,
   IconTypography,
   IconMenu4,
   IconCalendar,
@@ -241,6 +242,14 @@ const CommandGroups: SlashMenuGroupedItemsType = {
           .deleteRange(range)
           .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
           .run(),
+    },
+    {
+      title: "Handsontable",
+      description: "Insert an advanced spreadsheet-like table.",
+      searchTerms: ["handsontable", "spreadsheet", "excel", "grid", "data"],
+      icon: IconTableOptions,
+      command: ({ editor, range }: CommandProps) =>
+        editor.chain().focus().deleteRange(range).setHandsontable().run(),
     },
     {
       title: "Toggle block",

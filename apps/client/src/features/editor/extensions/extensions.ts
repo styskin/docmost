@@ -73,6 +73,7 @@ import { MarkdownClipboard } from "@/features/editor/extensions/markdown-clipboa
 import EmojiCommand from "./emoji-command";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import { Manul } from "./manul-extension";
+import { Handsontable } from "./handsontable-extension";
 import AICommand from "./ai-command";
 import { GoReplacementExtension } from "./go-replacement-plugin";
 import { SuggestionModeExtension } from "./suggestion-mode/extension";
@@ -222,6 +223,7 @@ export const mainExtensions = [
   }),
   CharacterCount,
   Manul,
+  Handsontable,
   SuggestionInsert,
   SuggestionDelete,
   SuggestionModeExtension,

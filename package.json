@@ -20,6 +20,7 @@
   "dependencies": {
     "@ai-sdk/react": "^1.2.9",
     "@docmost/editor-ext": "workspace:*",
+    "@handsontable/react": "^15.3.0",
     "@hocuspocus/extension-redis": "^2.15.2",
     "@hocuspocus/provider": "^2.15.2",
     "@hocuspocus/server": "^2.15.2",
@@ -61,23 +62,25 @@
     "@tiptap/react": "^2.10.3",
     "@tiptap/starter-kit": "^2.10.3",
     "@tiptap/suggestion": "^2.10.3",
-    "tiptap-markdown": "^0.8.10",
-    "markdown-it-multimd-table": "^4.2.3",
     "bytes": "^3.1.2",
     "cross-env": "^7.0.3",
     "date-fns": "^4.1.0",
     "diff": "^5.2.0",
     "dompurify": "^3.2.4",
     "fractional-indexing-jittered": "^1.0.0",
+    "hyperformula": "^3.0.0",
     "ioredis": "^5.4.1",
     "jszip": "^3.10.1",
     "linkifyjs": "^4.2.0",
+    "markdown-it-multimd-table": "^4.2.3",
     "marked": "^13.0.3",
+    "tiptap-markdown": "^0.8.10",
     "uuid": "^11.1.0",
     "y-indexeddb": "^9.0.12",
     "yjs": "^13.6.20"
   },
   "devDependencies": {
+    "@babel/preset-typescript": "^7.27.0",
     "@nx/js": "20.4.5",
     "@types/bytes": "^3.1.5",
     "@types/diff": "^5.2.1",
@@ -87,8 +90,7 @@
     "kysely": "^0.27.5",
     "nx": "20.4.5",
     "pg": "^8.13.3",
-    "tsx": "^4.19.3",
-    "@babel/preset-typescript": "^7.27.0"
+    "tsx": "^4.19.3"
   },
   "workspaces": {
     "packages": [
@@ -96,7 +98,7 @@
       "packages/*"
     ]
   },
-  "packageManager": "pnpm@10.4.0",
+  "packageManager": "pnpm@10.10.0",
   "pnpm": {
     "patchedDependencies": {
       "react-arborist@3.4.0": "patches/react-arborist@3.4.0.patch"
