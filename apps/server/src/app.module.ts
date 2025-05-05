@@ -17,6 +17,7 @@ import { ImportModule } from './integrations/import/import.module';
 import { SecurityModule } from './integrations/security/security.module';
 import { TelemetryModule } from './integrations/telemetry/telemetry.module';
 import { ManulModule } from './integrations/manul/manul.module';
+import { McpModule } from './integrations/mcp/mcp.module';
 
 const enterpriseModules = [];
 try {
@@ -43,6 +44,7 @@ try {
     StaticModule,
     HealthModule,
     ManulModule,
+    McpModule,
     ImportModule,
     ExportModule,
     StorageModule.forRootAsync({
