@@ -29,6 +29,8 @@ services:
       MAIL_FROM_ADDRESS: no-reply@manul.ai
       MAIL_FROM_NAME: Manul.ai
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      POSTHOG_API_KEY: ${POSTHOG_API_KEY}
+      POSTHOG_HOST: ${POSTHOG_HOST}
     ports:
       - "3000:3000"
     restart: unless-stopped

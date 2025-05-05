@@ -28,6 +28,7 @@ import { RESET } from "jotai/utils";
 import { useTranslation } from "react-i18next";
 import { isCloud } from "@/lib/config.ts";
 import { exchangeTokenRedirectUrl, getHostnameUrl } from "@/ee/utils.ts";
+import { authEvents, workspaceEvents } from "@/lib/analytics";
 
 export default function useAuth() {
   const { t } = useTranslation();
@@ -40,6 +41,8 @@ export default function useAuth() {
 
     try {
       await login(data);
+      // Track successful login event
+      authEvents.login();
       setIsLoading(false);
       navigate(APP_ROUTE.HOME);
     } catch (err) {
@@ -57,6 +60,9 @@ export default function useAuth() {
 
     try {
       await acceptInvitation(data);
+      // Track signup via invitation
+      authEvents.signup('invitation');
+      workspaceEvents.memberJoined();
       setIsLoading(false);
       navigate(APP_ROUTE.HOME);
     } catch (err) {
@@ -76,6 +82,14 @@ export default function useAuth() {
         const res = await createWorkspace(data);
         const hostname = res?.workspace?.hostname;
         const exchangeToken = res?.exchangeToken;
+        
+        // Track workspace creation and signup
+        workspaceEvents.created({
+          cloud: true,
+          workspace_name: data.workspaceName,
+        });
+        authEvents.signup();
+        
         if (hostname && exchangeToken) {
           window.location.href = exchangeTokenRedirectUrl(
             hostname,
@@ -84,6 +98,14 @@ export default function useAuth() {
         }
       } else {
         const res = await setupWorkspace(data);
+        
+        // Track workspace creation and signup for self-hosted
+        workspaceEvents.created({
+          cloud: false,
+          workspace_name: data.workspaceName,
+        });
+        authEvents.signup();
+        
         setIsLoading(false);
         navigate(APP_ROUTE.HOME);
       }
@@ -116,6 +138,9 @@ export default function useAuth() {
   };
 
   const handleLogout = async () => {
+    // Track logout event before clearing user data
+    authEvents.logout();
+    
     setCurrentUser(RESET);
     await logout();
     window.location.replace(APP_ROUTE.AUTH.LOGIN);
@@ -126,6 +151,8 @@ export default function useAuth() {
 
     try {
       await forgotPassword(data);
+      // Track password reset request
+      authEvents.passwordReset();
       setIsLoading(false);
 
       return true;
