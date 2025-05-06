@@ -1,0 +1,234 @@
+openapi: 3.0.0
+info:
+  title: Document API
+  description: API for managing documents in Docmost
+  version: 1.0.0
+servers:
+  - url: /
+    description: Current server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreateDocumentDto:
+      type: object
+      required:
+        - title
+        - content
+        - spaceId
+      properties:
+        title:
+          type: string
+          description: The title of the document
+        content:
+          type: string
+          description: The content of the document
+        spaceId:
+          type: string
+          format: uuid
+          description: The ID of the space to create the document in
+    CreateDocumentResponse:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+          description: The ID of the created document
+        slugId:
+          type: string
+          description: The slug ID of the created document
+        title:
+          type: string
+          description: The title of the created document
+        message:
+          type: string
+          description: A success message
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The ID of the document
+        slugId:
+          type: string
+          description: The slug ID of the document
+        title:
+          type: string
+          description: The title of the document
+        content:
+          type: object
+          description: The content of the document in Prosemirror format
+        textContent:
+          type: string
+          description: The plain text content of the document
+        spaceId:
+          type: string
+          format: uuid
+          description: The ID of the space the document belongs to
+        workspaceId:
+          type: string
+          format: uuid
+          description: The ID of the workspace the document belongs to
+    DocumentSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The ID of the document
+        slugId:
+          type: string
+          description: The slug ID of the document
+        title:
+          type: string
+          description: The title of the document
+        position:
+          type: string
+          description: The position of the document in the space
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The ID of the parent document, if any
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          description: The HTTP status code
+        message:
+          type: string
+          description: The error message
+        error:
+          type: string
+          description: The error type
+security:
+  - bearerAuth: []
+paths:
+  /documents:
+    post:
+      summary: Create a new document
+      description: Creates a new document with the specified title, content, and space
+      operationId: createDocument
+      tags:
+        - documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentDto'
+      responses:
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateDocumentResponse'
+        '400':
+          description: Bad request (invalid parameters)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized (invalid or missing authentication token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: List documents in a space
+      description: Lists all documents within a specified space
+      operationId: listDocuments
+      tags:
+        - documents
+      parameters:
+        - name: space
+          in: query
+          required: true
+          description: The slug of the space to list documents from
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentSummary'
+        '401':
+          description: Unauthorized (invalid or missing authentication token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Space not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /documents/{slugId}:
+    get:
+      summary: Get a document by slug ID
+      description: Retrieves a document by its unique slug ID
+      operationId: getDocument
+      tags:
+        - documents
+      parameters:
+        - name: slugId
+          in: path
+          required: true
+          description: The unique slug ID of the document
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401':
+          description: Unauthorized (invalid or missing authentication token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

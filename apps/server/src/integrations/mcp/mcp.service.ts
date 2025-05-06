@@ -1,12 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PageRepo } from '@docmost/db/repos/page/page.repo';
-import { SpaceRepo } from '@docmost/db/repos/space/space.repo';
-import { WorkspaceRepo } from '@docmost/db/repos/workspace/workspace.repo';
 import { z } from 'zod';
-import { generateSlugId } from '../../common/helpers';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { AGENT_USER_ID } from '../../common/helpers/constants';
+import { DocumentService } from '../../core/document/document.service';
+import { CreateDocumentDto } from '../../core/document/dto/create-document.dto';
+import { ListDocumentsDto } from '../../core/document/dto/list-documents.dto';
+import { GetDocumentDto } from '../../core/document/dto/get-document.dto';
 
 @Injectable()
 export class McpService implements OnModuleInit {
@@ -14,9 +13,7 @@ export class McpService implements OnModuleInit {
   private server: McpServer;
 
   constructor(
-    private readonly pageRepo: PageRepo,
-    private readonly spaceRepo: SpaceRepo,
-    private readonly workspaceRepo: WorkspaceRepo,
+    private readonly documentService: DocumentService,
   ) {}
 
   async onModuleInit() {
@@ -45,40 +42,20 @@ export class McpService implements OnModuleInit {
               };
             }
             
-            const workspaceEntity = await this.workspaceRepo.findFirst()
-            const workspaceId = workspaceEntity?.id;
-            const spaceEntity = await this.spaceRepo.findBySlug(space, workspaceId);
+            // Create a DTO for the document service
+            const createDocumentDto = new CreateDocumentDto();
+            createDocumentDto.title = title;
+            createDocumentDto.content = content;
+            createDocumentDto.spaceId = space;
             
-            if (!spaceEntity) {
-              return {
-                content: [{ type: 'text', text: `Space "${space}" not found` }],
-                isError: true
-              };
-            }
-
-            const createdPage = await this.pageRepo.insertPage({
-              slugId: generateSlugId(),
-              title,
-              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: content }] }] },
-              textContent: content,
-              position: '0',
-              spaceId: spaceEntity.id,
-              workspaceId: workspaceId,
-              creatorId: AGENT_USER_ID,
-              lastUpdatedById: AGENT_USER_ID,
-            });
-
-            this.logger.log(`Created document with title: ${title} and ID: ${createdPage.id}`);
+            const result = await this.documentService.createDocument(createDocumentDto);
+            
+            this.logger.log(`Created document with title: ${title} and ID: ${result.documentId}`);
             
             return {
               content: [{ 
                 type: 'text', 
-                text: JSON.stringify({
-                  documentId: createdPage.id,
-                  slugId: createdPage.slugId,
-                  title: createdPage.title,
-                  message: 'Document created successfully'
-                }, null, 2)
+                text: JSON.stringify(result, null, 2)
               }]
             };
           } catch (error: any) {
@@ -107,30 +84,11 @@ export class McpService implements OnModuleInit {
               };
             }
 
-            const workspaceEntity = await this.workspaceRepo.findFirst();
-            const workspaceId = workspaceEntity?.id;
-
-            const spaceEntity = await this.spaceRepo.findBySlug(space, workspaceId);
-            if (!spaceEntity) {
-              return {
-                content: [{ type: 'text', text: `Space "${space}" not found` }],
-                isError: true,
-              };
-            }
-
-            const paginationResult = await this.pageRepo.getRecentPagesInSpace(
-              spaceEntity.id,
-              { page: 1, limit: 1000, query: undefined },
-            );
-            const documents = paginationResult.items;
-
-            const documentList = documents.map((doc) => ({
-              id: doc.id,
-              slugId: doc.slugId,
-              title: doc.title,
-              position: doc.position, // Position might be useful for hierarchy later
-              parentId: doc.parentPageId, // Corrected field name
-            }));
+            // Create a DTO for the document service
+            const listDocumentsDto = new ListDocumentsDto();
+            listDocumentsDto.space = space;
+            
+            const documentList = await this.documentService.listDocuments(listDocumentsDto);
 
             this.logger.log(`Listed ${documentList.length} documents in space: ${space}`);
             return {
@@ -165,14 +123,11 @@ export class McpService implements OnModuleInit {
               };
             }
 
-            const document = await this.pageRepo.findById(slugId, { includeContent: true });
-
-            if (!document) {
-              return {
-                content: [{ type: 'text', text: `Document with slug ID "${slugId}" not found` }],
-                isError: true,
-              };
-            }
+            // Create a DTO for the document service
+            const getDocumentDto = new GetDocumentDto();
+            getDocumentDto.slugId = slugId;
+            
+            const document = await this.documentService.getDocument(getDocumentDto);
 
             this.logger.log(`Retrieved document with slug ID: ${slugId}`);
             return {
@@ -237,4 +192,4 @@ export class McpService implements OnModuleInit {
       }
     }
   }
-} 
+}
