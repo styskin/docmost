@@ -13,9 +13,7 @@ import { DocumentService } from './document.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { GetDocumentDto } from './dto/get-document.dto';
 import { ListDocumentsDto } from './dto/list-documents.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
-@UseGuards(JwtAuthGuard)
 @Controller('documents')
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
