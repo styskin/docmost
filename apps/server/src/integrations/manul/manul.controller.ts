@@ -21,6 +21,7 @@ import {
   sanitizeTiptapJson,
 } from '../../collaboration/collaboration.util';
 import { turndown } from '../export/turndown-utils';
+import { bias } from 'happy-dom/lib/PropertySymbol';
 
 @Controller('manul')
 export class ManulController {
@@ -32,10 +33,21 @@ export class ManulController {
   ) {}
 
   @Post('query')
-  async queryManul(@Body() body: { context: string; query: string }) {
+  async queryManul(@Body() body: { context: string; query: string; pageId : string }) {
     try {
+      const page = await this.pageRepo.findById(body.pageId, { includeContent: true });
+      let combinedMarkdown = '';
+      combinedMarkdown += `# ${page.title || 'Untitled'}\n\n`;
+      console.info(page);
+      const pageContent = page.content;
+      if (pageContent) {
+        const sanitizedContent = sanitizeTiptapJson(pageContent as JSONContent);
+        const pageMarkdown = sanitizedContent ? jsonToText(sanitizedContent) : '';
+        combinedMarkdown += `${pageMarkdown}\n\n`;
+      }
+
       const response = await this.manulService.contextCall(
-        body.context,
+        combinedMarkdown + "\n Dialog: \n" + body.context,
         body.query,
       );
       return { response };

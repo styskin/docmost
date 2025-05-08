@@ -106,7 +106,6 @@ export function AIChat() {
       content: userInput,
     };
     
-    const context = "Context: "  + messages.map(m => `${m.role}: ${m.content}`).join("\n") + " Task: " + userInput;
     
     setMessages(prev => [...prev, userMessage]);
     setInput("");
@@ -116,12 +115,14 @@ export function AIChat() {
       let responseContent;
       if (requestSuggestionsFlag) {
         // Request suggestions instead of normal response
+        const context = "Context: "  + messages.map(m => `${m.role}: ${m.content}`).join("\n") + " Task: " + userInput;
         responseContent = await requestSuggestions(context);
         if (!responseContent) {
           responseContent = "Sorry, I couldn't generate suggestions for this content.";
         }
       } else {
         // Get the context from all previous messages
+        const context = "Context: "  + messages.map(m => `${m.role}: ${m.content}`).join("\n");
         
         console.log("Sending request to Manul API:", { query: userInput, context });
         
@@ -134,6 +135,7 @@ export function AIChat() {
           body: JSON.stringify({
             query: userInput,
             context: context,
+            pageId: pageId,
           }),
         });
         
