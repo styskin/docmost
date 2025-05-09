@@ -29,6 +29,7 @@ services:
       MAIL_FROM_ADDRESS: no-reply@manul.ai
       MAIL_FROM_NAME: Manul.ai
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     ports:
       - "3000:3000"
     restart: unless-stopped
