@@ -87,6 +87,8 @@ export function AIChat() {
   const synth = window.speechSynthesis;
   const isListeningRef = useRef(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [micPermission, setMicPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
 
   const { pageSlug } = useParams<{ pageSlug: string }>();
   const pageId = pageSlug ? extractPageSlugId(pageSlug) : null;
@@ -134,6 +136,26 @@ export function AIChat() {
       return null;
     }
   };
+
+  // Function to check microphone permission
+  const checkMicrophonePermission = async () => {
+    try {
+      const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+      setMicPermission(result.state);
+      
+      result.addEventListener('change', () => {
+        setMicPermission(result.state);
+      });
+    } catch (error) {
+      console.error('Error checking microphone permission:', error);
+      setMicPermission('prompt');
+    }
+  };
+
+  // Check microphone permission on mount
+  useEffect(() => {
+    checkMicrophonePermission();
+  }, []);
 
   useEffect(() => {
     // Initialize speech recognition
@@ -248,30 +270,58 @@ export function AIChat() {
     }
   };
 
-  // Function to speak text
-  const speakText = (text: string) => {
+  // Function to speak text using OpenAI TTS
+  const speakText = async (text: string) => {
     // Only speak if microphone is active
-    if (synth && isListeningRef.current) {
-      console.log('Speaking response as microphone is active');
-      // Cancel any ongoing speech
-      synth.cancel();
-      setIsSpeaking(true);
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      utterance.onend = () => {
-        console.log('Speech synthesis ended');
-        setIsSpeaking(false);
-      };
-
-      utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
-        setIsSpeaking(false);
-      };
-
-      synth.speak(utterance);
-    } else {
+    if (!isListeningRef.current) {
       console.log('Skipping speech synthesis as microphone is not active');
+      return;
+    }
+
+    try {
+      console.log('Requesting speech synthesis from OpenAI');
+      setIsSpeaking(true);
+
+      const response = await fetch("/api/openai/tts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: text,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`TTS request failed: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Create audio element if it doesn't exist
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+        audioRef.current.onended = () => {
+          console.log('Audio playback ended');
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        audioRef.current.onerror = (error) => {
+          console.error('Audio playback error:', error);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+      }
+
+      // Play the audio
+      audioRef.current.src = audioUrl;
+      await audioRef.current.play();
+      console.log('Started playing audio response');
+
+    } catch (error) {
+      console.error('Error in speech synthesis:', error);
+      setIsSpeaking(false);
     }
   };
 
@@ -377,7 +427,7 @@ export function AIChat() {
       setMessages(prev => [...prev, assistantMessage]);
       
       // Speak the response
-      speakText(responseContent);
+      await speakText(responseContent);
     } catch (error) {
       console.error("Error fetching AI response:", error);
       
@@ -388,7 +438,7 @@ export function AIChat() {
       };
       
       setMessages(prev => [...prev, errorMessage]);
-      speakText(errorMessage.content);
+      await speakText(errorMessage.content);
     } finally {
       setIsLoading(false);
     }
@@ -401,9 +451,20 @@ export function AIChat() {
     }
   }, [messages]);
 
-  // Toggle listening function
-  const toggleListening = () => {
+  // Modified toggleListening function with permission handling
+  const toggleListening = async () => {
     console.log('Toggle listening, current state:', isListening);
+    
+    if (micPermission === 'denied') {
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Microphone access is denied. Please enable microphone access in your browser settings to use voice commands.",
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+
     if (!recognitionRef.current) {
       console.log('Speech recognition not initialized');
       return;
@@ -416,22 +477,34 @@ export function AIChat() {
     } else {
       console.log('Starting speech recognition');
       try {
+        // Request microphone permission explicitly
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop()); // Stop the stream after getting permission
+        
         isListeningRef.current = true;
         recognitionRef.current.start();
         setTranscript("");
       } catch (error) {
         console.error('Error starting speech recognition:', error);
         isListeningRef.current = false;
+        
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "Could not access microphone. Please make sure you've granted microphone permissions in your browser settings.",
+        };
+        setMessages(prev => [...prev, errorMessage]);
       }
     }
     setIsListening(!isListening);
   };
 
-  // Add cleanup for speech synthesis
+  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      if (synth) {
-        synth.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
       }
     };
   }, []);
@@ -487,7 +560,13 @@ export function AIChat() {
           style={{ display: "flex", alignItems: "center", gap: "4px" }}
         >
           <TextInput
-            placeholder={isListening ? "Listening..." : "Ask AI anything..."}
+            placeholder={
+              micPermission === 'denied' 
+                ? "Microphone access denied" 
+                : isListening 
+                  ? "Listening..." 
+                  : "Ask AI anything..."
+            }
             value={isListening ? transcript : input}
             onChange={(e) => setInput(e.currentTarget.value)}
             disabled={isLoading || isListening}
@@ -519,7 +598,14 @@ export function AIChat() {
               variant={isListening ? "filled" : "light"}
               size="xs"
               onClick={toggleListening}
-              title={isListening ? "Stop listening" : "Start listening"}
+              title={
+                micPermission === 'denied'
+                  ? "Microphone access denied"
+                  : isListening 
+                    ? "Stop listening" 
+                    : "Start listening"
+              }
+              disabled={micPermission === 'denied'}
             >
               {isListening ? <IconMicrophoneOff size={16} /> : <IconMicrophone size={16} />}
             </Button>
