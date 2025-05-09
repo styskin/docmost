@@ -156,4 +156,25 @@ export class WorkspaceRepo {
 
     return activeUsers.length;
   }
+
+  async findAll(opts?: {
+    limit?: number;
+    offset?: number;
+    orderBy?: keyof Workspaces;
+    orderDirection?: 'asc' | 'desc';
+  }): Promise<Workspace[]> {
+    const limit = opts?.limit || 100;
+    const offset = opts?.offset || 0;
+    const orderBy = opts?.orderBy || 'createdAt';
+    const orderDirection = opts?.orderDirection || 'asc';
+    
+    return await this.db
+      .selectFrom('workspaces')
+      .select(this.baseFields)
+      .where('deletedAt', 'is', null)
+      .orderBy(orderBy, orderDirection)
+      .limit(limit)
+      .offset(offset)
+      .execute();
+  }
 }
