@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Box, Button, ScrollArea, Stack, Text, TextInput, Group } from "@mantine/core";
+import { Box, Button, ScrollArea, Stack, Text, Textarea, Group } from "@mantine/core";
 import { IconSend, IconWand, IconMicrophone, IconMicrophoneOff } from "@tabler/icons-react";
 import { MarkdownRenderer } from "../../../components/markdown-renderer";
 import { ISuggestion } from "@/features/comment/types/comment.types";
@@ -557,9 +557,9 @@ export function AIChat() {
             e.preventDefault();
             handleSubmit(e);
           }} 
-          style={{ display: "flex", alignItems: "center", gap: "4px" }}
+          style={{ display: "flex", alignItems: "flex-start", gap: "4px" }}
         >
-          <TextInput
+          <Textarea
             placeholder={
               micPermission === 'denied' 
                 ? "Microphone access denied" 
@@ -572,6 +572,9 @@ export function AIChat() {
             disabled={isLoading || isListening}
             style={{ flex: 1 }}
             size="sm"
+            autosize
+            minRows={3}
+            maxRows={10}
           />
           <Stack gap="4px">
             <Button
