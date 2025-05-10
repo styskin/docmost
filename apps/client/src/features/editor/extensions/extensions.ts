@@ -72,7 +72,6 @@ import i18n from "@/i18n.ts";
 import { MarkdownClipboard } from "@/features/editor/extensions/markdown-clipboard.ts";
 import EmojiCommand from "./emoji-command";
 import { CharacterCount } from "@tiptap/extension-character-count";
-import { Manul } from "./manul-extension";
 import { Handsontable } from "./handsontable-extension";
 import AICommand from "./ai-command";
 import { GoReplacementExtension } from "./go-replacement-plugin";
@@ -222,7 +221,6 @@ export const mainExtensions = [
     transformPastedText: true,
   }),
   CharacterCount,
-  Manul,
   Handsontable,
   SuggestionInsert,
   SuggestionDelete,

@@ -25,8 +25,8 @@ interface SuggestionCommands {
   unsetSuggestionMode: () => void;
 }
 
-type EditorWithSuggestionCommands = any & {
-  commands: any & SuggestionCommands;
+type EditorWithSuggestionCommands = {
+  commands: SuggestionCommands;
 };
 
 export function AIChat() {
@@ -40,6 +40,7 @@ export function AIChat() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
   const [suggestions, setSuggestions] = useState<ISuggestion[]>([]);
   const [suggestionMode, setSuggestionMode] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -78,6 +79,13 @@ export function AIChat() {
     }
   };
 
+  // Auto-scroll to the bottom when new messages arrive or streaming content updates
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, streamingContent]);
+
   // Submit handler that calls the server's Manul API
   const handleSubmit = async (e: React.FormEvent, requestSuggestionsFlag = false) => {
     e.preventDefault();
@@ -97,21 +105,28 @@ export function AIChat() {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setStreamingContent(""); // Reset streaming content
 
     try {
       let responseContent;
+      
       if (requestSuggestionsFlag) {
         // Request suggestions instead of normal response
         responseContent = await requestSuggestions(context);
         if (!responseContent) {
           responseContent = "Sorry, I couldn't generate suggestions for this content.";
         }
+        
+        // Add AI response to chat
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: responseContent,
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
       } else {
-        // Get the context from all previous messages
-        
-        console.log("Sending request to Manul API:", { query: userInput, context });
-        
-        // Call Manul API
+        // Use streaming API for regular chat responses
         const response = await fetch("/api/manul/query", {
           method: "POST",
           headers: {
@@ -123,49 +138,57 @@ export function AIChat() {
           }),
         });
         
-        console.log("Raw response:", response);
-        
         if (!response.ok) {
-          console.error("Response not OK:", response.status, response.statusText);
-          throw new Error(`Failed to get response from AI: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to get response: ${response.status}`);
         }
         
-        const data = await response.json();
-        console.log("Parsed response data:", data);
+        // Process the streaming response
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('Response body is not readable');
         
-        // Determine the response content from various possible structures
-        responseContent = "No response content found";
+        const decoder = new TextDecoder();
+        let partialChunk = '';
+        let fullStreamingContent = '';
         
-        // Check for Manul API format: {"data":{"response":"..."},"success":true,"status":201}
-        if (data?.data?.response && typeof data.data.response === 'string') {
-          console.log("Found Manul API format response");
-          responseContent = data.data.response;
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          // Decode the chunk and append to partial chunk
+          const chunk = decoder.decode(value, { stream: true });
+          partialChunk += chunk;
+          
+          // Process any complete SSE messages in the partial chunk
+          while (partialChunk.includes('\n\n')) {
+            const eventEnd = partialChunk.indexOf('\n\n');
+            const eventData = partialChunk.substring(0, eventEnd);
+            partialChunk = partialChunk.substring(eventEnd + 2);
+            
+            if (eventData.startsWith('data: ')) {
+              try {
+                const jsonData = JSON.parse(eventData.slice(6));
+                if (jsonData.content) {
+                  fullStreamingContent += jsonData.content;
+                  setStreamingContent(fullStreamingContent);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
         }
-        // Check for direct response property (previous expected format)
-        else if (typeof data.response === 'string') {
-          console.log("Found direct response property");
-          responseContent = data.response;
-        } 
-        // Check for AI SDK format with choices array
-        else if (data?.choices?.[0]?.message?.content) {
-          console.log("Found AI SDK format response");
-          responseContent = data.choices[0].message.content;
-        } 
-        // Fallback with warning
-        else {
-          console.warn("Unexpected response structure:", data);
-          responseContent = "Received response in unexpected format: " + JSON.stringify(data);
+        
+        // Once streaming is complete, add the full message to the chat
+        if (fullStreamingContent) {
+          const assistantMessage: Message = {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: fullStreamingContent,
+          };
+          
+          setMessages(prev => [...prev, assistantMessage]);
         }
       }
-      
-      // Add AI response to chat
-      const assistantMessage: Message = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: responseContent,
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Error fetching AI response:", error);
       
@@ -179,15 +202,9 @@ export function AIChat() {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setStreamingContent(""); // Clear streaming content after it's added to messages
     }
   };
-
-  // Auto-scroll to the bottom when new messages arrive
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
 
   return (
     <Box style={{ display: "flex", flexDirection: "column", height: "85vh" }}>
@@ -221,7 +238,25 @@ export function AIChat() {
               )}
             </Box>
           ))}
-          {isLoading && (
+          
+          {/* Streaming content display */}
+          {streamingContent && (
+            <Box
+              p="md"
+              style={{
+                borderRadius: "8px",
+                maxWidth: "100%",
+                wordBreak: "break-word",
+              }}
+            >
+              <Text size="sm" fw={500} mb={4}>
+                AI Assistant
+              </Text>
+              <MarkdownRenderer content={streamingContent} />
+            </Box>
+          )}
+          
+          {isLoading && !streamingContent && (
             <Box p="md">
               <Text size="sm" c="dimmed">
                 AI is thinking...

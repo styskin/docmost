@@ -1,22 +1,15 @@
 import {
   Paper,
-  ScrollArea,
-  Stack,
   Text,
   UnstyledButton,
   Loader,
-  TextInput,
-  Popover,
   Textarea,
   Box,
   Divider,
-  Group,
 } from "@mantine/core";
 import { AIMenuItemType } from "./types";
-import clsx from "clsx";
 import classes from "./ai-menu.module.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { NodeViewProps, NodeViewWrapper } from "@tiptap/react";
 import { 
   IconPencil, 
   IconFileDescription, 
@@ -36,7 +29,6 @@ interface AIListProps {
   autoFocus?: boolean;
 }
 
-// Group items by category
 const groupItemsByCategory = (items: AIMenuItemType[]) => {
   const suggestedItems = items.filter(item => 
     item.title.toLowerCase().includes('continue') || 
@@ -77,24 +69,20 @@ export default function AIList({
   isLoading,
   command,
   editor,
-  range,
-  query,
-  autoFocus,
 }: AIListProps) {
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
-  const [preview, setPreview] = useState<string>("");
+  const [preview, setPreview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
   const groupedItems = groupItemsByCategory(items);
   const [cursorPosition, setCursorPosition] = useState({ top: 0, left: 0 });
 
-  // Get cursor position from editor
   useEffect(() => {
     if (editor && editor.view) {
       const { state } = editor;
       const { selection } = state;
       const { from } = selection;
       
-      // Get coordinates of cursor position
       const coords = editor.view.coordsAtPos(from);
       
       if (coords) {
@@ -106,12 +94,10 @@ export default function AIList({
     }
   }, [editor]);
 
-  // Focus the textarea when component mounts
   useEffect(() => {
     if (textAreaRef.current) {
       setTimeout(() => {
         textAreaRef.current?.focus();
-        // Place cursor at the end of any existing text
         if (textAreaRef.current.value) {
           const length = textAreaRef.current.value.length;
           textAreaRef.current.setSelectionRange(length, length);
@@ -128,6 +114,8 @@ export default function AIList({
     if (!preview.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
+    setStreamingContent("");
+    
     try {
       const response = await fetch("/api/manul/query", {
         method: "POST",
@@ -140,11 +128,49 @@ export default function AIList({
         }),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`Failed to get response: ${response.status}`);
+      }
       
-      // Convert markdown to TipTap JSON
-      const tiptapJson = markdownToTiptap(data.data.response);
-      console.log("JSON:", tiptapJson, "from", data.data.response);
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Response body is not readable');
+      
+      const decoder = new TextDecoder();
+      let partialChunk = '';
+      let fullResponse = '';
+      
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        partialChunk += chunk;
+        
+        while (partialChunk.includes('\n\n')) {
+          const eventEnd = partialChunk.indexOf('\n\n');
+          const eventData = partialChunk.substring(0, eventEnd);
+          partialChunk = partialChunk.substring(eventEnd + 2);
+          
+          if (eventData.startsWith('data: ')) {
+            try {
+              const jsonData = JSON.parse(eventData.slice(6));
+              if (jsonData.content) {
+                fullResponse += jsonData.content;
+                setStreamingContent(fullResponse);
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+              const rawContent = eventData.slice(6).trim();
+              if (rawContent) {
+                fullResponse += rawContent;
+                setStreamingContent(fullResponse);
+              }
+            }
+          }
+        }
+      }
+      
+      const tiptapJson = markdownToTiptap(fullResponse);
       
       editor
         .chain()
@@ -157,6 +183,7 @@ export default function AIList({
       console.error("Error querying Manul:", error);
     } finally {
       setIsSubmitting(false);
+      setStreamingContent("");
     }
   };
 
@@ -178,7 +205,6 @@ export default function AIList({
       style={{ 
         overflow: 'hidden',
         width: "400px",
-        // Fine-tune the position to be exactly at the cursor
         marginTop: "-35px",
         position: 'relative'
       }}
@@ -306,6 +332,15 @@ export default function AIList({
       {isLoading && (
         <Box p="md" style={{ display: 'flex', justifyContent: 'center' }}>
           <Loader size="sm" />
+        </Box>
+      )}
+      
+      {/* Display streaming content */}
+      {streamingContent && (
+        <Box p="xs" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+          <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+            {streamingContent}
+          </Text>
         </Box>
       )}
     </Paper>

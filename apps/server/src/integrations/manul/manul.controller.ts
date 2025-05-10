@@ -5,7 +5,10 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
+import { FastifyReply } from 'fastify';
 
 import { ImportService } from '../import/import.service';
 import { ManulService } from './manul.service';
@@ -29,21 +32,73 @@ export class ManulController {
   ) {}
 
   @Post('query')
-  async queryManul(@Body() body: { context: string; query: string }) {
+  async queryManul(
+    @Body() body: { context: string; query: string },
+    @Res() res: FastifyReply
+  ) {
     try {
-      const response = await this.manulService.contextCall(
+      console.log('ManulController: Processing query request:', body);
+      
+      const stream = await this.manulService.contextCall(
         body.context,
-        body.query,
+        body.query
       );
-      return { response };
+      
+      console.log('ManulController: Got stream response');
+
+      // Set up appropriate headers for SSE
+      res.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+      });
+      
+      console.log('ManulController: Wrote headers');
+
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+
+      (async () => {
+        try {
+          console.log('ManulController: Starting to process stream');
+          let chunkCount = 0;
+          
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+              console.log('ManulController: Stream complete, processed', chunkCount, 'chunks');
+              res.raw.end();
+              break;
+            }
+            
+            const chunk = decoder.decode(value);
+            chunkCount++;
+            
+            if (chunkCount <= 3) {
+              console.log(`ManulController: Chunk ${chunkCount} (${chunk.length} bytes):`, chunk.substring(0, 100));
+            } else if (chunkCount % 10 === 0) {
+              console.log(`ManulController: Processed ${chunkCount} chunks so far`);
+            }
+            
+            res.raw.write(chunk);
+          }
+        } catch (error) {
+          console.error('ManulController: Error processing stream:', error);
+          if (!res.raw.writableEnded) {
+            res.raw.end();
+          }
+        }
+      })();
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
+      console.error('ManulController: Error setting up stream:', error);
+      
+      if (!res.sent) {
+        res.status(500).send({
+          error: 'Failed to process streaming query',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
-      throw new HttpException(
-        'Failed to process query',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
     }
   }
 
