@@ -184,7 +184,7 @@ export default function GlobalAppShell({
           {isAsideOpen && (
             <div className={classes.asideResizeHandle} onMouseDown={startAsideResizing} />
           )}
-          <div style={{ padding: 'var(--mantine-spacing-md)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: 'var(--mantine-spacing-md)' }}>
              <Aside />
           </div>
         </AppShell.Aside>

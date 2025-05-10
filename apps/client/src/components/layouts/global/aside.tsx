@@ -36,20 +36,15 @@ export default function Aside() {
   }
 
   return (
-    <Box p="md">
+    <Box p="md" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {component && (
         <>
           <Text mb="md" fw={500}>
             {t(title)}
           </Text>
-
-          <ScrollArea
-            style={{ height: "85vh" }}
-            scrollbarSize={5}
-            type="scroll"
-          >
-            <div style={{ paddingBottom: "200px" }}>{component}</div>
-          </ScrollArea>
+          <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            {component}
+          </Box>
         </>
       )}
     </Box>

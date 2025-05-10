@@ -910,9 +910,9 @@ export function AIChat() {
   };
 
   return (
-    <Box style={{ display: "flex", flexDirection: "column", height: "85vh" }}>
+    <Box style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <ScrollArea
-        style={{ flex: 1 }}
+        style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
         scrollbarSize={5}
         type="scroll"
         viewportRef={(ref) => {
@@ -951,7 +951,7 @@ export function AIChat() {
         </Stack>
       </ScrollArea>
 
-      <Box p="md">
+      <Box p="md" style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}>
         <form 
           onSubmit={(e) => {
             e.preventDefault();
