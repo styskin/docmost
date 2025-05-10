@@ -31,6 +31,10 @@ interface ChatCompletionResponse {
   }[];
 }
 
+interface ContextualAgentResponse {
+  answer: string;
+}
+
 class ManulServiceError extends HttpException {
   constructor(
     message: string,
@@ -96,54 +100,14 @@ export class ManulService {
   }
 
   async contextCall(context: string, task: string): Promise<string> {
-    const response = await this.makeManulRequest<any, ChatCompletionResponse>(
+    const response = await this.makeManulRequest<any, ContextualAgentResponse>(
       '/context_call',
       {
-        input_variables: {
-          context,
-          task,
-        },
-        prompt_name: 'general_context',
+        context: context,
+        task: task,
       },
     );
-
-    if (!response?.choices?.[0]?.message?.content) {
-      throw new ManulServiceError(
-        `Invalid response format from Manul service at /context_call. Expected choices[0].message.content`,
-        HttpStatus.BAD_GATEWAY,
-      );
-    }
-    return response.choices[0].message.content;
-  }
-
-  async suggestDiff(
-    previousContent: string,
-    currentContent: string,
-    diff: string,
-  ): Promise<SuggestDiffResponse> {
-    const previous_content = previousContent;
-    const current_content = currentContent;
-    const response = await this.makeManulRequest<any, SuggestDiffResponse>(
-      '/suggest_diff',
-      {
-        previous_content,
-        current_content,
-        diff,
-        prompt_name: 'suggest_diff',
-      },
-    );
-
-    if (
-      !response ||
-      typeof response !== 'object' ||
-      !Array.isArray(response.suggestions)
-    ) {
-      throw new ManulServiceError(
-        `Invalid response format from Manul service at /suggest_diff. Expected an object with a 'suggestions' array.`,
-        HttpStatus.BAD_GATEWAY,
-      );
-    }
-    return response;
+    return response.answer;
   }
 
   async suggest(
@@ -165,11 +129,7 @@ export class ManulService {
 
     console.log("Suggest Response:", response);
 
-    if (
-      !response
-      // || typeof response !== 'object'
-      // || !Array.isArray(response.doc)
-    ) {
+    if (!response) {
       throw new ManulServiceError(
         `Invalid response format from Manul service at /suggest. Expected an object with a 'suggestions' array.`,
         HttpStatus.BAD_GATEWAY,

@@ -8,19 +8,16 @@ import {
 } from '@nestjs/common';
 
 import { ImportService } from '../import/import.service';
-import { ManulService, SuggestDiffResponse } from './manul.service';
+import { ManulService } from './manul.service';
 import { PageRepo } from '@docmost/db/repos/page/page.repo';
 import { JSONContent } from '@tiptap/core';
 
 export const AGENT_USER_ID = "00000000-0000-7000-8000-000000000000";
-// export const AGENT_USER_ID = "0195fc99-bd95-7b48-9efe-4541582f9adf";
 
 import {
-  jsonToHtml,
   jsonToText,
   sanitizeTiptapJson,
 } from '../../collaboration/collaboration.util';
-import { turndown } from '../export/turndown-utils';
 
 @Controller('manul')
 export class ManulController {
@@ -81,11 +78,7 @@ export class ManulController {
           combinedMarkdown += `${pageMarkdown}\n\n`;
         }
       }
-      // Convert page content to markdown
-      const sanitizedContent = sanitizeTiptapJson(page.content as JSONContent);
-      // const html = sanitizedContent ? jsonToHtml(sanitizedContent) : '';
-      // const markdown = turndown(html);    
-      const markdown = sanitizedContent ? jsonToText(sanitizedContent) : '';       
+      const sanitizedContent = sanitizeTiptapJson(page.content as JSONContent);     
       const response = await this.manulService.suggest(combinedMarkdown, JSON.stringify(sanitizedContent), body.prompt);
       this.importService.importJson(page.title + "_agent", response.doc, AGENT_USER_ID, page.spaceId, page.workspaceId);
       return response;

@@ -116,53 +116,6 @@ export class DiffAnalysisProcessor extends WorkerHost {
       this.logger.debug(
         `Calculated Markdown line diff (newlineIsToken=true): ${markdownDiffStr}`,
       );
-
-      // Ask Manul to analyze the changes and provide suggestions
-      this.logger.debug(`Requesting Manul suggestions for page: ${pageId}`);
-      const suggestionResponse = await this.manulService.suggestDiff(
-        previousMarkdown,
-        currentMarkdown,
-        markdownDiffStr,
-      );
-      this.logger.debug(`Received Manul suggestions for page: ${pageId}`);
-
-      // Find the first added line for selection context text
-      let selectionText: string | null = null;
-      const firstAddition = markdownDiff.find((change) => change.added);
-      if (firstAddition) {
-        selectionText = firstAddition.value
-          .trim()
-          .split('\n')[0]
-          .trim()
-          .substring(0, 250);
-      }
-      this.logger.debug(`Selection context text: "${selectionText}"`);
-
-      const commentJsonContent: JSONContent = {
-        type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: suggestionResponse.text || 'AI suggestions attached.',
-              },
-            ],
-          },
-        ],
-      };
-
-      this.logger.debug(
-        `Creating comment with suggestions for page: ${pageId}`,
-      );
-      await this.commentService.create(AGENT_USER_ID, pageId, workspaceId, {
-        pageId: pageId,
-        content: JSON.stringify(commentJsonContent),
-        selection: selectionText,
-        parentCommentId: null,
-        suggestions: suggestionResponse.suggestions,
-      });
       this.logger.debug(
         `Successfully completed diff analysis for page: ${pageId}`,
       );
