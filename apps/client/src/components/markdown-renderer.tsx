@@ -13,38 +13,66 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       components={{
         // Override heading components
         h1: ({ children }) => (
-          <Title order={1} my="sm">{children}</Title>
+          <Title order={1} my="sm">
+            {children}
+          </Title>
         ),
         h2: ({ children }) => (
-          <Title order={2} my="sm">{children}</Title>
+          <Title order={2} my="sm">
+            {children}
+          </Title>
         ),
         h3: ({ children }) => (
-          <Title order={3} my="sm">{children}</Title>
+          <Title order={3} my="sm">
+            {children}
+          </Title>
         ),
         h4: ({ children }) => (
-          <Title order={4} my="sm">{children}</Title>
+          <Title order={4} my="sm">
+            {children}
+          </Title>
         ),
         h5: ({ children }) => (
-          <Title order={5} my="sm">{children}</Title>
+          <Title order={5} my="sm">
+            {children}
+          </Title>
         ),
         h6: ({ children }) => (
-          <Title order={6} my="sm">{children}</Title>
+          <Title order={6} my="sm">
+            {children}
+          </Title>
         ),
 
         // Override paragraph
         p: ({ children }) => (
-          <Text my="xs" style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</Text>
+          <Text my="xs" style={{ fontSize: "15px", lineHeight: 1.2 }}>
+            {children}
+          </Text>
         ),
 
         // Override lists
         ul: ({ children }) => (
-          <List type="unordered" my="xs" style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</List>
+          <List
+            type="unordered"
+            my="xs"
+            style={{ fontSize: "15px", lineHeight: 1.2 }}
+          >
+            {children}
+          </List>
         ),
         ol: ({ children }) => (
-          <List type="unordered" my="xs" style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</List>
+          <List
+            type="unordered"
+            my="xs"
+            style={{ fontSize: "15px", lineHeight: 1.2 }}
+          >
+            {children}
+          </List>
         ),
         li: ({ children }) => (
-          <List.Item style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</List.Item>
+          <List.Item style={{ fontSize: "15px", lineHeight: 1.2 }}>
+            {children}
+          </List.Item>
         ),
 
         // Override code blocks with syntax highlighting
@@ -52,14 +80,21 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           const { className, children } = props;
           const match = /language-(\w+)/.exec(className || "");
           const language = match ? match[1] : "";
-          
+
           // Simplify inline code detection - if no language specified and content is short, treat as inline
           const content = String(children).replace(/\n$/, "");
-          const isInline = !className && content.length < 50 && !content.includes("\n");
-          
+          const isInline =
+            !className && content.length < 50 && !content.includes("\n");
+
           if (isInline) {
             return (
-              <Text style={{ fontSize: "15px", lineHeight: 1.2 }} component="code" c="blue" bg="gray.0" px={5}>
+              <Text
+                style={{ fontSize: "15px", lineHeight: 1.2 }}
+                component="code"
+                c="blue"
+                bg="gray.0"
+                px={5}
+              >
                 {children}
               </Text>
             );
@@ -83,9 +118,9 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           <Box
             my="sm"
             pl="md"
-            style={{ 
+            style={{
               borderLeft: "3px solid var(--mantine-color-gray-4)",
-              color: "var(--mantine-color-dimmed)"
+              color: "var(--mantine-color-dimmed)",
             }}
           >
             {children}
@@ -94,10 +129,10 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
         // Override links
         a: ({ children, href }) => (
-          <Text 
+          <Text
             component="a"
             href={href}
-            c="blue" 
+            c="blue"
             style={{ textDecoration: "underline" }}
           >
             {children}

@@ -69,7 +69,7 @@ export default function MovePageModal({
       yOffset="10vh"
       xOffset={0}
       mah={400}
-      onClick={e => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       <Modal.Overlay />
       <Modal.Content style={{ overflow: "hidden" }}>
@@ -78,7 +78,9 @@ export default function MovePageModal({
           <Modal.CloseButton />
         </Modal.Header>
         <Modal.Body>
-          <Text mb="xs" c="dimmed" size="sm">{t("Move page to a different space.")}</Text>
+          <Text mb="xs" c="dimmed" size="sm">
+            {t("Move page to a different space.")}
+          </Text>
 
           <SpaceSelect
             value={currentSpaceSlug}

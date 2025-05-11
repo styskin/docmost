@@ -55,7 +55,7 @@ export function SwitchSpace({ spaceName, spaceSlug }: SwitchSpaceProps) {
         <SpaceSelect
           label={spaceName}
           value={spaceSlug}
-          onChange={space => handleSelect(space.slug)}
+          onChange={(space) => handleSelect(space.slug)}
           width={300}
           opened={true}
         />

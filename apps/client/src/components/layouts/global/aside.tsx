@@ -27,7 +27,7 @@ export default function Aside() {
       title = "Table of contents";
       break;
     case "ai":
-      component = <AIChat   />;
+      component = <AIChat />;
       title = "Chat with AI";
       break;
     default:

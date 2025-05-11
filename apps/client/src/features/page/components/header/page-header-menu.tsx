@@ -36,7 +36,7 @@ import {
 import { formattedDate, timeAgo } from "@/lib/time.ts";
 import MovePageModal from "@/features/page/components/move-page-modal.tsx";
 import { useTimeAgo } from "@/hooks/use-time-ago.tsx";
-import ShareModal from '@/features/share/components/share-modal.tsx';
+import ShareModal from "@/features/share/components/share-modal.tsx";
 
 interface PageHeaderMenuProps {
   readOnly?: boolean;
@@ -60,7 +60,7 @@ export default function PageHeaderMenu({ readOnly }: PageHeaderMenuProps) {
         </Tooltip>
       )}
 
-      <ShareModal readOnly={readOnly}/>
+      <ShareModal readOnly={readOnly} />
 
       <Tooltip label={t("Comments")} openDelay={250} withArrow>
         <ActionIcon

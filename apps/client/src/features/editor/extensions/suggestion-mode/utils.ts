@@ -1,7 +1,7 @@
 import { Node, Mark, MarkType } from "@tiptap/pm/model";
 import { EditorState, Transaction } from "@tiptap/pm/state";
 import { EditorView } from "@tiptap/pm/view";
-import { defaultMarkdownSerializer } from 'prosemirror-markdown';
+import { defaultMarkdownSerializer } from "prosemirror-markdown";
 // import taskLists from 'markdown-it-task-lists';
 
 export interface TextSuggestion {
@@ -47,7 +47,7 @@ function findDocumentRange(
         endPos = nodeStartPos + curEnd;
       }
 
-      curLength += (node.text?.length || 0);
+      curLength += node.text?.length || 0;
     }
     return true;
   });
@@ -102,7 +102,8 @@ export function createSuggestionTransaction(
   const processedReplace = escapedReplace.replace(/\n/g, "\\s*");
   const processedAfter = escapedAfter.replace(/\n/g, "\\s*");
 
-  const patternText = processedBefore + "\\s*(" + processedReplace + ")\\s*" + processedAfter;
+  const patternText =
+    processedBefore + "\\s*(" + processedReplace + ")\\s*" + processedAfter;
   // const patternText = "(" + processedReplace + ")";
 
   console.log(

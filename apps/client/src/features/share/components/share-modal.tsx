@@ -92,26 +92,29 @@ export default function ShareModal({ readOnly }: ShareModalProps) {
     });
   };
 
-  const shareLink = useMemo(() => (
-    <Group my="sm" gap={4} wrap="nowrap">
-      <TextInput
-        variant="filled"
-        value={publicLink}
-        readOnly
-        rightSection={<CopyTextButton text={publicLink} />}
-        style={{ width: "100%" }}
-      />
-      <ActionIcon
-        component="a"
-        variant="default"
-        target="_blank"
-        href={publicLink}
-        size="sm"
-      >
-        <IconExternalLink size={16} />
-      </ActionIcon>
-    </Group>
-  ), [publicLink]);
+  const shareLink = useMemo(
+    () => (
+      <Group my="sm" gap={4} wrap="nowrap">
+        <TextInput
+          variant="filled"
+          value={publicLink}
+          readOnly
+          rightSection={<CopyTextButton text={publicLink} />}
+          style={{ width: "100%" }}
+        />
+        <ActionIcon
+          component="a"
+          variant="default"
+          target="_blank"
+          href={publicLink}
+          size="sm"
+        >
+          <IconExternalLink size={16} />
+        </ActionIcon>
+      </Group>
+    ),
+    [publicLink],
+  );
 
   return (
     <Popover width={350} position="bottom" withArrow shadow="md">

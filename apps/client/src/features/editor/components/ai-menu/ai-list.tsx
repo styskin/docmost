@@ -10,12 +10,12 @@ import {
 import { AIMenuItemType } from "./types";
 import classes from "./ai-menu.module.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { 
-  IconPencil, 
-  IconFileDescription, 
-  IconListCheck, 
-  IconChartBar, 
-  IconTable 
+import {
+  IconPencil,
+  IconFileDescription,
+  IconListCheck,
+  IconChartBar,
+  IconTable,
 } from "@tabler/icons-react";
 import { markdownToTiptap } from "./markdown-to-tiptap";
 
@@ -30,37 +30,39 @@ interface AIListProps {
 }
 
 const groupItemsByCategory = (items: AIMenuItemType[]) => {
-  const suggestedItems = items.filter(item => 
-    item.title.toLowerCase().includes('continue') || 
-    item.title.toLowerCase().includes('suggest')
+  const suggestedItems = items.filter(
+    (item) =>
+      item.title.toLowerCase().includes("continue") ||
+      item.title.toLowerCase().includes("suggest"),
   );
-  
-  const writeItems = items.filter(item => 
-    !suggestedItems.includes(item)
-  );
-  
+
+  const writeItems = items.filter((item) => !suggestedItems.includes(item));
+
   return {
     suggested: suggestedItems,
-    write: writeItems
+    write: writeItems,
   };
 };
 
 // Get icon for menu item based on title
 const getItemIcon = (title: string) => {
   const lowerTitle = title.toLowerCase();
-  
-  if (lowerTitle.includes('continue') || lowerTitle.includes('write anything')) {
+
+  if (
+    lowerTitle.includes("continue") ||
+    lowerTitle.includes("write anything")
+  ) {
     return <IconPencil size={16} stroke={1.5} />;
-  } else if (lowerTitle.includes('summary')) {
+  } else if (lowerTitle.includes("summary")) {
     return <IconFileDescription size={16} stroke={1.5} />;
-  } else if (lowerTitle.includes('action') || lowerTitle.includes('list')) {
+  } else if (lowerTitle.includes("action") || lowerTitle.includes("list")) {
     return <IconListCheck size={16} stroke={1.5} />;
-  } else if (lowerTitle.includes('flowchart') || lowerTitle.includes('chart')) {
+  } else if (lowerTitle.includes("flowchart") || lowerTitle.includes("chart")) {
     return <IconChartBar size={16} stroke={1.5} />;
-  } else if (lowerTitle.includes('table')) {
+  } else if (lowerTitle.includes("table")) {
     return <IconTable size={16} stroke={1.5} />;
   }
-  
+
   return <IconPencil size={16} stroke={1.5} />;
 };
 
@@ -82,13 +84,13 @@ export default function AIList({
       const { state } = editor;
       const { selection } = state;
       const { from } = selection;
-      
+
       const coords = editor.view.coordsAtPos(from);
-      
+
       if (coords) {
         setCursorPosition({
           top: coords.top,
-          left: coords.left
+          left: coords.left,
         });
       }
     }
@@ -115,7 +117,7 @@ export default function AIList({
 
     setIsSubmitting(true);
     setStreamingContent("");
-    
+
     try {
       const response = await fetch("/api/manul/query", {
         method: "POST",
@@ -131,27 +133,27 @@ export default function AIList({
       if (!response.ok) {
         throw new Error(`Failed to get response: ${response.status}`);
       }
-      
+
       const reader = response.body?.getReader();
-      if (!reader) throw new Error('Response body is not readable');
-      
+      if (!reader) throw new Error("Response body is not readable");
+
       const decoder = new TextDecoder();
-      let partialChunk = '';
-      let fullResponse = '';
-      
+      let partialChunk = "";
+      let fullResponse = "";
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value, { stream: true });
         partialChunk += chunk;
-        
-        while (partialChunk.includes('\n\n')) {
-          const eventEnd = partialChunk.indexOf('\n\n');
+
+        while (partialChunk.includes("\n\n")) {
+          const eventEnd = partialChunk.indexOf("\n\n");
           const eventData = partialChunk.substring(0, eventEnd);
           partialChunk = partialChunk.substring(eventEnd + 2);
-          
-          if (eventData.startsWith('data: ')) {
+
+          if (eventData.startsWith("data: ")) {
             try {
               const jsonData = JSON.parse(eventData.slice(6));
               if (jsonData.content) {
@@ -159,7 +161,7 @@ export default function AIList({
                 setStreamingContent(fullResponse);
               }
             } catch (e) {
-              console.error('Error parsing SSE data:', e);
+              console.error("Error parsing SSE data:", e);
               const rawContent = eventData.slice(6).trim();
               if (rawContent) {
                 fullResponse += rawContent;
@@ -169,14 +171,10 @@ export default function AIList({
           }
         }
       }
-      
+
       const tiptapJson = markdownToTiptap(fullResponse);
-      
-      editor
-        .chain()
-        .focus()
-        .insertContentAt(getPos(), tiptapJson)
-        .run();
+
+      editor.chain().focus().insertContentAt(getPos(), tiptapJson).run();
 
       setPreview("");
     } catch (error) {
@@ -198,15 +196,15 @@ export default function AIList({
     [command, items],
   );
   return items.length > 0 || isLoading ? (
-    <Paper 
-      id="ai-command" 
-      shadow="sm" 
-      withBorder 
-      style={{ 
-        overflow: 'hidden',
+    <Paper
+      id="ai-command"
+      shadow="sm"
+      withBorder
+      style={{
+        overflow: "hidden",
         width: "400px",
         marginTop: "-35px",
-        position: 'relative'
+        position: "relative",
       }}
     >
       <Textarea
@@ -217,9 +215,9 @@ export default function AIList({
         classNames={{ input: classes.textInput }}
         value={preview}
         placeholder={"Ask AI anything"}
-        style={{ 
+        style={{
           width: "100%",
-          caretColor: 'var(--mantine-color-blue-6)'
+          caretColor: "var(--mantine-color-blue-6)",
         }}
         autoFocus
         onFocus={(e) => {
@@ -262,7 +260,7 @@ export default function AIList({
           setPreview(e.target.value);
         }}
       />
-      
+
       {/* Menu items styled like AiMenu.png */}
       {!isLoading && items.length > 0 && (
         <>
@@ -278,13 +276,15 @@ export default function AIList({
                 <UnstyledButton
                   key={item.id}
                   className={classes.menuItem}
-                  onClick={() => selectItem(items.findIndex(i => i.id === item.id))}
+                  onClick={() =>
+                    selectItem(items.findIndex((i) => i.id === item.id))
+                  }
                   p="xs"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    width: '100%',
-                    cursor: 'pointer',
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    cursor: "pointer",
                   }}
                 >
                   <Box mr={8} style={{ opacity: 0.7 }}>
@@ -295,7 +295,7 @@ export default function AIList({
               ))}
             </Box>
           )}
-          
+
           {/* Write Section */}
           {groupedItems.write.length > 0 && (
             <Box>
@@ -309,13 +309,15 @@ export default function AIList({
                 <UnstyledButton
                   key={item.id}
                   className={classes.menuItem}
-                  onClick={() => selectItem(items.findIndex(i => i.id === item.id))}
+                  onClick={() =>
+                    selectItem(items.findIndex((i) => i.id === item.id))
+                  }
                   p="xs"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    width: '100%',
-                    cursor: 'pointer',
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    cursor: "pointer",
                   }}
                 >
                   <Box mr={8} style={{ opacity: 0.7 }}>
@@ -328,17 +330,17 @@ export default function AIList({
           )}
         </>
       )}
-      
+
       {isLoading && (
-        <Box p="md" style={{ display: 'flex', justifyContent: 'center' }}>
+        <Box p="md" style={{ display: "flex", justifyContent: "center" }}>
           <Loader size="sm" />
         </Box>
       )}
-      
+
       {/* Display streaming content */}
       {streamingContent && (
-        <Box p="xs" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-          <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+        <Box p="xs" style={{ maxHeight: "200px", overflowY: "auto" }}>
+          <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>
             {streamingContent}
           </Text>
         </Box>

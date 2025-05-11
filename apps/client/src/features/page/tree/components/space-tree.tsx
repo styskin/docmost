@@ -451,8 +451,7 @@ function NodeMenu({ node, treeApi }: NodeMenuProps) {
 
   const handleCopyLink = () => {
     const pageUrl =
-      getAppUrl() +
-      buildPageUrl(spaceSlug, node.data.slugId, node.data.name);
+      getAppUrl() + buildPageUrl(spaceSlug, node.data.slugId, node.data.name);
     clipboard.copy(pageUrl);
     notifications.show({ message: t("Link copied") });
   };

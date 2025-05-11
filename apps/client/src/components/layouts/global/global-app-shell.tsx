@@ -84,8 +84,7 @@ export default function GlobalAppShell({
   const resizeAside = React.useCallback(
     (mouseMoveEvent) => {
       if (isAsideResizing && asideRef.current) {
-        const newWidth =
-          window.innerWidth - mouseMoveEvent.clientX;
+        const newWidth = window.innerWidth - mouseMoveEvent.clientX;
         const minWidth = 250;
         const maxWidth = 600;
 
@@ -160,7 +159,10 @@ export default function GlobalAppShell({
           ref={sidebarRef}
         >
           {desktopOpened && isSpaceRoute && (
-             <div className={classes.resizeHandle} onMouseDown={startSidebarResizing} />
+            <div
+              className={classes.resizeHandle}
+              onMouseDown={startSidebarResizing}
+            />
           )}
           {isSpaceRoute && <SpaceSidebar />}
           {isSettingsRoute && <SettingsSidebar />}
@@ -182,10 +184,13 @@ export default function GlobalAppShell({
           ref={asideRef}
         >
           {isAsideOpen && (
-            <div className={classes.asideResizeHandle} onMouseDown={startAsideResizing} />
+            <div
+              className={classes.asideResizeHandle}
+              onMouseDown={startAsideResizing}
+            />
           )}
-          <div style={{ padding: 'var(--mantine-spacing-md)' }}>
-             <Aside />
+          <div style={{ padding: "var(--mantine-spacing-md)" }}>
+            <Aside />
           </div>
         </AppShell.Aside>
       )}

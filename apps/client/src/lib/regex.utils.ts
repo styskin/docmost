@@ -8,7 +8,7 @@
  * @param flags - The regex flags (default: 'g')
  * @returns A RegExp object
  */
-export function createRegex(pattern: string, flags: string = 'g'): RegExp {
+export function createRegex(pattern: string, flags: string = "g"): RegExp {
   return new RegExp(pattern, flags);
 }
 
@@ -20,14 +20,14 @@ export function createRegex(pattern: string, flags: string = 'g'): RegExp {
 export function parseRegexString(regexStr: string): RegExp | null {
   const match = regexStr.match(/\/(.*)\/([gimuy]*)$/);
   if (!match) return null;
-  
+
   const pattern = match[1];
-  const flags = match[2] || 'g';
-  
+  const flags = match[2] || "g";
+
   try {
     return new RegExp(pattern, flags);
   } catch (error) {
-    console.error('Error parsing regex string:', error);
+    console.error("Error parsing regex string:", error);
     return null;
   }
 }
@@ -51,13 +51,16 @@ export function testRegex(regex: RegExp, text: string): RegExpExecArray | null {
 export function matchAllRegex(regex: RegExp, text: string): RegExpExecArray[] {
   const matches: RegExpExecArray[] = [];
   let match: RegExpExecArray | null;
-  
+
   // Ensure the regex has the global flag
-  const globalRegex = new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : regex.flags + 'g');
-  
+  const globalRegex = new RegExp(
+    regex.source,
+    regex.flags.includes("g") ? regex.flags : regex.flags + "g",
+  );
+
   while ((match = globalRegex.exec(text)) !== null) {
     matches.push(match);
   }
-  
+
   return matches;
-} 
+}

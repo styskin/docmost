@@ -41,7 +41,7 @@ export const getAIItems = async ({
       item.description.toLowerCase().includes(query.toLowerCase()),
   );
   const items = filteredItems.map((item) => ({
-    ...item
+    ...item,
   }));
   return items;
 };

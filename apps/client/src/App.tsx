@@ -29,7 +29,7 @@ import { useRedirectToCloudSelect } from "@/ee/hooks/use-redirect-to-cloud-selec
 import SharedPage from "@/pages/share/shared-page.tsx";
 import Shares from "@/pages/settings/shares/shares.tsx";
 import ShareLayout from "@/features/share/components/share-layout.tsx";
-import ShareRedirect from '@/pages/share/share-redirect.tsx';
+import ShareRedirect from "@/pages/share/share-redirect.tsx";
 import { useTrackOrigin } from "@/hooks/use-track-origin";
 
 export default function App() {
@@ -58,7 +58,10 @@ export default function App() {
         )}
 
         <Route element={<ShareLayout />}>
-          <Route path={"/share/:shareId/p/:pageSlug"} element={<SharedPage />} />
+          <Route
+            path={"/share/:shareId/p/:pageSlug"}
+            element={<SharedPage />}
+          />
           <Route path={"/share/p/:pageSlug"} element={<SharedPage />} />
         </Route>
 
