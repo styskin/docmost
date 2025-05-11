@@ -103,7 +103,6 @@ export function AIChat() {
     }
   }, [input]);
 
-  // Submit handler that calls the server's Manul API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -116,11 +115,44 @@ export function AIChat() {
       segments: [{ type: 'text', content: userInput }],
     };
     
-    const context = "Context: " + messages.map(m => 
-      `${m.role}: ${m.segments.map(s => 
-        s.type === 'text' ? (s as TextSegment).content : ''
-      ).join('')}`
-    ).join("\n") + " Task: " + userInput;
+    const apiMessages = messages.concat(userMessage).map(m => {
+      const baseMessage = {
+        role: m.role === 'user' ? 'user' : 
+              m.role === 'assistant' ? 'assistant' : 'system',
+        content: m.segments
+          .filter(s => s.type === 'text')
+          .map(s => (s as TextSegment).content)
+          .join('')
+      };
+
+      const toolCallSegments = m.segments.filter(s => s.type === 'tool_call') as ToolCallSegment[];
+      if (m.role === 'assistant' && toolCallSegments.length > 0) {
+        const toolCalls = toolCallSegments.map(segment => ({
+          id: segment.id,
+          type: 'function',
+          function: {
+            name: segment.name,
+            arguments: segment.data // Should be a JSON string
+          }
+        }));
+        
+        return {
+          ...baseMessage,
+          tool_calls: toolCalls
+        };
+      }
+
+      if (m.role === 'user' && toolCallSegments.length > 0 && toolCallSegments[0].result) {
+        const tool = toolCallSegments[0];
+        return {
+          role: 'tool',
+          content: tool.result || '',
+          tool_call_id: tool.id
+        };
+      }
+
+      return baseMessage;
+    });
     
     setMessages(prev => [...prev, userMessage]);
     setInput("");
@@ -138,7 +170,7 @@ export function AIChat() {
       const response = await fetch("/api/manul/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userInput, context }),
+        body: JSON.stringify({ messages: apiMessages }),
       });
       
       if (!response.ok) throw new Error(`Failed to get response: ${response.status}`);

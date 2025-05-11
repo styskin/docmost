@@ -87,21 +87,28 @@ export class ManulService {
     }
   }
 
-  async contextCall(context: string, task: string): Promise<ReadableStream<Uint8Array>> {
+  async contextCall(messages: { 
+    role: string; 
+    content: string;
+    tool_calls?: any[];
+    tool_call_id?: string;
+  }[]): Promise<ReadableStream<Uint8Array>> {
     try {
-      console.log('ManulService: Calling Manul API with context and task:', {
-        contextLength: context?.length || 0,
-        task
+      console.log('ManulService: Calling Manul API with messages:', {
+        messagesCount: messages?.length || 0,
+        hasToolCalls: messages.some(m => m.tool_calls && m.tool_calls.length > 0)
       });
       
       const url = `${process.env.MANUL_AGENTS_URL}/context_call`;
       console.log('ManulService: Using URL:', url);
       
       const body = {
-        context: context,
-        task: task,
+        messages: messages,
         stream: true
       };
+      
+      // Log the payload for debugging
+      console.log('ManulService: Sending payload to server:', JSON.stringify(body));
       
       const response = await fetch(url, {
         method: 'POST',

@@ -59,7 +59,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           
           if (isInline) {
             return (
-              <Text component="code" c="blue" bg="gray.0" px={5}>
+              <Text style={{ fontSize: "15px", lineHeight: 1.2 }} component="code" c="blue" bg="gray.0" px={5}>
                 {children}
               </Text>
             );

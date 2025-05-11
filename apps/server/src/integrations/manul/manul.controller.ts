@@ -6,7 +6,6 @@ import {
   HttpStatus,
   NotFoundException,
   Res,
-  StreamableFile,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 
@@ -27,22 +26,43 @@ export class ManulController {
   constructor(
     private readonly manulService: ManulService,
     private readonly pageRepo: PageRepo,
-
     private readonly importService: ImportService,
   ) {}
 
   @Post('query')
   async queryManul(
-    @Body() body: { context: string; query: string },
+    @Body() body: { 
+      messages: { 
+        role: string; 
+        content: string;
+        tool_calls?: any[];
+        tool_call_id?: string;
+      }[]
+    },
     @Res() res: FastifyReply
   ) {
     try {
-      console.log('ManulController: Processing query request:', body);
+      console.log('ManulController: Processing query request with message count:', body.messages?.length);
       
-      const stream = await this.manulService.contextCall(
-        body.context,
-        body.query
-      );
+      if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+        throw new HttpException(
+          'Missing required parameter: messages must be a non-empty array',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      
+      // Validate message format
+      for (const message of body.messages) {
+        if (!message.role || typeof message.content !== 'string') {
+          throw new HttpException(
+            'Invalid message format: each message must have role and content properties',
+            HttpStatus.BAD_REQUEST
+          );
+        }
+      }
+      
+      console.log('ManulController: Calling Manul API with messages:', body.messages);
+      const stream = await this.manulService.contextCall(body.messages);
       
       console.log('ManulController: Got stream response');
 
