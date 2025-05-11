@@ -27,8 +27,8 @@ export default function Aside() {
       title = "Table of contents";
       break;
     case "ai":
-      component = <AIChat />;
-      title = "AI Assistant";
+      component = <AIChat   />;
+      title = "Chat with AI";
       break;
     default:
       component = null;
@@ -36,10 +36,10 @@ export default function Aside() {
   }
 
   return (
-    <Box p="md">
+    <Box p={tab === "ai" ? "0" : "md"}>
       {component && (
         <>
-          <Text mb="md" fw={500}>
+          <Text mb="md" fw={500} px={tab === "ai" ? "md" : "0"}>
             {t(title)}
           </Text>
 

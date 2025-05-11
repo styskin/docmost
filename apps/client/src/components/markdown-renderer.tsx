@@ -1,4 +1,3 @@
-import React from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -34,18 +33,18 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
         // Override paragraph
         p: ({ children }) => (
-          <Text my="sm">{children}</Text>
+          <Text my="xs" style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</Text>
         ),
 
         // Override lists
         ul: ({ children }) => (
-          <List type="unordered" my="sm">{children}</List>
+          <List type="unordered" my="xs" style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</List>
         ),
         ol: ({ children }) => (
-          <List type="unordered" my="sm">{children}</List>
+          <List type="unordered" my="xs" style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</List>
         ),
         li: ({ children }) => (
-          <List.Item>{children}</List.Item>
+          <List.Item style={{ fontSize: "15px", lineHeight: 1.2 }}>{children}</List.Item>
         ),
 
         // Override code blocks with syntax highlighting

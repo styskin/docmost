@@ -1,272 +1,453 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Box, Button, ScrollArea, Stack, Text, TextInput, Group } from "@mantine/core";
-import { IconSend, IconWand } from "@tabler/icons-react";
+import { Box, Button, ScrollArea, Stack, Text, TextInput, Group, Collapse } from "@mantine/core";
+import { IconSend, IconTools, IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import { MarkdownRenderer } from "../../../components/markdown-renderer";
-import { ISuggestion } from "@/features/comment/types/comment.types";
-import { useAtomValue } from "jotai";
-import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms";
-import { useParams } from "react-router-dom";
-import { extractPageSlugId } from "@/lib";
 
 
 // Message type definition
 interface Message {
   id: string;
   role: "user" | "assistant";
+  segments: MessageSegment[];
+}
+
+// Message segment types
+type MessageSegment = TextSegment | ToolCallSegment;
+
+interface TextSegment {
+  type: "text";
   content: string;
 }
 
-// Editor with suggestion commands
-interface SuggestionCommands {
-  setSuggestionMode: (
-    suggestions: ISuggestion[] | undefined | null,
-    username: string,
-  ) => void;
-  unsetSuggestionMode: () => void;
+interface ToolCallSegment {
+  type: "tool_call";
+  id: string;
+  name: string;
+  data: string;
+  result?: string;
+  isOpen: boolean;
 }
 
-type EditorWithSuggestionCommands = {
-  commands: SuggestionCommands;
-};
-
 export function AIChat() {
-  // State management
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome-message",
       role: "assistant",
-      content: "Hi, I'm your AI assistant. How can I help you?",
+      segments: [{ type: 'text', content: "How can I help you?" }],
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [suggestions, setSuggestions] = useState<ISuggestion[]>([]);
-  const [suggestionMode, setSuggestionMode] = useState<boolean>(false);
+  const [currentAssistantMessage, setCurrentAssistantMessage] = useState<Message | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const editor = useAtomValue(pageEditorAtom) as EditorWithSuggestionCommands | null;
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
-  const { pageSlug } = useParams<{ pageSlug: string }>();
-  const pageId = pageSlug ? extractPageSlugId(pageSlug) : null;
-
-  // Function to request suggestions
-  const requestSuggestions = async (userInput: string) => {
-    try {
-      // Extract page ID and workspace ID from URL
-            
-      console.log("Requesting suggestions for page:", pageId);
-      
-      const response = await fetch("/api/manul/suggest", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          pageId,
-          prompt: userInput,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to get suggestions: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data.data.text;
-    } catch (error) {
-      console.error("Error fetching suggestions:", error);
-      return null;
+  const toggleToolCall = (messageId: string, toolId: string, event?: React.MouseEvent) => {
+    // Prevent auto-scroll when manually toggling tool calls
+    if (event) {
+      event.stopPropagation();
+      setShouldAutoScroll(false);
     }
+    
+    if (currentAssistantMessage && currentAssistantMessage.id === messageId) {
+      setCurrentAssistantMessage(prev => {
+        if (!prev) return prev;
+        
+        return {
+          ...prev,
+          segments: prev.segments.map(segment => {
+            if (segment.type === 'tool_call' && segment.id === toolId) {
+              return { ...segment, isOpen: !segment.isOpen };
+            }
+            return segment;
+          })
+        };
+      });
+      return;
+    }
+    
+    setMessages(prevMessages => 
+      prevMessages.map(message => {
+        if (message.id === messageId) {
+          return {
+            ...message,
+            segments: message.segments.map(segment => {
+              if (segment.type === 'tool_call' && segment.id === toolId) {
+                return { ...segment, isOpen: !segment.isOpen };
+              }
+              return segment;
+            })
+          };
+        }
+        return message;
+      })
+    );
   };
 
   // Auto-scroll to the bottom when new messages arrive or streaming content updates
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && shouldAutoScroll) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, streamingContent]);
+  }, [messages, currentAssistantMessage, shouldAutoScroll]);
+
+  // Re-enable auto-scrolling when new messages are added
+  useEffect(() => {
+    setShouldAutoScroll(true);
+  }, [messages.length]);
+
+  // Re-enable auto-scrolling when user is typing a new message
+  useEffect(() => {
+    if (input.trim().length > 0) {
+      setShouldAutoScroll(true);
+    }
+  }, [input]);
 
   // Submit handler that calls the server's Manul API
-  const handleSubmit = async (e: React.FormEvent, requestSuggestionsFlag = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const userInput = input.trim();
     if (!userInput || isLoading) return;
     
-    // Add user message to chat
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: userInput,
+      segments: [{ type: 'text', content: userInput }],
     };
     
-    const context = "Context: "  + messages.map(m => `${m.role}: ${m.content}`).join("\n") + " Task: " + userInput;
+    const context = "Context: " + messages.map(m => 
+      `${m.role}: ${m.segments.map(s => 
+        s.type === 'text' ? (s as TextSegment).content : ''
+      ).join('')}`
+    ).join("\n") + " Task: " + userInput;
     
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-    setStreamingContent(""); // Reset streaming content
+    setShouldAutoScroll(true);
+    
+    const newMessageId = Date.now().toString();
+    setCurrentAssistantMessage({
+      id: newMessageId,
+      role: "assistant",
+      segments: [],
+    });
 
     try {
-      let responseContent;
+      const response = await fetch("/api/manul/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: userInput, context }),
+      });
       
-      if (requestSuggestionsFlag) {
-        // Request suggestions instead of normal response
-        responseContent = await requestSuggestions(context);
-        if (!responseContent) {
-          responseContent = "Sorry, I couldn't generate suggestions for this content.";
-        }
+      if (!response.ok) throw new Error(`Failed to get response: ${response.status}`);
+      
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Response body is not readable');
+      
+      const decoder = new TextDecoder();
+      let partialChunk = '';
+      let currentToolId: string | null = null;
+      
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
         
-        // Add AI response to chat
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          role: "assistant",
-          content: responseContent,
-        };
+        const chunk = decoder.decode(value, { stream: true });
+        partialChunk += chunk;
         
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        // Use streaming API for regular chat responses
-        const response = await fetch("/api/manul/query", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query: userInput,
-            context: context,
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to get response: ${response.status}`);
-        }
-        
-        // Process the streaming response
-        const reader = response.body?.getReader();
-        if (!reader) throw new Error('Response body is not readable');
-        
-        const decoder = new TextDecoder();
-        let partialChunk = '';
-        let fullStreamingContent = '';
-        
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
+        while (partialChunk.includes('\n\n')) {
+          const eventEnd = partialChunk.indexOf('\n\n');
+          const eventData = partialChunk.substring(0, eventEnd);
+          partialChunk = partialChunk.substring(eventEnd + 2);
           
-          // Decode the chunk and append to partial chunk
-          const chunk = decoder.decode(value, { stream: true });
-          partialChunk += chunk;
-          
-          // Process any complete SSE messages in the partial chunk
-          while (partialChunk.includes('\n\n')) {
-            const eventEnd = partialChunk.indexOf('\n\n');
-            const eventData = partialChunk.substring(0, eventEnd);
-            partialChunk = partialChunk.substring(eventEnd + 2);
-            
-            if (eventData.startsWith('data: ')) {
-              try {
-                const jsonData = JSON.parse(eventData.slice(6));
-                if (jsonData.content) {
-                  fullStreamingContent += jsonData.content;
-                  setStreamingContent(fullStreamingContent);
-                }
-              } catch (e) {
-                console.error('Error parsing SSE data:', e);
+          if (eventData.startsWith('data: ')) {
+            try {
+              const jsonData = JSON.parse(eventData.slice(6));
+              console.log('STREAM DATA:', jsonData); // Debug the incoming data
+              
+
+              // HANDLE TOOL CALL CHUNKS: {"tool_call_chunks": [{"name": null, "args": "{\"workspace\"", "id": null, "index": 1, "type": "tool_call_chunk"}]}
+              if (jsonData.tool_call_chunks && Array.isArray(jsonData.tool_call_chunks)) {
+                setCurrentAssistantMessage(prev => {
+                  if (!prev) return prev;
+                  const segments = [...prev.segments];
+                  
+                  for (const chunk of jsonData.tool_call_chunks) {
+                    // New tool call with ID and name
+                    if (chunk.id && chunk.name) {
+                      currentToolId = chunk.id;
+                      segments.push({
+                        type: 'tool_call',
+                        id: chunk.id,
+                        name: chunk.name,
+                        data: chunk.args || '',
+                        isOpen: false
+                      } as ToolCallSegment);
+                    } 
+                    // Continuation of existing tool call
+                    else if (chunk.args !== undefined) {
+                      // If we have a current tool ID, try to find that specific tool call
+                      if (currentToolId) {
+                        for (let i = segments.length - 1; i >= 0; i--) {
+                          if (segments[i].type === 'tool_call' && (segments[i] as ToolCallSegment).id === currentToolId) {
+                            const toolSegment = segments[i] as ToolCallSegment;
+                            segments[i] = {
+                              ...toolSegment,
+                              data: toolSegment.data + (chunk.args || '')
+                            } as ToolCallSegment;
+                            break;
+                          }
+                        }
+                      } 
+                      // Otherwise find the most recent tool call
+                      else {
+                        for (let i = segments.length - 1; i >= 0; i--) {
+                          if (segments[i].type === 'tool_call') {
+                            const toolSegment = segments[i] as ToolCallSegment;
+                            segments[i] = {
+                              ...toolSegment,
+                              data: toolSegment.data + (chunk.args || '')
+                            } as ToolCallSegment;
+                            break;
+                          }
+                        }
+                      }
+                    }
+                  }
+                  
+                  console.log('UPDATED TOOL CHUNKS:', segments);
+                  return { ...prev, segments };
+                });
               }
+              
+              // HANDLE TEXT: {'content': [{'text': 'I', 'type': 'text', 'index': 0}]}
+              else if (jsonData.content && Array.isArray(jsonData.content)) {
+                setCurrentAssistantMessage(prev => {
+                  if (!prev) return prev;
+                  const segments = [...prev.segments];
+                  
+                  // Process text content
+                  for (const item of jsonData.content) {
+                    if (item.type === 'text' && item.text !== undefined) {
+                      // If already have a text segment, append to it
+                      if (segments.length > 0 && segments[segments.length - 1].type === 'text') {
+                        const lastSegment = segments[segments.length - 1] as TextSegment;
+                        segments[segments.length - 1] = {
+                          ...lastSegment,
+                          content: lastSegment.content + item.text
+                        };
+                      }
+                      // Otherwise create a new text segment
+                      else {
+                        segments.push({ 
+                          type: 'text', 
+                          content: item.text 
+                        });
+                      }
+                    }
+                    
+                    // Process tool_use content in the same update
+                    if (item.type === 'tool_use') {
+                      if (item.id && item.name) {
+                        currentToolId = item.id;
+                        segments.push({
+                          type: 'tool_call',
+                          id: item.id,
+                          name: item.name,
+                          data: item.partial_json || '',
+                          isOpen: false
+                        } as ToolCallSegment);
+                      } 
+                      else if (item.partial_json !== undefined) {
+                        for (let i = segments.length - 1; i >= 0; i--) {
+                          if (segments[i].type === 'tool_call') {
+                            const toolSegment = segments[i] as ToolCallSegment;
+                            segments[i] = {
+                              ...toolSegment,
+                              data: toolSegment.data + (item.partial_json || '')
+                            } as ToolCallSegment;
+                            break;
+                          }
+                        }
+                      }
+                    }
+                  }
+                  
+                  console.log('UPDATED SEGMENTS:', segments);
+                  return { ...prev, segments };
+                });
+              }
+              
+              // HANDLE TOOL RESPONSE: {"content": "[\n  {\n    "id": "0196...",...}]", "tool_call_id": "toolu_..."}
+              else if (jsonData.tool_call_id && jsonData.content) {
+                setCurrentAssistantMessage(prev => {
+                  if (!prev) return prev;
+                  
+                  const segments = [...prev.segments];
+                  for (let i = 0; i < segments.length; i++) {
+                    if (segments[i].type === 'tool_call' && (segments[i] as ToolCallSegment).id === jsonData.tool_call_id) {
+                      segments[i] = { 
+                        ...(segments[i] as ToolCallSegment), 
+                        result: jsonData.content 
+                      } as ToolCallSegment;
+                      break;
+                    }
+                  }
+                  
+                  console.log('UPDATED TOOL RESPONSE:', segments);
+                  return { ...prev, segments };
+                });
+              }
+              
+              // HANDLE ANY OTHER TEXT FORMAT AS FALLBACK
+              else if (jsonData.content && typeof jsonData.content === 'string') {
+                setCurrentAssistantMessage(prev => {
+                  if (!prev) return prev;
+                  const segments = [...prev.segments];
+                  
+                  if (segments.length > 0 && segments[segments.length - 1].type === 'text') {
+                    const lastSegment = segments[segments.length - 1] as TextSegment;
+                    segments[segments.length - 1] = {
+                      ...lastSegment,
+                      content: lastSegment.content + jsonData.content
+                    };
+                  } else {
+                    segments.push({ type: 'text', content: jsonData.content });
+                  }
+                  
+                  return { ...prev, segments };
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
             }
           }
         }
-        
-        // Once streaming is complete, add the full message to the chat
-        if (fullStreamingContent) {
-          const assistantMessage: Message = {
-            id: Date.now().toString(),
-            role: "assistant",
-            content: fullStreamingContent,
-          };
-          
-          setMessages(prev => [...prev, assistantMessage]);
-        }
       }
+      
+      setCurrentAssistantMessage(prev => {
+        if (!prev) return prev;
+        setMessages(messages => [...messages, prev]);
+        return null;
+      });
     } catch (error) {
       console.error("Error fetching AI response:", error);
       
-      // Add error message to chat with more details
       const errorMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: `Sorry, I encountered an error: ${error.message || "Unknown error"}`,
+        segments: [{ type: 'text', content: `Sorry, I encountered an error: ${error.message || "Unknown error"}` }],
       };
       
       setMessages(prev => [...prev, errorMessage]);
+      setCurrentAssistantMessage(null);
     } finally {
       setIsLoading(false);
-      setStreamingContent(""); // Clear streaming content after it's added to messages
     }
   };
 
+  // Render message segments
+  const renderSegments = (segments: MessageSegment[], messageId: string) => {
+    return segments.map((segment, index) => {
+      if (segment.type === 'text') {
+        return (
+          <Box key={index}>
+            <MarkdownRenderer content={(segment as TextSegment).content} />
+          </Box>
+        );
+      } else if (segment.type === 'tool_call') {
+        const toolSegment = segment as ToolCallSegment;
+        return (
+          <Box key={toolSegment.id} mt="xs" mb="xs" 
+            style={{ border: "1px solid var(--mantine-color-gray-3)", borderRadius: "4px", overflow: "hidden" }}>
+            <Group p="xs" onClick={(e) => toggleToolCall(messageId, toolSegment.id, e)} 
+              style={{ cursor: "pointer", background: "var(--mantine-color-gray-1)" }}>
+              <IconTools size={16} />
+              <Text size="sm" fw={500} style={{ flex: 1 }}>Tool call: {toolSegment.name}</Text>
+              {toolSegment.isOpen ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+            </Group>
+            <Collapse in={toolSegment.isOpen}>
+              <Box style={{ fontFamily: "monospace", background: "var(--mantine-color-gray-0)" }}>
+                <Box p="xs" style={{ borderBottom: toolSegment.result ? "1px solid var(--mantine-color-gray-3)" : "none" }}>
+                  <Text size="xs" fw={500} pb={2}>Arguments:</Text>
+                  <Text size="xs" style={{ wordBreak: "break-word", whiteSpace: "pre-wrap", lineHeight: 1.1 }}>{toolSegment.data}</Text>
+                </Box>
+                {toolSegment.result && (
+                  <Box p="xs">
+                    <Text size="xs" fw={500} pb={2}>Result:</Text>
+                    <Text size="xs" style={{ wordBreak: "break-word", whiteSpace: "pre-wrap", lineHeight: 1.1 }}>{toolSegment.result}</Text>
+                  </Box>
+                )}
+              </Box>
+            </Collapse>
+          </Box>
+        );
+      }
+      return null;
+    });
+  };
+
   return (
-    <Box style={{ display: "flex", flexDirection: "column", height: "85vh" }}>
+    <Box style={{ 
+      position: "absolute", 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0,
+      display: "flex", 
+      flexDirection: "column",
+      padding: "0"
+    }}>
       <ScrollArea
         style={{ flex: 1 }}
         scrollbarSize={5}
         type="scroll"
-        viewportRef={(ref) => {
-          scrollRef.current = ref;
-        }}
+        viewportRef={ref => { scrollRef.current = ref; }}
       >
-        <Stack gap="md" p="xs">
-          {messages.map((message) => (
-            <Box
-              key={message.id}
-              p="md"
-              style={{
-                background: message.role === "user" ? "var(--mantine-color-blue-0)" : "transparent",
-                borderRadius: "8px",
-                maxWidth: "100%",
-                wordBreak: "break-word",
-              }}
-            >
-              <Text size="sm" fw={500} mb={4}>
+        <Stack gap="xs" p="xs">
+          {messages.map(message => (
+            <Box key={message.id} p="xs" style={{
+              background: message.role === "user" ? "var(--mantine-color-blue-0)" : "transparent",
+              borderRadius: "8px",
+              maxWidth: "100%",
+              wordBreak: "break-word",
+            }}>
+              <Text size="xs" fw={500} mb={1} style={{ fontSize: "13px", lineHeight: 1.2 }}>
                 {message.role === "user" ? "You" : "AI Assistant"}
               </Text>
+              
               {message.role === "user" ? (
-                <Text size="sm">{message.content}</Text>
+                <Box mt="xs">
+                  <Text size="sm" style={{ fontSize: "15px", lineHeight: 1.2 }}>
+                    {(message.segments[0] as TextSegment).content}
+                  </Text> 
+                </Box>
               ) : (
-                <MarkdownRenderer content={message.content} />
+                renderSegments(message.segments, message.id)
               )}
             </Box>
           ))}
           
-          {/* Streaming content display */}
-          {streamingContent && (
-            <Box
-              p="md"
-              style={{
-                borderRadius: "8px",
-                maxWidth: "100%",
-                wordBreak: "break-word",
-              }}
-            >
-              <Text size="sm" fw={500} mb={4}>
+          {currentAssistantMessage && (
+            <Box p="xs" style={{ borderRadius: "8px", maxWidth: "100%", wordBreak: "break-word" }}>
+              <Text size="xs" fw={500} mb={1} style={{ fontSize: "13px", lineHeight: 1.2 }}>
                 AI Assistant
               </Text>
-              <MarkdownRenderer content={streamingContent} />
+              {renderSegments(currentAssistantMessage.segments, currentAssistantMessage.id)}
             </Box>
           )}
           
-          {isLoading && !streamingContent && (
-            <Box p="md">
-              <Text size="sm" c="dimmed">
-                AI is thinking...
-              </Text>
+          {isLoading && !currentAssistantMessage && (
+            <Box p="xs">
+              <Text size="sm" c="dimmed">AI is thinking...</Text>
             </Box>
           )}
         </Stack>
       </ScrollArea>
 
-      <Box p="md">
+      <Box p="md" style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
         <form onSubmit={handleSubmit} style={{ display: "flex" }}>
           <TextInput
             placeholder="Ask AI anything..."
@@ -275,54 +456,10 @@ export function AIChat() {
             disabled={isLoading}
             style={{ flex: 1 }}
           />
-          <Button
-            type="submit"
-            variant="light"
-            ml="xs"
-            disabled={isLoading || !input.trim()}
-          >
+          <Button type="submit" variant="light" ml="xs" disabled={isLoading || !input.trim()}>
             <IconSend size={18} />
           </Button>
-          <Button
-            variant="light"
-            ml="xs"
-            onClick={(e) => {
-              e.preventDefault();
-              handleSubmit(e, true);
-            }}
-            disabled={isLoading || !input.trim()}
-            title="Generate suggestions for the document"
-          >
-            <IconWand size={18} />
-          </Button>
         </form>
-        
-        {suggestions.length > 0 && (
-          <Box mt="md">
-            <Group justify="space-between">
-              <Text size="sm" fw={500}>Suggestions</Text>
-              <Button 
-                size="xs" 
-                variant="subtle"
-                onClick={() => {
-                  if (suggestionMode) {
-                    if (editor?.commands?.unsetSuggestionMode) {
-                      editor.commands.unsetSuggestionMode();
-                      setSuggestionMode(false);
-                    }
-                  } else {
-                    if (editor?.commands?.setSuggestionMode) {
-                      editor.commands.setSuggestionMode(suggestions, "AI Assistant");
-                      setSuggestionMode(true);
-                    }
-                  }
-                }}
-              >
-                {suggestionMode ? "Hide Suggestions" : "Show Suggestions"}
-              </Button>
-            </Group>
-          </Box>
-        )}
       </Box>
     </Box>
   );
