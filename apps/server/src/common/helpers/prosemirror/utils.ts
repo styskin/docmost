@@ -59,7 +59,6 @@ export function extractPageMentions(mentionList: MentionNode[]): MentionNode[] {
   return pageMentionList as MentionNode[];
 }
 
-
 export function getProsemirrorContent(content: any) {
   return (
     content ?? {

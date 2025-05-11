@@ -1,12 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { 
-  CreateDocumentTool, 
-  ListDocumentsTool, 
-  GetDocumentTool, 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import {
+  CreateDocumentTool,
+  ListDocumentsTool,
+  GetDocumentTool,
   ListSpacesTool,
-  ListWorkspacesTool
+  ListWorkspacesTool,
 } from './tools';
 
 @Injectable()
@@ -36,7 +36,9 @@ export class McpService implements OnModuleInit {
       this.listSpacesTool.register(this.server);
       this.listWorkspacesTool.register(this.server);
 
-      this.logger.log('MCP server initialized and ready for controller integration');
+      this.logger.log(
+        'MCP server initialized and ready for controller integration',
+      );
     } catch (error: any) {
       this.logger.error(`Failed to initialize MCP server: ${error.message}`);
     }
@@ -47,18 +49,21 @@ export class McpService implements OnModuleInit {
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
       });
-      
+
       res.raw.on('close', () => {
         this.logger.log('Request closed');
         transport.close();
       });
-      
+
       await this.server.connect(transport);
       await transport.handleRequest(req.raw, res.raw, body);
-      
+
       return true;
     } catch (error: any) {
-      this.logger.error(`Error handling MCP request: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error handling MCP request: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -69,8 +74,11 @@ export class McpService implements OnModuleInit {
         await this.server.close();
         this.logger.log(`MCP server stopped`);
       } catch (error: any) {
-        this.logger.error(`Error closing MCP server: ${error.message}`, error.stack);
+        this.logger.error(
+          `Error closing MCP server: ${error.message}`,
+          error.stack,
+        );
       }
     }
   }
-} 
+}

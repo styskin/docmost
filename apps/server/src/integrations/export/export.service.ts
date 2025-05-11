@@ -200,7 +200,8 @@ export class ExportService {
 
         if (includeAttachments) {
           await this.zipAttachments(updatedJsonContent, page.spaceId, folder);
-          updatedJsonContent = updateAttachmentUrlsToLocalPaths(updatedJsonContent);
+          updatedJsonContent =
+            updateAttachmentUrlsToLocalPaths(updatedJsonContent);
         }
 
         const pageTitle = getPageTitle(page.title);

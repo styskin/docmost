@@ -36,7 +36,9 @@ export class ListDocumentsTool {
       'list_documents',
       LIST_DOCUMENTS_TOOL_DESCRIPTION,
       {
-        space: z.string().describe('The slug of the space to list documents from'),
+        space: z
+          .string()
+          .describe('The slug of the space to list documents from'),
         workspace: z.string().describe('The ID of the workspace'),
       },
       async (args: any) => {
@@ -44,13 +46,21 @@ export class ListDocumentsTool {
           const { space, workspace } = args;
           if (!space || !workspace) {
             return {
-              content: [{ type: 'text', text: 'Missing required parameters: space or workspace' }],
+              content: [
+                {
+                  type: 'text',
+                  text: 'Missing required parameters: space or workspace',
+                },
+              ],
               isError: true,
             };
           }
 
           const workspaceId = workspace;
-          const spaceEntity = await this.spaceRepo.findBySlug(space, workspaceId);
+          const spaceEntity = await this.spaceRepo.findBySlug(
+            space,
+            workspaceId,
+          );
           if (!spaceEntity) {
             return {
               content: [{ type: 'text', text: `Space "${space}" not found` }],
@@ -72,21 +82,28 @@ export class ListDocumentsTool {
             parentId: doc.parentPageId,
           }));
 
-          this.logger.log(`Listed ${documentList.length} documents in space: ${space}`);
+          this.logger.log(
+            `Listed ${documentList.length} documents in space: ${space}`,
+          );
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(documentList, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(documentList, null, 2),
+              },
+            ],
           };
         } catch (error: any) {
-          this.logger.error(`Failed to list documents in space: ${error.message}`, error.stack);
+          this.logger.error(
+            `Failed to list documents in space: ${error.message}`,
+            error.stack,
+          );
           return {
             content: [{ type: 'text', text: `Error: ${error.message}` }],
             isError: true,
           };
         }
-      }
+      },
     );
   }
-} 
+}

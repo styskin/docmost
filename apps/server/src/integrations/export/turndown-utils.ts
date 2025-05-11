@@ -87,8 +87,12 @@ function preserveDetail(turndownService: TurndownService) {
       }
 
       const detailsContent = Array.from(node.childNodes)
-        .filter(child => child.nodeName !== 'SUMMARY')
-        .map(child => (child.nodeType === 1 ? turndownService.turndown((child as HTMLElement).outerHTML) : child.textContent))
+        .filter((child) => child.nodeName !== 'SUMMARY')
+        .map((child) =>
+          child.nodeType === 1
+            ? turndownService.turndown((child as HTMLElement).outerHTML)
+            : child.textContent,
+        )
         .join('');
 
       return `\n<details>\n${detailSummary}\n\n${detailsContent}\n\n</details>\n`;

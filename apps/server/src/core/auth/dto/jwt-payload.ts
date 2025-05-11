@@ -29,4 +29,3 @@ export type JwtAttachmentPayload = {
   workspaceId: string;
   type: 'attachment';
 };
-

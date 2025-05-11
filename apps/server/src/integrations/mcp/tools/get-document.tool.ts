@@ -25,59 +25,80 @@ A document object containing:
 export class GetDocumentTool {
   private readonly logger = new Logger('GetDocumentTool');
 
-  constructor(
-    private readonly pageRepo: PageRepo,
-  ) {}
+  constructor(private readonly pageRepo: PageRepo) {}
 
   register(server: McpServer) {
     server.tool(
       'get_document',
       GET_DOCUMENT_TOOL_DESCRIPTION,
       {
-        slugId: z.string().describe('The unique slug ID of the document to retrieve'),
+        slugId: z
+          .string()
+          .describe('The unique slug ID of the document to retrieve'),
       },
       async (args: any) => {
         try {
           const { slugId } = args;
           if (!slugId) {
             return {
-              content: [{ type: 'text', text: 'Missing required parameters: slugId or workspace' }],
+              content: [
+                {
+                  type: 'text',
+                  text: 'Missing required parameters: slugId or workspace',
+                },
+              ],
               isError: true,
             };
           }
 
-          const document = await this.pageRepo.findById(slugId, { includeContent: true });
+          const document = await this.pageRepo.findById(slugId, {
+            includeContent: true,
+          });
 
           if (!document) {
             return {
-              content: [{ type: 'text', text: `Document with slug ID "${slugId}" not found` }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Document with slug ID "${slugId}" not found`,
+                },
+              ],
               isError: true,
             };
           }
 
           this.logger.log(`Retrieved document with slug ID: ${slugId}`);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify({
-                id: document.id,
-                slugId: document.slugId,
-                title: document.title,
-                content: document.content,
-                textContent: document.textContent,
-                spaceId: document.spaceId,
-                workspaceId: document.workspaceId,
-              }, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    id: document.id,
+                    slugId: document.slugId,
+                    title: document.title,
+                    content: document.content,
+                    textContent: document.textContent,
+                    spaceId: document.spaceId,
+                    workspaceId: document.workspaceId,
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
           };
         } catch (error: any) {
-          this.logger.error(`Failed to get document by slug ID: ${error.message}`, error.stack);
+          this.logger.error(
+            `Failed to get document by slug ID: ${error.message}`,
+            error.stack,
+          );
           return {
             content: [{ type: 'text', text: `Error: ${error.message}` }],
             isError: true,
           };
         }
-      }
+      },
     );
   }
-} 
+}

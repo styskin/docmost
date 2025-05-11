@@ -22,9 +22,7 @@ An array of workspace objects, each containing:
 export class ListWorkspacesTool {
   private readonly logger = new Logger('ListWorkspacesTool');
 
-  constructor(
-    private readonly workspaceRepo: WorkspaceRepo,
-  ) {}
+  constructor(private readonly workspaceRepo: WorkspaceRepo) {}
 
   register(server: McpServer) {
     server.tool(
@@ -34,8 +32,8 @@ export class ListWorkspacesTool {
       async () => {
         try {
           const workspaces = await this.workspaceRepo.findAll();
-          
-          const workspaceList = workspaces.map(workspace => ({
+
+          const workspaceList = workspaces.map((workspace) => ({
             id: workspace.id,
             name: workspace.name,
             hostname: workspace.hostname,
@@ -45,19 +43,24 @@ export class ListWorkspacesTool {
 
           this.logger.log(`Listed ${workspaceList.length} workspaces`);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(workspaceList, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(workspaceList, null, 2),
+              },
+            ],
           };
         } catch (error: any) {
-          this.logger.error(`Failed to list workspaces: ${error.message}`, error.stack);
+          this.logger.error(
+            `Failed to list workspaces: ${error.message}`,
+            error.stack,
+          );
           return {
             content: [{ type: 'text', text: `Error: ${error.message}` }],
             isError: true,
           };
         }
-      }
+      },
     );
   }
-} 
+}

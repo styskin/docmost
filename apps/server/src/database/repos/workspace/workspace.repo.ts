@@ -167,7 +167,7 @@ export class WorkspaceRepo {
     const offset = opts?.offset || 0;
     const orderBy = opts?.orderBy || 'createdAt';
     const orderDirection = opts?.orderDirection || 'asc';
-    
+
     return await this.db
       .selectFrom('workspaces')
       .select(this.baseFields)

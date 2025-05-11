@@ -165,8 +165,16 @@ export class CreateDocumentTool {
       CREATE_DOCUMENT_TOOL_DESCRIPTION,
       {
         title: z.string().describe('The title for the new document.'),
-        content: z.string().describe('The content of the new document, as a stringified JSON YDoc.'),
-        space: z.string().describe('The slug of the space where the document will be created.'),
+        content: z
+          .string()
+          .describe(
+            'The content of the new document, as a stringified JSON YDoc.',
+          ),
+        space: z
+          .string()
+          .describe(
+            'The slug of the space where the document will be created.',
+          ),
         workspace: z.string().describe('The ID of the workspace.'),
       },
       async (args: any) => {
@@ -174,18 +182,26 @@ export class CreateDocumentTool {
           const { title, content, space, workspace } = args;
           if (!title || !content || !space || !workspace) {
             return {
-              content: [{ type: 'text', text: 'Missing required parameters: title, content, space, or workspace' }],
-              isError: true
+              content: [
+                {
+                  type: 'text',
+                  text: 'Missing required parameters: title, content, space, or workspace',
+                },
+              ],
+              isError: true,
             };
           }
-          
+
           const workspaceId = workspace;
-          const spaceEntity = await this.spaceRepo.findBySlug(space, workspaceId);
-          
+          const spaceEntity = await this.spaceRepo.findBySlug(
+            space,
+            workspaceId,
+          );
+
           if (!spaceEntity) {
             return {
               content: [{ type: 'text', text: `Space "${space}" not found` }],
-              isError: true
+              isError: true,
             };
           }
 
@@ -201,27 +217,38 @@ export class CreateDocumentTool {
             lastUpdatedById: AGENT_USER_ID,
           });
 
-          this.logger.log(`Created document with title: ${title} and ID: ${createdPage.id}`);
-          
+          this.logger.log(
+            `Created document with title: ${title} and ID: ${createdPage.id}`,
+          );
+
           return {
-            content: [{ 
-              type: 'text', 
-              text: JSON.stringify({
-                documentId: createdPage.id,
-                slugId: createdPage.slugId,
-                title: createdPage.title,
-                message: 'Document created successfully'
-              }, null, 2)
-            }]
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    documentId: createdPage.id,
+                    slugId: createdPage.slugId,
+                    title: createdPage.title,
+                    message: 'Document created successfully',
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
           };
         } catch (error: any) {
-          this.logger.error(`Failed to create document: ${error.message}`, error.stack);
+          this.logger.error(
+            `Failed to create document: ${error.message}`,
+            error.stack,
+          );
           return {
             content: [{ type: 'text', text: `Error: ${error.message}` }],
-            isError: true
+            isError: true,
           };
         }
-      }
+      },
     );
   }
-} 
+}

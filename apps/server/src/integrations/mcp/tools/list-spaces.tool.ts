@@ -22,9 +22,7 @@ An array of space objects, each containing:
 export class ListSpacesTool {
   private readonly logger = new Logger('ListSpacesTool');
 
-  constructor(
-    private readonly spaceRepo: SpaceRepo,
-  ) {}
+  constructor(private readonly spaceRepo: SpaceRepo) {}
 
   register(server: McpServer) {
     server.tool(
@@ -38,7 +36,9 @@ export class ListSpacesTool {
           const { workspace } = args;
           if (!workspace) {
             return {
-              content: [{ type: 'text', text: 'Missing required parameter: workspace' }],
+              content: [
+                { type: 'text', text: 'Missing required parameter: workspace' },
+              ],
               isError: true,
             };
           }
@@ -46,9 +46,9 @@ export class ListSpacesTool {
           const workspaceId = workspace;
           const spacesResult = await this.spaceRepo.getSpacesInWorkspace(
             workspaceId,
-            { page: 1, limit: 100, query: undefined }
+            { page: 1, limit: 100, query: undefined },
           );
-          
+
           const spaceList = spacesResult.items.map((space) => ({
             id: space.id,
             slug: space.slug,
@@ -58,19 +58,24 @@ export class ListSpacesTool {
 
           this.logger.log(`Listed ${spaceList.length} spaces in workspace`);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(spaceList, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(spaceList, null, 2),
+              },
+            ],
           };
         } catch (error: any) {
-          this.logger.error(`Failed to list spaces: ${error.message}`, error.stack);
+          this.logger.error(
+            `Failed to list spaces: ${error.message}`,
+            error.stack,
+          );
           return {
             content: [{ type: 'text', text: `Error: ${error.message}` }],
             isError: true,
           };
         }
-      }
+      },
     );
   }
-} 
+}

@@ -58,9 +58,16 @@ export class ImportService {
       this.logger.error(message);
       throw new BadRequestException(message);
     }
-    const { title, prosemirrorJson } = this.extractTitleAndRemoveHeading(prosemirrorState);
+    const { title, prosemirrorJson } =
+      this.extractTitleAndRemoveHeading(prosemirrorState);
     const pageTitle = title || fileName;
-    return this.importJson(pageTitle, prosemirrorState, userId, spaceId, workspaceId);
+    return this.importJson(
+      pageTitle,
+      prosemirrorState,
+      userId,
+      spaceId,
+      workspaceId,
+    );
   }
 
   async importJson(
@@ -70,7 +77,6 @@ export class ImportService {
     spaceId: string,
     workspaceId: string,
   ): Promise<void> {
-  
     let createdPage = null;
     if (prosemirrorJson) {
       try {
@@ -98,7 +104,7 @@ export class ImportService {
       }
     }
 
-    console.log("Page created:", createdPage);
+    console.log('Page created:', createdPage);
     return createdPage;
   }
 

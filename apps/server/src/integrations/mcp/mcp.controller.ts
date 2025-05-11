@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Delete, Req, Res, Body, HttpStatus, HttpException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Req,
+  Res,
+  Body,
+  HttpStatus,
+  HttpException,
+} from '@nestjs/common';
 import { McpService } from './mcp.service';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Logger } from '@nestjs/common';
@@ -19,7 +29,10 @@ export class McpController {
       await this.mcpService.handleMcpRequest(req, res, body);
       // The response is handled by the StreamableHTTPServerTransport
     } catch (error: any) {
-      this.logger.error(`Error in MCP controller: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error in MCP controller: ${error.message}`,
+        error.stack,
+      );
       if (!res.sent) {
         res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
           jsonrpc: '2.0',
@@ -58,4 +71,4 @@ export class McpController {
       id: null,
     });
   }
-} 
+}

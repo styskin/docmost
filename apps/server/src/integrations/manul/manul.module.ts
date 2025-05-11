@@ -7,7 +7,7 @@ import { ImportModule } from '../import/import.module';
 @Module({
   imports: [DatabaseModule, ImportModule],
   controllers: [ManulController],
-  providers: [ManulService, ],
+  providers: [ManulService],
   exports: [ManulService],
 })
 export class ManulModule {}
