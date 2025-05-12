@@ -5,7 +5,7 @@ import {
   ScrollArea,
   Stack,
   Text,
-  TextInput,
+  Textarea,
   Group,
   Collapse,
 } from "@mantine/core";
@@ -653,12 +653,14 @@ export function AIChat() {
         style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}
       >
         <form onSubmit={handleSubmit} style={{ display: "flex" }}>
-          <TextInput
+          <Textarea
             placeholder="Ask AI anything..."
             value={input}
             onChange={(e) => setInput(e.currentTarget.value)}
             disabled={isLoading}
             style={{ flex: 1 }}
+            autosize
+            minRows={4}
           />
           <Button
             type="submit"
