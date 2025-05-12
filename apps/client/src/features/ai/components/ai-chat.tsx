@@ -14,12 +14,72 @@ import {
   IconTools,
   IconChevronDown,
   IconChevronRight,
+  IconMicrophone,
+  IconMicrophoneOff,
 } from "@tabler/icons-react";
 import { MarkdownRenderer } from "../../../components/markdown-renderer";
 import { useAtom } from "jotai";
 import { workspaceAtom } from "@/features/user/atoms/current-user-atom";
 import { usePageQuery } from "@/features/page/queries/page-query";
 import { extractPageSlugId } from "@/lib";
+
+// Add Web Speech API type declarations
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+  interpretation: any;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionError extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onaudioend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onaudiostart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionError) => any) | null;
+  onnomatch: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onsoundend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onsoundstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onspeechend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onspeechstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
 
 // Message type definition
 interface Message {
@@ -71,6 +131,8 @@ export function AIChat() {
     useState<Message | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const toggleToolCall = (
     messageId: string,
@@ -137,11 +199,95 @@ export function AIChat() {
     }
   }, [input]);
 
+  useEffect(() => {
+    // Initialize speech recognition
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true; // Keep continuous for longer phrases
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+        // Combine all results for the current utterance
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        
+        setInput(transcript);
+
+        // Check if the *last* result is final
+        const lastResult = event.results[event.results.length - 1];
+        if (lastResult.isFinal && transcript.trim()) {
+          // Submit the form
+          const formEvent = new Event('submit', { cancelable: true, bubbles: true });
+          const form = document.querySelector('form'); 
+          if (form) {
+            form.dispatchEvent(formEvent);
+            // Stop recognition to clear its internal state
+            recognitionRef.current?.stop(); 
+          }
+          // Note: Input clearing is handled by handleSubmit now
+        }
+      };
+
+      recognitionRef.current.onerror = (event: SpeechRecognitionError) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false); // Turn off listening state on error
+      };
+
+      recognitionRef.current.onend = () => {
+        // Only restart if we are *still* supposed to be listening
+        // This handles the case where stop() was called manually or after submission
+        if (isListening) {
+          try {
+            // Start a fresh recognition instance
+            recognitionRef.current?.start();
+          } catch (error) {
+            console.error('Error restarting speech recognition:', error);
+            // If restarting fails, ensure we update the state
+            setIsListening(false); 
+          }
+        }
+      };
+    }
+
+    return () => {
+      // Ensure recognition is stopped when the component unmounts
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isListening]); // Depend only on isListening
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      console.error('Speech recognition is not supported in this browser');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setIsListening(false);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const userInput = input.trim();
     if (!userInput || isLoading) return;
+
+    // Clear input immediately after grabbing the value for submission
+    setInput(""); 
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -208,7 +354,6 @@ export function AIChat() {
     const messagesWithSystem = [systemMessage, ...apiMessages];
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
     setIsLoading(true);
     setShouldAutoScroll(true);
 
@@ -462,6 +607,19 @@ export function AIChat() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Check if Enter is pressed without modifier keys
+    if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      handleSubmit(e as unknown as React.FormEvent);
+    }
+    // Check if Cmd+Enter (Mac) or Ctrl+Enter (Windows) is pressed
+    else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      // Allow default behavior (new line)
+      return;
+    }
+  };
+
   // Render message segments
   const renderSegments = (segments: MessageSegment[], messageId: string) => {
     return segments.map((segment, index) => {
@@ -650,26 +808,44 @@ export function AIChat() {
 
       <Box
         p="md"
-        style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}
+        style={{ 
+          borderTop: "1px solid var(--mantine-color-gray-2)",
+          width: "100%"
+        }}
       >
-        <form onSubmit={handleSubmit} style={{ display: "flex" }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", gap: "8px", width: "100%" }}>
           <Textarea
-            placeholder="Ask AI anything..."
+            placeholder="Ask AI anything... (Press Enter to send, Cmd/Ctrl+Enter for new line)"
             value={input}
             onChange={(e) => setInput(e.currentTarget.value)}
+            onKeyDown={handleKeyDown}
             disabled={isLoading}
-            style={{ flex: 1 }}
+            style={{ flex: 1, width: "100%" }}
             autosize
             minRows={4}
           />
-          <Button
-            type="submit"
-            variant="light"
-            ml="xs"
-            disabled={isLoading || !input.trim()}
-          >
-            <IconSend size={18} />
-          </Button>
+          <Stack gap="xs" style={{ justifyContent: "center" }}>
+            <Button
+              type="button"
+              variant="light"
+              color={isListening ? "red" : "blue"}
+              onClick={toggleListening}
+              disabled={isLoading}
+              size="xs"
+              px="xs"
+            >
+              {isListening ? <IconMicrophoneOff size={16} /> : <IconMicrophone size={16} />}
+            </Button>
+            <Button
+              type="submit"
+              variant="light"
+              disabled={isLoading || !input.trim()}
+              size="xs"
+              px="xs"
+            >
+              <IconSend size={16} />
+            </Button>
+          </Stack>
         </form>
       </Box>
     </Box>
