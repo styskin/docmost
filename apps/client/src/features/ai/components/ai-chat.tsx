@@ -16,6 +16,10 @@ import {
   IconChevronRight,
 } from "@tabler/icons-react";
 import { MarkdownRenderer } from "../../../components/markdown-renderer";
+import { useAtom } from "jotai";
+import { workspaceAtom } from "@/features/user/atoms/current-user-atom";
+import { usePageQuery } from "@/features/page/queries/page-query";
+import { extractPageSlugId } from "@/lib";
 
 // Message type definition
 interface Message {
@@ -42,6 +46,18 @@ interface ToolCallSegment {
 }
 
 export function AIChat() {
+  // Get current context
+  const [workspace] = useAtom(workspaceAtom);
+  const pathParts = window.location.pathname.split("/");
+  const pageSlugIndex = pathParts.indexOf("p") + 1;
+  const pageSlug =
+    pageSlugIndex > 0 && pageSlugIndex < pathParts.length
+      ? pathParts[pageSlugIndex]
+      : null;
+  const pageId = pageSlug ? extractPageSlugId(pageSlug) : null;
+  const { data: currentPage } = usePageQuery({ pageId });
+
+  // Conversation state
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome-message",
@@ -182,6 +198,15 @@ export function AIChat() {
       return baseMessage;
     });
 
+    const systemMessage = {
+      role: "system",
+      content: `Current context:
+      - workspaceId: ${workspace?.id},
+      - spaceSlug: ${currentPage?.space?.slug},
+      - documentSlug: ${currentPage?.slugId || pageSlug}`,
+    };
+    const messagesWithSystem = [systemMessage, ...apiMessages];
+
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -198,7 +223,7 @@ export function AIChat() {
       const response = await fetch("/api/manul/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: messagesWithSystem }),
       });
 
       if (!response.ok)
