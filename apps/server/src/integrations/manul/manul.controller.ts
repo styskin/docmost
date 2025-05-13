@@ -4,30 +4,17 @@ import {
   Post,
   HttpException,
   HttpStatus,
-  NotFoundException,
   Res,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 
-import { ImportService } from '../import/import.service';
 import { ManulService } from './manul.service';
-import { PageRepo } from '@docmost/db/repos/page/page.repo';
-import { JSONContent } from '@tiptap/core';
 
 export const AGENT_USER_ID = '00000000-0000-7000-8000-000000000000';
 
-import {
-  jsonToText,
-  sanitizeTiptapJson,
-} from '../../collaboration/collaboration.util';
-
 @Controller('manul')
 export class ManulController {
-  constructor(
-    private readonly manulService: ManulService,
-    private readonly pageRepo: PageRepo,
-    private readonly importService: ImportService,
-  ) {}
+  constructor(private readonly manulService: ManulService) {}
 
   @Post('query')
   async queryManul(
@@ -139,70 +126,6 @@ export class ManulController {
           message: error instanceof Error ? error.message : 'Unknown error',
         });
       }
-    }
-  }
-
-  @Post('suggest')
-  async suggestManul(@Body() body: { pageId: string; prompt: string }) {
-    try {
-      const page = await this.pageRepo.findById(body.pageId, {
-        includeContent: true,
-      });
-
-      if (!page) {
-        throw new NotFoundException('Page not found');
-      }
-
-      // Get all ancestors of the page (excluding the page itself)
-      const pageHierarchy = await this.pageRepo.getPageAncestors(
-        body.pageId,
-        true,
-      );
-
-      // Build a markdown string with all pages in the hierarchy
-      let combinedMarkdown = '';
-
-      // Process pages in reverse order (from root to current page)
-      for (const hierarchyPage of pageHierarchy.reverse()) {
-        // Add page title as heading
-        combinedMarkdown += `# ${hierarchyPage.title || 'Untitled'}\n\n`;
-
-        // Add page content if it exists
-        // content might be missing in the database schema response
-        const pageContent = hierarchyPage['content'];
-        if (pageContent) {
-          const sanitizedContent = sanitizeTiptapJson(
-            pageContent as JSONContent,
-          );
-          const pageMarkdown = sanitizedContent
-            ? jsonToText(sanitizedContent)
-            : '';
-          combinedMarkdown += `${pageMarkdown}\n\n`;
-        }
-      }
-      const sanitizedContent = sanitizeTiptapJson(page.content as JSONContent);
-      const response = await this.manulService.suggest(
-        combinedMarkdown,
-        JSON.stringify(sanitizedContent),
-        body.prompt,
-      );
-      this.importService.importJson(
-        page.title + '_agent',
-        response.doc,
-        AGENT_USER_ID,
-        page.spaceId,
-        page.workspaceId,
-      );
-      return response;
-    } catch (error) {
-      console.error('Error', error);
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException(
-        'Failed to process suggestion',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
     }
   }
 }
