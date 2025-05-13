@@ -83,7 +83,13 @@
     "socket.io": "^4.8.1",
     "stripe": "^17.5.0",
     "ws": "^8.18.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@nestjs/swagger": "^7.3.1",
+    "@prisma/client": "^5.14.0",
+    "@sentry/node": "^8.4.0",
+    "openai": "^4.98.0",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
