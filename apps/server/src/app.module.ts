@@ -18,6 +18,7 @@ import { SecurityModule } from './integrations/security/security.module';
 import { TelemetryModule } from './integrations/telemetry/telemetry.module';
 import { ManulModule } from './integrations/manul/manul.module';
 import { McpModule } from './integrations/mcp/mcp.module';
+import { TtsModule } from './integrations/tts/tts.module';
 
 const enterpriseModules = [];
 try {
@@ -47,6 +48,7 @@ try {
     McpModule,
     ImportModule,
     ExportModule,
+    TtsModule,
     StorageModule.forRootAsync({
       imports: [EnvironmentModule],
     }),

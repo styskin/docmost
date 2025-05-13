@@ -22,6 +22,7 @@ import { useAtom } from "jotai";
 import { workspaceAtom } from "@/features/user/atoms/current-user-atom";
 import { usePageQuery } from "@/features/page/queries/page-query";
 import { extractPageSlugId } from "@/lib";
+import { ttsPlayer } from "../utils/tts-player";
 
 // Add Web Speech API type declarations
 interface SpeechRecognitionEvent extends Event {
@@ -133,6 +134,7 @@ export function AIChat() {
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [isRestartingRecognition, setIsRestartingRecognition] = useState(false);
 
   const toggleToolCall = (
     messageId: string,
@@ -196,6 +198,7 @@ export function AIChat() {
   useEffect(() => {
     if (input.trim().length > 0) {
       setShouldAutoScroll(true);
+      ttsPlayer.stop(); // Stop TTS when user starts typing
     }
   }, [input]);
 
@@ -219,6 +222,7 @@ export function AIChat() {
         // Check if the *last* result is final
         const lastResult = event.results[event.results.length - 1];
         if (lastResult.isFinal && transcript.trim()) {
+          console.log('Final transcript received, submitting form');
           // Submit the form
           const formEvent = new Event('submit', { cancelable: true, bubbles: true });
           const form = document.querySelector('form'); 
@@ -233,32 +237,83 @@ export function AIChat() {
 
       recognitionRef.current.onerror = (event: SpeechRecognitionError) => {
         console.error('Speech recognition error:', event.error);
-        setIsListening(false); // Turn off listening state on error
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          console.log('Attempting to restart speech recognition after error:', event.error);
+          // Attempt to restart listening if it was not manually stopped
+          if (isListening && !isRestartingRecognition) {
+            safelyRestartRecognition();
+          }
+        } else {
+          setIsListening(false); // Turn off listening state on other errors
+        }
       };
 
       recognitionRef.current.onend = () => {
+        console.log('Speech recognition ended');
         // Only restart if we are *still* supposed to be listening
         // This handles the case where stop() was called manually or after submission
-        if (isListening) {
-          try {
-            // Start a fresh recognition instance
-            recognitionRef.current?.start();
-          } catch (error) {
-            console.error('Error restarting speech recognition:', error);
-            // If restarting fails, ensure we update the state
-            setIsListening(false); 
-          }
+        if (isListening && !isRestartingRecognition) {
+          console.log('Restarting speech recognition from onend');
+          safelyRestartRecognition();
         }
       };
     }
 
+    // Set TTS playback complete callback
+    ttsPlayer.setOnPlaybackComplete(() => {
+      console.log('TTS playback complete');
+      
+      // Use a slight delay before restarting speech recognition
+      // This ensures the audio context has fully finished
+      setTimeout(() => {
+        console.log('Attempting to restart speech recognition after TTS');
+        
+        // Only try to restart if we're not already in the process of restarting
+        if (!isRestartingRecognition) {
+          safelyRestartRecognition();
+        }
+      }, 300);
+    });
+
     return () => {
       // Ensure recognition is stopped when the component unmounts
       if (recognitionRef.current) {
+        console.log('Stopping speech recognition on component unmount');
         recognitionRef.current.stop();
       }
     };
-  }, [isListening]); // Depend only on isListening
+  }, [isListening, isRestartingRecognition]); // Include isRestartingRecognition in dependencies
+  
+  const safelyRestartRecognition = () => {
+    if (isRestartingRecognition || !recognitionRef.current) return;
+    
+    setIsRestartingRecognition(true);
+    
+    try {
+      // First stop the recognition
+      recognitionRef.current.stop();
+      
+      // After a delay, try to start it again
+      setTimeout(() => {
+        try {
+          if (recognitionRef.current) {
+            recognitionRef.current.start();
+            console.log('Speech recognition restarted successfully');
+            setIsListening(true);
+          }
+        } catch (error) {
+          console.error('Error starting speech recognition:', error);
+          setIsListening(false);
+        } finally {
+          setIsRestartingRecognition(false);
+        }
+      }, 200);
+    } catch (error) {
+      console.error('Error stopping speech recognition before restart:', error);
+      setIsListening(false);
+      setIsRestartingRecognition(false);
+    }
+  };
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
@@ -266,16 +321,26 @@ export function AIChat() {
       return;
     }
 
+    if (isRestartingRecognition) {
+      console.log('Cannot toggle while restarting recognition, please wait');
+      return;
+    }
+
     if (isListening) {
+      console.log('Stopping listening and TTS');
       recognitionRef.current.stop();
       setIsListening(false);
+      ttsPlayer.disable(); // Disable TTS when stopping STT
     } else {
       try {
+        console.log('Starting listening and enabling TTS');
         recognitionRef.current.start();
         setIsListening(true);
+        ttsPlayer.enable(); // Enable TTS when starting STT
       } catch (error) {
         console.error('Error starting speech recognition:', error);
         setIsListening(false);
+        ttsPlayer.disable(); // Ensure TTS is disabled if start fails
       }
     }
   };
@@ -283,11 +348,21 @@ export function AIChat() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Check if STT was active when this request was initiated
+    const playResponseTTS = isListening;
+
     const userInput = input.trim();
     if (!userInput || isLoading) return;
 
     // Clear input immediately after grabbing the value for submission
     setInput(""); 
+
+    // If the user submitted via STT, stop listening now
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      // ttsPlayer.disable() will be called due to setIsListening(false) triggering the useEffect or toggleListening logic indirectly
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -464,10 +539,12 @@ export function AIChat() {
                 setCurrentAssistantMessage((prev) => {
                   if (!prev) return prev;
                   const segments = [...prev.segments];
+                  let textChunkForTTS = "";
 
                   // Process text content
                   for (const item of jsonData.content) {
                     if (item.type === "text" && item.text !== undefined) {
+                      textChunkForTTS += item.text;
                       // If already have a text segment, append to it
                       if (
                         segments.length > 0 &&
@@ -514,6 +591,12 @@ export function AIChat() {
                           }
                         }
                       }
+                    }
+                  }
+
+                  if (textChunkForTTS) {
+                    if (playResponseTTS) {
+                      ttsPlayer.addText(textChunkForTTS);
                     }
                   }
 
@@ -570,6 +653,10 @@ export function AIChat() {
                   } else {
                     segments.push({ type: "text", content: jsonData.content });
                   }
+                  
+                  if (playResponseTTS) {
+                    ttsPlayer.addText(jsonData.content);
+                  }
 
                   return { ...prev, segments };
                 });
@@ -584,6 +671,9 @@ export function AIChat() {
       setCurrentAssistantMessage((prev) => {
         if (!prev) return prev;
         setMessages((messages) => [...messages, prev]);
+        if (playResponseTTS) {
+          ttsPlayer.finalizeStream(); // Finalize TTS stream only if it was played
+        }
         return null;
       });
     } catch (error) {
@@ -602,6 +692,8 @@ export function AIChat() {
 
       setMessages((prev) => [...prev, errorMessage]);
       setCurrentAssistantMessage(null);
+      // Don't finalize here if it wasn't playing
+      // ttsPlayer state (enabled/disabled) is managed by isListening state now.
     } finally {
       setIsLoading(false);
     }
