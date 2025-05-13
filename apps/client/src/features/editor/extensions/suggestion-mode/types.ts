@@ -5,4 +5,4 @@ export interface ISuggestion {
   reason: string;
   textBefore: string;
   textAfter: string;
-} 
+}

@@ -24,6 +24,7 @@ import { workspaceAtom } from "@/features/user/atoms/current-user-atom";
 import { usePageQuery } from "@/features/page/queries/page-query";
 import { extractPageSlugId } from "@/lib";
 import { ttsPlayer } from "../utils/tts-player";
+import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms";
 
 // Add Web Speech API type declarations
 interface SpeechRecognitionEvent extends Event {
@@ -63,9 +64,13 @@ interface SpeechRecognition extends EventTarget {
   onaudioend: ((this: SpeechRecognition, ev: Event) => any) | null;
   onaudiostart: ((this: SpeechRecognition, ev: Event) => any) | null;
   onend: ((this: SpeechRecognition, ev: Event) => any) | null;
-  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionError) => any) | null;
+  onerror:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionError) => any)
+    | null;
   onnomatch: ((this: SpeechRecognition, ev: Event) => any) | null;
-  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onresult:
+    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any)
+    | null;
   onsoundend: ((this: SpeechRecognition, ev: Event) => any) | null;
   onsoundstart: ((this: SpeechRecognition, ev: Event) => any) | null;
   onspeechend: ((this: SpeechRecognition, ev: Event) => any) | null;
@@ -83,14 +88,12 @@ declare global {
   }
 }
 
-// Message type definition
 interface Message {
   id: string;
   role: "user" | "assistant";
   segments: MessageSegment[];
 }
 
-// Message segment types
 type MessageSegment = TextSegment | ToolCallSegment;
 
 interface TextSegment {
@@ -119,6 +122,9 @@ export function AIChat() {
   const pageId = pageSlug ? extractPageSlugId(pageSlug) : null;
   const { data: currentPage } = usePageQuery({ pageId });
 
+  // Get access to the main document editor
+  const [mainEditor] = useAtom(pageEditorAtom);
+
   // Conversation state
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -136,6 +142,16 @@ export function AIChat() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [isRestartingRecognition, setIsRestartingRecognition] = useState(false);
+
+  // Check and apply pending suggestion diff calls when editor becomes available
+  const [pendingSuggestions, setPendingSuggestions] = useState<
+    {
+      toolCallId: string;
+      name: string;
+      data: string;
+      result?: string;
+    }[]
+  >([]);
 
   const toggleToolCall = (
     messageId: string,
@@ -205,8 +221,9 @@ export function AIChat() {
 
   useEffect(() => {
     // Initialize speech recognition
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true; // Keep continuous for longer phrases
       recognitionRef.current.interimResults = true;
@@ -217,29 +234,35 @@ export function AIChat() {
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           transcript += event.results[i][0].transcript;
         }
-        
+
         setInput(transcript);
 
         // Check if the *last* result is final
         const lastResult = event.results[event.results.length - 1];
         if (lastResult.isFinal && transcript.trim()) {
-          console.log('Final transcript received, submitting form');
+          console.log("Final transcript received, submitting form");
           // Submit the form
-          const formEvent = new Event('submit', { cancelable: true, bubbles: true });
-          const form = document.querySelector('form'); 
+          const formEvent = new Event("submit", {
+            cancelable: true,
+            bubbles: true,
+          });
+          const form = document.querySelector("form");
           if (form) {
             form.dispatchEvent(formEvent);
             // Stop recognition to clear its internal state
-            recognitionRef.current?.stop(); 
+            recognitionRef.current?.stop();
           }
           // Note: Input clearing is handled by handleSubmit now
         }
       };
 
       recognitionRef.current.onerror = (event: SpeechRecognitionError) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'no-speech' || event.error === 'aborted') {
-          console.log('Attempting to restart speech recognition after error:', event.error);
+        console.error("Speech recognition error:", event.error);
+        if (event.error === "no-speech" || event.error === "aborted") {
+          console.log(
+            "Attempting to restart speech recognition after error:",
+            event.error,
+          );
           // Attempt to restart listening if it was not manually stopped
           if (isListening && !isRestartingRecognition) {
             safelyRestartRecognition();
@@ -250,11 +273,11 @@ export function AIChat() {
       };
 
       recognitionRef.current.onend = () => {
-        console.log('Speech recognition ended');
+        console.log("Speech recognition ended");
         // Only restart if we are *still* supposed to be listening
         // This handles the case where stop() was called manually or after submission
         if (isListening && !isRestartingRecognition) {
-          console.log('Restarting speech recognition from onend');
+          console.log("Restarting speech recognition from onend");
           safelyRestartRecognition();
         }
       };
@@ -262,13 +285,13 @@ export function AIChat() {
 
     // Set TTS playback complete callback
     ttsPlayer.setOnPlaybackComplete(() => {
-      console.log('TTS playback complete');
-      
+      console.log("TTS playback complete");
+
       // Use a slight delay before restarting speech recognition
       // This ensures the audio context has fully finished
       setTimeout(() => {
-        console.log('Attempting to restart speech recognition after TTS');
-        
+        console.log("Attempting to restart speech recognition after TTS");
+
         // Only try to restart if we're not already in the process of restarting
         if (!isRestartingRecognition) {
           safelyRestartRecognition();
@@ -279,38 +302,38 @@ export function AIChat() {
     return () => {
       // Ensure recognition is stopped when the component unmounts
       if (recognitionRef.current) {
-        console.log('Stopping speech recognition on component unmount');
+        console.log("Stopping speech recognition on component unmount");
         recognitionRef.current.stop();
       }
     };
   }, [isListening, isRestartingRecognition]); // Include isRestartingRecognition in dependencies
-  
+
   const safelyRestartRecognition = () => {
     if (isRestartingRecognition || !recognitionRef.current) return;
-    
+
     setIsRestartingRecognition(true);
-    
+
     try {
       // First stop the recognition
       recognitionRef.current.stop();
-      
+
       // After a delay, try to start it again
       setTimeout(() => {
         try {
           if (recognitionRef.current) {
             recognitionRef.current.start();
-            console.log('Speech recognition restarted successfully');
+            console.log("Speech recognition restarted successfully");
             setIsListening(true);
           }
         } catch (error) {
-          console.error('Error starting speech recognition:', error);
+          console.error("Error starting speech recognition:", error);
           setIsListening(false);
         } finally {
           setIsRestartingRecognition(false);
         }
       }, 200);
     } catch (error) {
-      console.error('Error stopping speech recognition before restart:', error);
+      console.error("Error stopping speech recognition before restart:", error);
       setIsListening(false);
       setIsRestartingRecognition(false);
     }
@@ -318,28 +341,28 @@ export function AIChat() {
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
-      console.error('Speech recognition is not supported in this browser');
+      console.error("Speech recognition is not supported in this browser");
       return;
     }
 
     if (isRestartingRecognition) {
-      console.log('Cannot toggle while restarting recognition, please wait');
+      console.log("Cannot toggle while restarting recognition, please wait");
       return;
     }
 
     if (isListening) {
-      console.log('Stopping listening and TTS');
+      console.log("Stopping listening and TTS");
       recognitionRef.current.stop();
       setIsListening(false);
       ttsPlayer.disable(); // Disable TTS when stopping STT
     } else {
       try {
-        console.log('Starting listening and enabling TTS');
+        console.log("Starting listening and enabling TTS");
         recognitionRef.current.start();
         setIsListening(true);
         ttsPlayer.enable(); // Enable TTS when starting STT
       } catch (error) {
-        console.error('Error starting speech recognition:', error);
+        console.error("Error starting speech recognition:", error);
         setIsListening(false);
         ttsPlayer.disable(); // Ensure TTS is disabled if start fails
       }
@@ -356,13 +379,11 @@ export function AIChat() {
     if (!userInput || isLoading) return;
 
     // Clear input immediately after grabbing the value for submission
-    setInput(""); 
+    setInput("");
 
-    // If the user submitted via STT, stop listening now
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
-      // ttsPlayer.disable() will be called due to setIsListening(false) triggering the useEffect or toggleListening logic indirectly
     }
 
     const userMessage: Message = {
@@ -629,6 +650,9 @@ export function AIChat() {
                   console.log("UPDATED TOOL RESPONSE:", segments);
                   return { ...prev, segments };
                 });
+
+                // Process the tool response if needed (e.g., for suggest_diff)
+                handleToolResponse(jsonData.tool_call_id, jsonData.content);
               }
 
               // HANDLE ANY OTHER TEXT FORMAT AS FALLBACK
@@ -654,7 +678,7 @@ export function AIChat() {
                   } else {
                     segments.push({ type: "text", content: jsonData.content });
                   }
-                  
+
                   if (playResponseTTS) {
                     ttsPlayer.addText(jsonData.content);
                   }
@@ -702,16 +726,171 @@ export function AIChat() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Check if Enter is pressed without modifier keys
-    if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey &&
+      !e.altKey &&
+      !e.metaKey &&
+      !e.ctrlKey
+    ) {
       e.preventDefault();
       handleSubmit(e as unknown as React.FormEvent);
     }
     // Check if Cmd+Enter (Mac) or Ctrl+Enter (Windows) is pressed
-    else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       // Allow default behavior (new line)
       return;
     }
   };
+
+  // Process tool calls that modify the editor
+  const processSuggestDiffTool = (
+    toolCallId: string,
+    toolName: string,
+    data: string,
+    result: string | undefined,
+  ) => {
+    // Only process if we have valid tool data
+    if (!data || typeof data !== "string" || data.trim() === "") {
+      console.log("Incomplete tool data, skipping suggest_diff processing");
+      return;
+    }
+
+    // Make sure the data is complete (has a valid JSON structure with suggestions)
+    try {
+      const parsedData = JSON.parse(data);
+      if (
+        !parsedData.suggestions ||
+        !Array.isArray(parsedData.suggestions) ||
+        parsedData.suggestions.length === 0
+      ) {
+        console.log("Incomplete suggestions data, waiting for full data");
+        return;
+      }
+    } catch (e) {
+      console.log("Invalid JSON in tool data, waiting for complete data");
+      return;
+    }
+
+    if (!mainEditor) {
+      console.log(
+        "Main editor not available yet, queueing suggest_diff tool call",
+      );
+      setPendingSuggestions((prev) => [
+        ...prev,
+        { toolCallId, name: toolName, data, result },
+      ]);
+      return;
+    }
+
+    if (toolName === "suggest_diff") {
+      console.log("Processing suggest_diff tool call:", { toolCallId, data });
+
+      try {
+        // For suggest_diff, we want to apply the suggestions from the input data
+        // not the result (which just confirms success)
+        const success = mainEditor.commands.applySuggestDiffResults(
+          data,
+          "AI Assistant",
+        );
+        console.log("Applied suggest_diff results:", success);
+
+        if (!success) {
+          console.warn("Failed to apply suggest_diff results to editor");
+        }
+      } catch (error) {
+        console.error("Error processing suggest_diff tool:", error);
+      }
+    }
+  };
+
+  // Process pending suggestions when editor becomes available
+  useEffect(() => {
+    if (mainEditor && pendingSuggestions.length > 0) {
+      console.log(
+        `Processing ${pendingSuggestions.length} pending suggestions now that editor is available`,
+      );
+
+      pendingSuggestions.forEach((suggestion) => {
+        if (suggestion.name === "suggest_diff") {
+          try {
+            const success = mainEditor.commands.applySuggestDiffResults(
+              suggestion.data,
+              "AI Assistant",
+            );
+            console.log(
+              `Applied pending suggest_diff (${suggestion.toolCallId}):`,
+              success,
+            );
+          } catch (error) {
+            console.error("Error processing pending suggest_diff:", error);
+          }
+        }
+      });
+
+      // Clear the pending suggestions
+      setPendingSuggestions([]);
+    }
+  }, [mainEditor, pendingSuggestions]);
+
+  // Handle incoming tool response
+  const handleToolResponse = (toolCallId: string, content: string) => {
+    // Check if we're processing a tool call in the current message
+    if (currentAssistantMessage) {
+      const segments = [...currentAssistantMessage.segments];
+      let toolSegment: ToolCallSegment | undefined;
+
+      // Find the tool segment
+      for (let i = 0; i < segments.length; i++) {
+        if (
+          segments[i].type === "tool_call" &&
+          (segments[i] as ToolCallSegment).id === toolCallId
+        ) {
+          toolSegment = segments[i] as ToolCallSegment;
+          break;
+        }
+      }
+
+      // If we found the tool segment and it's a suggest_diff tool,
+      // process it once we have the result (which confirms the tool call is complete)
+      if (toolSegment && toolSegment.name === "suggest_diff") {
+        // Process the tool with its data
+        processSuggestDiffTool(
+          toolSegment.id,
+          toolSegment.name,
+          toolSegment.data,
+          content,
+        );
+      }
+    }
+  };
+
+  // Effect to process completed messages with tool calls
+  useEffect(() => {
+    // Only process complete messages (not the currently streaming one)
+    if (messages.length > 0) {
+      // Get the last completed message
+      const lastMessage = messages[messages.length - 1];
+
+      if (lastMessage?.role === "assistant") {
+        const toolCalls = lastMessage.segments.filter(
+          (segment) => segment.type === "tool_call" && segment.result,
+        ) as ToolCallSegment[];
+
+        toolCalls.forEach((toolCall) => {
+          if (toolCall.name === "suggest_diff") {
+            console.log("Processing completed message with suggest_diff tool");
+            processSuggestDiffTool(
+              toolCall.id,
+              toolCall.name,
+              toolCall.data,
+              toolCall.result,
+            );
+          }
+        });
+      }
+    }
+  }, [messages.length, mainEditor]);
 
   // Render message segments
   const renderSegments = (segments: MessageSegment[], messageId: string) => {
@@ -746,6 +925,8 @@ export function AIChat() {
               <IconTools size={16} />
               <Text size="sm" fw={500} style={{ flex: 1 }}>
                 Tool call: {toolSegment.name}
+                {toolSegment.name === "suggest_diff" &&
+                  " (Editing Suggestions)"}
               </Text>
               {toolSegment.isOpen ? (
                 <IconChevronDown size={16} />
@@ -906,12 +1087,15 @@ export function AIChat() {
 
       <Box
         p="md"
-        style={{ 
+        style={{
           borderTop: "1px solid var(--mantine-color-gray-2)",
-          width: "100%"
+          width: "100%",
         }}
       >
-        <form onSubmit={handleSubmit} style={{ display: "flex", gap: "8px", width: "100%" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", gap: "8px", width: "100%" }}
+        >
           <Textarea
             placeholder="Ask AI anything... (Press Enter to send, Cmd/Ctrl+Enter for new line)"
             value={input}
@@ -932,7 +1116,11 @@ export function AIChat() {
               size="xs"
               px="xs"
             >
-              {isListening ? <IconMicrophoneOff size={16} /> : <IconMicrophone size={16} />}
+              {isListening ? (
+                <IconMicrophoneOff size={16} />
+              ) : (
+                <IconMicrophone size={16} />
+              )}
             </Button>
             <Button
               type="submit"

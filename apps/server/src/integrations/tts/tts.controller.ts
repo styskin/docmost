@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Res, HttpStatus, HttpException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  HttpStatus,
+  HttpException,
+} from '@nestjs/common';
 import { Response } from 'express';
 import OpenAI from 'openai';
 import { Readable } from 'stream';
@@ -39,8 +46,14 @@ export class TtsController {
     console.log('TTS Controller: Extracted text:', text);
 
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      console.error("TTS Controller: Manual validation failed even after DTO validation should have run.", {text});
-      throw new HttpException('Invalid text input received.', HttpStatus.BAD_REQUEST);
+      console.error(
+        'TTS Controller: Manual validation failed even after DTO validation should have run.',
+        { text },
+      );
+      throw new HttpException(
+        'Invalid text input received.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     try {
@@ -61,22 +74,27 @@ export class TtsController {
         for await (const chunk of mp3.body) {
           chunks.push(chunk);
         }
-        const buffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+        const buffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
         res.send(buffer);
       } else {
         console.error('Unexpected stream type from OpenAI API');
-        throw new HttpException('Failed to process audio stream', HttpStatus.INTERNAL_SERVER_ERROR);
+        throw new HttpException(
+          'Failed to process audio stream',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
       }
-
     } catch (error) {
       console.error('Error generating speech:', error);
       if (error instanceof OpenAI.APIError) {
         throw new HttpException(
           `OpenAI API error: ${error.message}`,
-          error.status || HttpStatus.INTERNAL_SERVER_ERROR
+          error.status || HttpStatus.INTERNAL_SERVER_ERROR,
         );
       }
-      throw new HttpException('Failed to generate speech', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Failed to generate speech',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
-} 
+}

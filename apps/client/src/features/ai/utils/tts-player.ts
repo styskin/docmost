@@ -5,38 +5,40 @@ class TTSPlayer {
   private audioContext: AudioContext;
   private textToSpeakQueue: string[] = [];
   private audioPlaybackQueue: ArrayBuffer[] = [];
-  
+
   private isFetchingFromApi = false;
   private isPlayingAudio = false;
-  
+
   private currentSource: AudioBufferSourceNode | null = null;
   private isEnabled = false;
-  private sentenceEndChars = ['.', '?', '!', '\n'];
+  private sentenceEndChars = [".", "?", "!", "\n"];
   private textBuffer = "";
   private onPlaybackComplete: (() => void) | null = null;
 
   constructor() {
     try {
-        this.audioContext = new window.AudioContext();
+      this.audioContext = new window.AudioContext();
     } catch (e) {
-        console.error("Could not create AudioContext immediately:", e);
+      console.error("Could not create AudioContext immediately:", e);
     }
   }
 
   public enable() {
     this.isEnabled = true;
-    if (this.audioContext && this.audioContext.state === 'suspended') {
-        this.audioContext.resume().catch(err => console.error("Error resuming AudioContext:", err));
+    if (this.audioContext && this.audioContext.state === "suspended") {
+      this.audioContext
+        .resume()
+        .catch((err) => console.error("Error resuming AudioContext:", err));
     }
     // Process any text that might have been buffered while disabled or before enabling
-    this.processBufferedText(); 
+    this.processBufferedText();
     // Start fetching if there's anything in the queue
     this.tryFetchNextTTS();
   }
 
   public disable() {
     this.isEnabled = false;
-    this.stop(); 
+    this.stop();
   }
 
   public getIsEnabled(): boolean {
@@ -65,13 +67,13 @@ class TTSPlayer {
           // One call to tryFetchNextTTS after the loop (or from addText/enable) is sufficient.
         }
         this.textBuffer = this.textBuffer.substring(i + 1);
-        i = -1; 
+        i = -1;
       }
     }
     // After processing the current buffer, try to fetch if new sentences were added.
     this.tryFetchNextTTS();
   }
-  
+
   public finalizeStream() {
     if (this.isEnabled && this.textBuffer.trim()) {
       const remainingText = this.textBuffer.trim();
@@ -84,27 +86,32 @@ class TTSPlayer {
   }
 
   private async tryFetchNextTTS(): Promise<void> {
-    if (!this.isEnabled || this.isFetchingFromApi || this.textToSpeakQueue.length === 0) {
+    if (
+      !this.isEnabled ||
+      this.isFetchingFromApi ||
+      this.textToSpeakQueue.length === 0
+    ) {
       return;
     }
 
     this.isFetchingFromApi = true;
     const text = this.textToSpeakQueue.shift();
 
-    if (!text) { // Should be guarded by length check, but for safety.
-        this.isFetchingFromApi = false;
-        // If queue was supposedly not empty but shift gave nothing, try again in case of race, though unlikely here.
-        this.tryFetchNextTTS(); 
-        return;
+    if (!text) {
+      // Should be guarded by length check, but for safety.
+      this.isFetchingFromApi = false;
+      // If queue was supposedly not empty but shift gave nothing, try again in case of race, though unlikely here.
+      this.tryFetchNextTTS();
+      return;
     }
 
     console.log("TTSPlayer: Fetching TTS for:", text);
 
     try {
-      const response = await fetch('/api/tts', {
-        method: 'POST',
+      const response = await fetch("/api/tts", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ text }),
       });
@@ -112,28 +119,32 @@ class TTSPlayer {
       // Check if disabled during await
       if (!this.isEnabled) {
         this.isFetchingFromApi = false; // Ensure flag is cleared
-        return; 
+        return;
       }
 
       if (!response.ok) {
-        console.error(`TTS API request failed for "${text}":`, response.status, response.statusText);
+        console.error(
+          `TTS API request failed for "${text}":`,
+          response.status,
+          response.statusText,
+        );
         this.isFetchingFromApi = false;
         this.tryFetchNextTTS(); // Try next item in queue
         return;
       }
 
       const audioData = await response.arrayBuffer();
-      
+
       // Check if disabled during await response.arrayBuffer()
       if (!this.isEnabled) {
-        this.isFetchingFromApi = false; 
-        return; 
+        this.isFetchingFromApi = false;
+        return;
       }
 
       this.audioPlaybackQueue.push(audioData);
       this.isFetchingFromApi = false;
-      this.tryPlayNextAudio();    
-      this.tryFetchNextTTS();     
+      this.tryPlayNextAudio();
+      this.tryFetchNextTTS();
     } catch (error) {
       console.error(`Error fetching TTS audio for "${text}":`, error);
       // Check if disabled due to error or concurrently
@@ -142,7 +153,7 @@ class TTSPlayer {
         return;
       }
       this.isFetchingFromApi = false;
-      this.tryFetchNextTTS(); 
+      this.tryFetchNextTTS();
     }
   }
 
@@ -151,18 +162,25 @@ class TTSPlayer {
   }
 
   private async tryPlayNextAudio(): Promise<void> {
-    if (!this.isEnabled || this.isPlayingAudio || this.audioPlaybackQueue.length === 0 || !this.audioContext) {
+    if (
+      !this.isEnabled ||
+      this.isPlayingAudio ||
+      this.audioPlaybackQueue.length === 0 ||
+      !this.audioContext
+    ) {
       return;
     }
 
-    if (this.audioContext.state === 'suspended') {
-        console.log("AudioContext is suspended, attempting to resume before playing next track.");
-        try {
-            await this.audioContext.resume();
-        } catch (err) {
-            console.error("Could not resume AudioContext, playback may fail:", err);
-            return; 
-        }
+    if (this.audioContext.state === "suspended") {
+      console.log(
+        "AudioContext is suspended, attempting to resume before playing next track.",
+      );
+      try {
+        await this.audioContext.resume();
+      } catch (err) {
+        console.error("Could not resume AudioContext, playback may fail:", err);
+        return;
+      }
     }
 
     this.isPlayingAudio = true;
@@ -200,17 +218,19 @@ class TTSPlayer {
         }
       };
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error("Error playing audio:", error);
       this.isPlayingAudio = false;
       // Check if still enabled
       if (this.isEnabled) {
-         this.tryPlayNextAudio(); 
+        this.tryPlayNextAudio();
       }
     }
   }
 
   public stop(): void {
-    console.log("TTSPlayer: Stop called - clearing queues and stopping playback.");
+    console.log(
+      "TTSPlayer: Stop called - clearing queues and stopping playback.",
+    );
     // isEnabled is set to false by disable() before calling stop().
     // Here we focus on cleanup.
     if (this.currentSource) {
@@ -223,11 +243,11 @@ class TTSPlayer {
       this.currentSource = null;
     }
     this.audioPlaybackQueue = [];
-    this.textToSpeakQueue = []; 
+    this.textToSpeakQueue = [];
     this.isPlayingAudio = false;
-    this.isFetchingFromApi = false; 
-    this.textBuffer = ""; 
+    this.isFetchingFromApi = false;
+    this.textBuffer = "";
   }
 }
 
-export const ttsPlayer = new TTSPlayer(); 
+export const ttsPlayer = new TTSPlayer();

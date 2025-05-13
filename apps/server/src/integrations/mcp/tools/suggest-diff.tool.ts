@@ -38,21 +38,37 @@ export class SuggestDiffTool {
       'suggest_diff',
       SUGGEST_DIFF_TOOL_DESCRIPTION,
       {
-        suggestions: z.array(
-          z.object({
-            textToReplace: z.string().describe('The original text segment to replace'),
-            textReplacement: z.string().describe('The text to replace the original with'),
-            reason: z.string().describe('Explanation for why this change is recommended'),
-            textBefore: z.string().describe('Text before the suggestion for context'),
-            textAfter: z.string().describe('Text after the suggestion for context')
-          })
-        ).describe('Array of suggestion objects to apply')
+        suggestions: z
+          .array(
+            z.object({
+              textToReplace: z
+                .string()
+                .describe('The original text segment to replace'),
+              textReplacement: z
+                .string()
+                .describe('The text to replace the original with'),
+              reason: z
+                .string()
+                .describe('Explanation for why this change is recommended'),
+              textBefore: z
+                .string()
+                .describe('Text before the suggestion for context'),
+              textAfter: z
+                .string()
+                .describe('Text after the suggestion for context'),
+            }),
+          )
+          .describe('Array of suggestion objects to apply'),
       },
       async (args: any) => {
         try {
           const { suggestions } = args;
-          
-          if (!suggestions || !Array.isArray(suggestions) || suggestions.length === 0) {
+
+          if (
+            !suggestions ||
+            !Array.isArray(suggestions) ||
+            suggestions.length === 0
+          ) {
             return {
               content: [
                 {
@@ -65,12 +81,18 @@ export class SuggestDiffTool {
           }
 
           // Validate each suggestion object
-          const validSuggestions = suggestions.filter(suggestion => 
-            suggestion.textToReplace && 
-            suggestion.textReplacement && 
-            suggestion.reason &&
-            suggestion.textBefore &&
-            suggestion.textAfter
+          const validSuggestions = suggestions.filter(
+            (suggestion) =>
+              suggestion.textToReplace !== undefined &&
+              suggestion.textToReplace !== null &&
+              suggestion.textReplacement !== undefined &&
+              suggestion.textReplacement !== null &&
+              suggestion.reason !== undefined &&
+              suggestion.reason !== null &&
+              suggestion.textBefore !== undefined &&
+              suggestion.textBefore !== null &&
+              suggestion.textAfter !== undefined &&
+              suggestion.textAfter !== null,
           );
 
           if (validSuggestions.length !== suggestions.length) {
@@ -90,11 +112,15 @@ export class SuggestDiffTool {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  status: 'success',
-                  appliedSuggestions: suggestions.length,
-                  message: `Successfully processed ${suggestions.length} suggestions`
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    status: 'success',
+                    appliedSuggestions: suggestions.length,
+                    message: `Successfully processed ${suggestions.length} suggestions`,
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
           };
@@ -111,4 +137,4 @@ export class SuggestDiffTool {
       },
     );
   }
-} 
+}

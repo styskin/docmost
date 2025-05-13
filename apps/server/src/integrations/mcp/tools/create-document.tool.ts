@@ -10,6 +10,7 @@ export const CREATE_DOCUMENT_TOOL_DESCRIPTION = `
 Create a new document with the specified title and content.
 The content must be provided as a stringified JSON representing a YDoc.
 YDoc is a data structure used for collaborative editing.
+Do not include title in the content.
 Example of a simple YDoc structure:
 {
   "type": "doc",
