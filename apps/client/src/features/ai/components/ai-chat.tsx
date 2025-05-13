@@ -8,6 +8,7 @@ import {
   TextInput,
   Group,
   Collapse,
+  Loader,
 } from "@mantine/core";
 import {
   IconSend,
@@ -638,13 +639,18 @@ export function AIChat() {
             </Box>
           )}
 
-          {isLoading && !currentAssistantMessage && (
-            <Box p="xs">
-              <Text size="sm" c="dimmed">
-                AI is thinking...
-              </Text>
-            </Box>
-          )}
+          {isLoading &&
+            (!currentAssistantMessage ||
+              currentAssistantMessage.segments.length === 0) && (
+              <Box p="xs">
+                <Group align="center" gap="xs">
+                  <Loader size="xs" />
+                  <Text size="sm" c="dimmed">
+                    Thinking...
+                  </Text>
+                </Group>
+              </Box>
+            )}
         </Stack>
       </ScrollArea>
 
