@@ -8,6 +8,7 @@ import {
   GetDocumentTool,
   ListSpacesTool,
   ListWorkspacesTool,
+  SuggestDiffTool,
 } from './tools';
 
 @Module({
@@ -20,6 +21,7 @@ import {
     GetDocumentTool,
     ListSpacesTool,
     ListWorkspacesTool,
+    SuggestDiffTool,
   ],
   exports: [McpService],
 })

@@ -1,15 +1,13 @@
 import { Extension } from "@tiptap/core";
 import { SuggestionInsert, SuggestionDelete } from "./marks";
 import { suggestionModePlugin } from "./plugin";
-import { ISuggestion } from "@/features/comment/types/comment.types";
 import { createSuggestionTransaction } from "./utils";
+import { ISuggestion } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SuggestionModeOptions {
-  // Add options here if needed in the future
 }
 
-// Define the command structure we expect
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     suggestionMode: {
@@ -27,7 +25,6 @@ export const SuggestionModeExtension = Extension.create<SuggestionModeOptions>({
 
   addOptions() {
     return {
-      // Default options
     };
   },
 

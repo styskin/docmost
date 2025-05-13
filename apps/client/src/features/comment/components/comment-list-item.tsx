@@ -13,7 +13,8 @@ import {
   useDeleteCommentMutation,
   useUpdateCommentMutation,
 } from "@/features/comment/queries/comment-query";
-import { IComment, ISuggestion } from "@/features/comment/types/comment.types";
+import { IComment } from "@/features/comment/types/comment.types";
+import { ISuggestion } from "@/features/editor/extensions/suggestion-mode/types";
 import { CustomAvatar } from "@/components/ui/custom-avatar.tsx";
 import { currentUserAtom } from "@/features/user/atoms/current-user-atom.ts";
 import { AGENT_USER_ID } from "@/lib/constants";

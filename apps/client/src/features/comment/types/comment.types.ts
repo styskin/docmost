@@ -1,14 +1,6 @@
 import { IUser } from "@/features/user/types/user.types";
 import { QueryParams } from "@/lib/types.ts";
-
-// Define the structure for suggestions received from the backend
-export interface ISuggestion {
-  textToReplace: string;
-  textReplacement: string;
-  reason: string;
-  textBefore: string;
-  textAfter: string;
-}
+import { ISuggestion } from "@/features/editor/extensions/suggestion-mode/types";
 
 export interface IComment {
   id: string;

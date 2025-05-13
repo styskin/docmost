@@ -7,6 +7,7 @@ import {
   GetDocumentTool,
   ListSpacesTool,
   ListWorkspacesTool,
+  SuggestDiffTool,
 } from './tools';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class McpService implements OnModuleInit {
     private readonly getDocumentTool: GetDocumentTool,
     private readonly listSpacesTool: ListSpacesTool,
     private readonly listWorkspacesTool: ListWorkspacesTool,
+    private readonly suggestDiffTool: SuggestDiffTool,
   ) {}
 
   async onModuleInit() {
@@ -35,6 +37,7 @@ export class McpService implements OnModuleInit {
       this.getDocumentTool.register(this.server);
       this.listSpacesTool.register(this.server);
       this.listWorkspacesTool.register(this.server);
+      this.suggestDiffTool.register(this.server);
 
       this.logger.log(
         'MCP server initialized and ready for controller integration',
