@@ -6,7 +6,7 @@ import {
   HttpStatus,
   HttpException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { FastifyReply } from 'fastify';
 import OpenAI from 'openai';
 import { Readable } from 'stream';
 import { IsString, IsNotEmpty } from 'class-validator';
@@ -32,7 +32,7 @@ export class TtsController {
   }
 
   @Post()
-  async generateSpeech(@Body() body: TtsRequestDto, @Res() res: Response) {
+  async generateSpeech(@Body() body: TtsRequestDto, @Res() res: FastifyReply) {
     console.log('TTS Controller: Received request body:', body);
 
     if (!this.openai.apiKey) {
@@ -64,19 +64,12 @@ export class TtsController {
         response_format: 'mp3',
       });
 
-      // Set headers for audio streaming
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Transfer-Encoding', 'chunked');
-
       if (mp3.body instanceof Readable) {
-        // Handle the stream manually instead of using pipe
-        const chunks: Uint8Array[] = [];
-        for await (const chunk of mp3.body) {
-          chunks.push(chunk);
-        }
-        const buffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
-        res.send(buffer);
-        res.end();
+        // Set headers and pipe the stream directly to Fastify response
+        return res
+          .header('Content-Type', 'audio/mpeg')
+          .header('Cache-Control', 'no-cache')
+          .send(mp3.body);
       } else {
         console.error('Unexpected stream type from OpenAI API');
         throw new HttpException(
