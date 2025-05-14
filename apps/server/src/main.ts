@@ -64,6 +64,7 @@ async function bootstrap() {
         '/api/workspace/create',
         '/api/workspace/joined',
         '/api/manul',
+        '/api/tts',
       ];
 
       if (
