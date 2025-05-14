@@ -76,6 +76,7 @@ export class TtsController {
         }
         const buffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
         res.send(buffer);
+        res.end();
       } else {
         console.error('Unexpected stream type from OpenAI API');
         throw new HttpException(
