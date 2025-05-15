@@ -119,14 +119,25 @@ export default function AIList({
     setStreamingContent("");
 
     try {
+      
       const response = await fetch("/api/manul/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          query: preview,
-          context: editor.state.doc.textContent,
+          messages: [
+            {
+              role: "system",
+              content: `Hint: Remember to focus solely on providing the inline addition. Do not call any tools, do not provide any additional information or reasoning, do not engage in any dialogue or ask for additional information from the user.
+              Current document: 
+              - ${editor.state.doc.textContent}`,
+            },
+            {
+              role: "user",
+              content: preview,
+            },
+          ],
         }),
       });
 
@@ -139,7 +150,6 @@ export default function AIList({
 
       const decoder = new TextDecoder();
       let partialChunk = "";
-      let fullResponse = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -156,26 +166,24 @@ export default function AIList({
           if (eventData.startsWith("data: ")) {
             try {
               const jsonData = JSON.parse(eventData.slice(6));
-              if (jsonData.content) {
-                fullResponse += jsonData.content;
-                setStreamingContent(fullResponse);
+              // FIXME: Think about formating support in streaming mode
+              for (const item of jsonData.content) {
+                if (item.type === "text" && item.text !== undefined) {
+                  editor.chain().focus().insertContentAt(getPos(), item.text).run();
+                }
+                // setStreamingContent(fullResponse);
               }
             } catch (e) {
               console.error("Error parsing SSE data:", e);
-              const rawContent = eventData.slice(6).trim();
-              if (rawContent) {
-                fullResponse += rawContent;
-                setStreamingContent(fullResponse);
-              }
             }
           }
         }
       }
 
-      const tiptapJson = markdownToTiptap(fullResponse);
+//      const tiptapJson = markdownToTiptap(fullResponse);
+//    editor.chain().focus().insertContentAt(getPos(), tiptapJson).run();
 
-      editor.chain().focus().insertContentAt(getPos(), tiptapJson).run();
-
+  
       setPreview("");
     } catch (error) {
       console.error("Error querying Manul:", error);
