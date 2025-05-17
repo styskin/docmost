@@ -7,10 +7,10 @@ import { AGENT_USER_ID } from '../../../common/helpers/constants';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 export const CREATE_DOCUMENT_TOOL_DESCRIPTION = `
-Create a new document with the specified title and content.
+Creating a new document with the specified title and content.
 The content must be provided as a stringified JSON representing a YDoc.
 YDoc is a data structure used for collaborative editing.
-Do not include title in the content.
+Do not include title in the content as a heading.
 Example of a simple YDoc structure:
 {
   "type": "doc",
@@ -143,6 +143,7 @@ Args:
 - content, string: The content of the new document, as a stringified JSON YDoc.
 - space, string: The slug of the space where the document will be created.
 - workspace, string: The ID of the workspace.
+- parentDocument, string, optional: The slug ID of the parent document. If provided, the new document will be nested under this document.
 
 Returns:
 - documentId, string: The ID of the created document.
@@ -177,10 +178,16 @@ export class CreateDocumentTool {
             'The slug of the space where the document will be created.',
           ),
         workspace: z.string().describe('The ID of the workspace.'),
+        parentDocument: z
+          .string()
+          .optional()
+          .describe(
+            'The slug ID of the parent document. If provided, the new document will be nested under this document.',
+          ),
       },
       async (args: any) => {
         try {
-          const { title, content, space, workspace } = args;
+          const { title, content, space, workspace, parentDocument } = args;
           if (!title || !content || !space || !workspace) {
             return {
               content: [
@@ -206,6 +213,37 @@ export class CreateDocumentTool {
             };
           }
 
+          let parentPageId = undefined;
+          if (parentDocument) {
+            const parentPage = await this.pageRepo.findById(parentDocument);
+
+            if (!parentPage) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Parent document "${parentDocument}" not found`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+
+            if (parentPage.spaceId !== spaceEntity.id) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Parent document "${parentDocument}" is not in space "${space}"`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+
+            parentPageId = parentPage.id;
+          }
+
           const createdPage = await this.pageRepo.insertPage({
             slugId: generateSlugId(),
             title,
@@ -216,10 +254,11 @@ export class CreateDocumentTool {
             workspaceId: workspaceId,
             creatorId: AGENT_USER_ID,
             lastUpdatedById: AGENT_USER_ID,
+            parentPageId: parentPageId,
           });
 
           this.logger.log(
-            `Created document with title: ${title} and ID: ${createdPage.id}`,
+            `Created document with title: ${title} and ID: ${createdPage.id}${parentPageId ? `, under parent ID: ${parentPageId}` : ''}`,
           );
 
           return {
@@ -232,6 +271,7 @@ export class CreateDocumentTool {
                     slugId: createdPage.slugId,
                     title: createdPage.title,
                     message: 'Document created successfully',
+                    parentId: parentPageId || null,
                   },
                   null,
                   2,
