@@ -19,6 +19,7 @@ A document object containing:
 - textContent, string: The plain text representation of the document content.
 - spaceId, string: The ID of the space containing this document.
 - workspaceId, string: The ID of the workspace containing this document.
+- parentId, string: The ID of the parent document, if any.
 `;
 
 @Injectable()
@@ -81,6 +82,7 @@ export class GetDocumentTool {
                     textContent: document.textContent,
                     spaceId: document.spaceId,
                     workspaceId: document.workspaceId,
+                    parentId: document.parentPageId || null,
                   },
                   null,
                   2,

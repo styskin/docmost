@@ -197,7 +197,6 @@ export class AppendContentTool {
           });
 
           // Emit WebSocket event to notify all clients
-          const room = this.wsGateway.getSpaceRoomName(page.spaceId);
           this.wsGateway.server.emit('message', {
             operation: 'updateOne',
             spaceId: page.spaceId,

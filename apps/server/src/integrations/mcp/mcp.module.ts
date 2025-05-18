@@ -12,9 +12,10 @@ import {
   SuggestDiffTool,
 } from './tools';
 import { WsModule } from '../../ws/ws.module';
+import { PageModule } from '../../core/page/page.module';
 
 @Module({
-  imports: [DatabaseModule, WsModule],
+  imports: [DatabaseModule, WsModule, PageModule],
   controllers: [McpController],
   providers: [
     McpService,

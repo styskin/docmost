@@ -5,6 +5,9 @@ import { SpaceRepo } from '@docmost/db/repos/space/space.repo';
 import { generateSlugId } from '../../../common/helpers';
 import { AGENT_USER_ID } from '../../../common/helpers/constants';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WsGateway } from '../../../ws/ws.gateway';
+import { PageService } from '../../../core/page/services/page.service';
 
 export const CREATE_DOCUMENT_TOOL_DESCRIPTION = `
 Creating a new document with the specified title and content.
@@ -159,6 +162,9 @@ export class CreateDocumentTool {
   constructor(
     private readonly pageRepo: PageRepo,
     private readonly spaceRepo: SpaceRepo,
+    private eventEmitter: EventEmitter2,
+    private wsGateway: WsGateway,
+    private pageService: PageService,
   ) {}
 
   register(server: McpServer) {
@@ -244,12 +250,25 @@ export class CreateDocumentTool {
             parentPageId = parentPage.id;
           }
 
+          // Get proper position for the new document
+          let position = 'a0';
+          try {
+            position = await this.pageService.nextPagePosition(
+              spaceEntity.id,
+              parentPageId,
+            );
+          } catch (error: any) {
+            this.logger.warn(
+              `Error generating position: ${error.message}, using default`,
+            );
+          }
+
           const createdPage = await this.pageRepo.insertPage({
             slugId: generateSlugId(),
             title,
             content: JSON.parse(content),
             textContent: content,
-            position: '0',
+            position: position,
             spaceId: spaceEntity.id,
             workspaceId: workspaceId,
             creatorId: AGENT_USER_ID,
@@ -260,6 +279,45 @@ export class CreateDocumentTool {
           this.logger.log(
             `Created document with title: ${title} and ID: ${createdPage.id}${parentPageId ? `, under parent ID: ${parentPageId}` : ''}`,
           );
+
+          // Find the correct index for the new document based on its position
+          let index = 0;
+          const paginationOpts = { page: 1, limit: 250, query: '' };
+          const siblingPagesResult = await this.pageService.getSidebarPages(
+            spaceEntity.id,
+            paginationOpts,
+            parentPageId || undefined,
+          );
+          const siblingPages = siblingPagesResult.items;
+          siblingPages.sort((a, b) => a.position.localeCompare(b.position));
+          index = siblingPages.findIndex((page) => page.id === createdPage.id);
+          if (index === -1) index = siblingPages.length;
+
+          // Emit event for the collaboration system to handle
+          this.eventEmitter.emit('collab.page.created', {
+            page: createdPage,
+            source: 'create-document-tool',
+          });
+
+          // Emit WebSocket event to notify all clients - using correct addTreeNode format
+          this.wsGateway.server.emit('message', {
+            operation: 'addTreeNode',
+            spaceId: spaceEntity.id,
+            payload: {
+              parentId: parentPageId || null,
+              index: index,
+              data: {
+                id: createdPage.id,
+                slugId: createdPage.slugId,
+                name: createdPage.title,
+                position: createdPage.position,
+                spaceId: spaceEntity.id,
+                parentPageId: parentPageId || null,
+                hasChildren: false,
+                children: [],
+              },
+            },
+          });
 
           return {
             content: [
