@@ -206,3 +206,44 @@ curl -v -X POST "$MCP_URL" \
 echo -e "\nRaw Response (including headers):"
 cat "$RESPONSE_FILE"
 rm -f "$RESPONSE_FILE"
+
+
+########################################################
+# Append to a document
+########################################################
+
+echo "Testing MCP append_document tool..."
+echo "Sending request to $MCP_URL"
+
+# Create the JSON payload with the correct method name for MCP tool invocation
+PAYLOAD=$(cat <<EOF
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "tools/call",
+  "params": {
+    "name": "append_document",
+    "arguments": {
+      "document": "rXYv03k1BA",
+      "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"This is appended content.\"}]}] }",
+      "workspace": "$WORKSPACE_ID"
+    }
+  }
+}
+EOF
+)
+
+echo "Payload:"
+echo "$PAYLOAD" | jq . 2>/dev/null || echo "$PAYLOAD"
+
+# Make the curl request with required Accept headers
+echo -e "\nSending request..."
+RESPONSE_FILE="/tmp/mcp_response_$$.txt"
+curl -v -X POST "$MCP_URL" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d "$PAYLOAD" > "$RESPONSE_FILE" 2>&1
+
+echo -e "\nRaw Response (including headers):"
+cat "$RESPONSE_FILE"
+rm -f "$RESPONSE_FILE"

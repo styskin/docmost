@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CreateDocumentTool,
+  AppendDocumentTool,
   ListDocumentsTool,
   GetDocumentTool,
   ListSpacesTool,
@@ -17,6 +18,7 @@ export class McpService implements OnModuleInit {
 
   constructor(
     private readonly createDocumentTool: CreateDocumentTool,
+    private readonly appendDocumentTool: AppendDocumentTool,
     private readonly listDocumentsTool: ListDocumentsTool,
     private readonly getDocumentTool: GetDocumentTool,
     private readonly listSpacesTool: ListSpacesTool,
@@ -33,6 +35,7 @@ export class McpService implements OnModuleInit {
       });
 
       this.createDocumentTool.register(this.server);
+      this.appendDocumentTool.register(this.server);
       this.listDocumentsTool.register(this.server);
       this.getDocumentTool.register(this.server);
       this.listSpacesTool.register(this.server);

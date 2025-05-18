@@ -493,7 +493,6 @@ export function AIChat() {
           if (eventData.startsWith("data: ")) {
             try {
               const jsonData = JSON.parse(eventData.slice(6));
-              console.log("STREAM DATA:", jsonData); // Debug the incoming data
 
               // HANDLE TOOL CALL CHUNKS: {"tool_call_chunks": [{"name": null, "args": "{\"workspace\"", "id": null, "index": 1, "type": "tool_call_chunk"}]}
               if (
@@ -551,7 +550,6 @@ export function AIChat() {
                     }
                   }
 
-                  console.log("UPDATED TOOL CHUNKS:", segments);
                   return { ...prev, segments };
                 });
               }
@@ -622,7 +620,6 @@ export function AIChat() {
                     }
                   }
 
-                  console.log("UPDATED SEGMENTS:", segments);
                   return { ...prev, segments };
                 });
               }
@@ -647,7 +644,6 @@ export function AIChat() {
                     }
                   }
 
-                  console.log("UPDATED TOOL RESPONSE:", segments);
                   return { ...prev, segments };
                 });
 

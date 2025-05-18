@@ -119,7 +119,6 @@ export default function AIList({
     setStreamingContent("");
 
     try {
-      
       const response = await fetch("/api/manul/query", {
         method: "POST",
         headers: {
@@ -169,7 +168,11 @@ export default function AIList({
               // FIXME: Think about formating support in streaming mode
               for (const item of jsonData.content) {
                 if (item.type === "text" && item.text !== undefined) {
-                  editor.chain().focus().insertContentAt(getPos(), item.text).run();
+                  editor
+                    .chain()
+                    .focus()
+                    .insertContentAt(getPos(), item.text)
+                    .run();
                 }
                 // setStreamingContent(fullResponse);
               }
@@ -180,10 +183,9 @@ export default function AIList({
         }
       }
 
-//      const tiptapJson = markdownToTiptap(fullResponse);
-//    editor.chain().focus().insertContentAt(getPos(), tiptapJson).run();
+      //      const tiptapJson = markdownToTiptap(fullResponse);
+      //    editor.chain().focus().insertContentAt(getPos(), tiptapJson).run();
 
-  
       setPreview("");
     } catch (error) {
       console.error("Error querying Manul:", error);
