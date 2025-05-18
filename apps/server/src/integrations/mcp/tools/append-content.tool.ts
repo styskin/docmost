@@ -152,11 +152,15 @@ export class AppendContentTool {
             Y.applyUpdate(ydoc, existingState);
           }
           const mainRoot = ydoc.get('default', Y.XmlFragment) as Y.XmlFragment;
-          fragmentNodes.forEach((node) => {
-            if (node instanceof Y.XmlElement || node instanceof Y.XmlText) {
-              mainRoot.push([node.clone()]);
-            }
-          });
+          const nodesToPush = fragmentNodes
+            .filter(
+              (node) =>
+                node instanceof Y.XmlElement || node instanceof Y.XmlText,
+            )
+            .map((node) => node.clone());
+          if (nodesToPush.length > 0) {
+            mainRoot.push(nodesToPush);
+          }
           const mergedContent = TiptapTransformer.fromYdoc(ydoc, 'default');
           const ydocState = Buffer.from(Y.encodeStateAsUpdate(ydoc));
           const textContent = jsonToText(mergedContent);
@@ -242,4 +246,4 @@ export class AppendContentTool {
       },
     );
   }
-} 
+}
