@@ -4,7 +4,7 @@ import { McpService } from './mcp.service';
 import { DatabaseModule } from '@docmost/db/database.module';
 import {
   CreateDocumentTool,
-  AppendDocumentTool,
+  AppendContentTool,
   ListDocumentsTool,
   GetDocumentTool,
   ListSpacesTool,
@@ -19,7 +19,7 @@ import { WsModule } from '../../ws/ws.module';
   providers: [
     McpService,
     CreateDocumentTool,
-    AppendDocumentTool,
+    AppendContentTool,
     ListDocumentsTool,
     GetDocumentTool,
     ListSpacesTool,

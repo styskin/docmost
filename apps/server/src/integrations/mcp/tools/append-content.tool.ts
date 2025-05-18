@@ -13,7 +13,7 @@ import { JSONContent } from '@tiptap/core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WsGateway } from '../../../ws/ws.gateway';
 
-export const APPEND_DOCUMENT_TOOL_DESCRIPTION = `
+export const APPEND_CONTENT_TOOL_DESCRIPTION = `
 Appends content to an existing document.
 The content to append must be provided as a stringified JSON representing a YDoc fragment.
 This will be added to the end of the current document.
@@ -55,8 +55,8 @@ Returns:
 `;
 
 @Injectable()
-export class AppendDocumentTool {
-  private readonly logger = new Logger('AppendDocumentTool');
+export class AppendContentTool {
+  private readonly logger = new Logger('AppendContentTool');
 
   constructor(
     private readonly pageRepo: PageRepo,
@@ -66,8 +66,8 @@ export class AppendDocumentTool {
 
   register(server: McpServer) {
     server.tool(
-      'append_document',
-      APPEND_DOCUMENT_TOOL_DESCRIPTION,
+      'append_content',
+      APPEND_CONTENT_TOOL_DESCRIPTION,
       {
         document: z
           .string()
@@ -123,14 +123,12 @@ export class AppendDocumentTool {
             };
           }
 
-          let docType = 'doc';
           let contentNodesArray: any[] = [];
           if (
             contentToAppend.type === 'doc' &&
             Array.isArray(contentToAppend.content)
           ) {
             contentNodesArray = contentToAppend.content;
-            docType = contentToAppend.type;
           } else if (Array.isArray(contentToAppend)) {
             contentNodesArray = contentToAppend;
           } else {
@@ -191,7 +189,7 @@ export class AppendDocumentTool {
           // Emit event for the collaboration system to handle
           this.eventEmitter.emit('collab.page.updated', {
             page: updatedPage,
-            source: 'append-document-tool',
+            source: 'append-content-tool',
           });
 
           // Emit WebSocket event to notify all clients
@@ -244,4 +242,4 @@ export class AppendDocumentTool {
       },
     );
   }
-}
+} 

@@ -212,7 +212,7 @@ rm -f "$RESPONSE_FILE"
 # Append to a document
 ########################################################
 
-echo "Testing MCP append_document tool..."
+echo "Testing MCP append_content tool..."
 echo "Sending request to $MCP_URL"
 
 # Create the JSON payload with the correct method name for MCP tool invocation
@@ -222,7 +222,7 @@ PAYLOAD=$(cat <<EOF
   "id": "1",
   "method": "tools/call",
   "params": {
-    "name": "append_document",
+    "name": "append_content",
     "arguments": {
       "document": "rXYv03k1BA",
       "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"This is appended content.\"}]}] }",
