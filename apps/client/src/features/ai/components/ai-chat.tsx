@@ -1088,6 +1088,31 @@ export function AIChat() {
           width: "100%",
         }}
       >
+        <Group mb="xs" gap="xs">
+          {[
+            "Execute instructions from this document",
+            "Summarize this document in 3 sentences"
+          ].map((suggestion) => (
+            <Button
+              key={suggestion}
+              variant="outline"
+              color="gray"
+              size="xs"
+              radius="xl"
+              onClick={() => {
+                setInput(suggestion);
+                setShouldAutoScroll(true);
+                setTimeout(() => {
+                  const form = document.querySelector("form");
+                  const event = new Event("submit", { bubbles: true, cancelable: true });
+                  form?.dispatchEvent(event);
+                }, 0);
+              }}
+            >
+              {suggestion}
+            </Button>
+          ))}
+        </Group>
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", gap: "8px", width: "100%" }}
