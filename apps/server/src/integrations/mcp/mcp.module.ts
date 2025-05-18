@@ -11,9 +11,10 @@ import {
   ListWorkspacesTool,
   SuggestDiffTool,
 } from './tools';
+import { WsModule } from '../../ws/ws.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, WsModule],
   controllers: [McpController],
   providers: [
     McpService,

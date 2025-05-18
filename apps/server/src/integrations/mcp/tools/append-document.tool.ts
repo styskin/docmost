@@ -11,6 +11,7 @@ import {
 } from '../../../collaboration/collaboration.util';
 import { JSONContent } from '@tiptap/core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WsGateway } from '../../../ws/ws.gateway';
 
 export const APPEND_DOCUMENT_TOOL_DESCRIPTION = `
 Appends content to an existing document.
@@ -60,6 +61,7 @@ export class AppendDocumentTool {
   constructor(
     private readonly pageRepo: PageRepo,
     private eventEmitter: EventEmitter2,
+    private wsGateway: WsGateway,
   ) {}
 
   register(server: McpServer) {
@@ -186,9 +188,29 @@ export class AppendDocumentTool {
             updatedAt: new Date(),
           };
 
+          // Emit event for the collaboration system to handle
           this.eventEmitter.emit('collab.page.updated', {
             page: updatedPage,
             source: 'append-document-tool',
+          });
+
+          // Emit WebSocket event to notify all clients
+          const room = this.wsGateway.getSpaceRoomName(page.spaceId);
+          this.wsGateway.server.emit('message', {
+            operation: 'updateOne',
+            spaceId: page.spaceId,
+            entity: ['pages'],
+            id: page.id,
+            payload: {
+              id: page.id,
+              slugId: page.slugId,
+              content: mergedContent,
+              textContent: textContent,
+              lastUpdatedById: AGENT_USER_ID,
+              updatedAt: new Date(),
+              spaceId: page.spaceId,
+              workspaceId: page.workspaceId,
+            },
           });
 
           this.logger.log(`Appended content to document with ID: ${page.id}`);

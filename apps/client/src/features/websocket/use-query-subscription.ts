@@ -3,6 +3,7 @@ import { socketAtom } from "@/features/websocket/atoms/socket-atom.ts";
 import { useAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 import { WebSocketEvent } from "@/features/websocket/types";
+import { IPage } from "@/features/page/types/page.types";
 
 export const useQuerySubscription = () => {
   const queryClient = useQueryClient();
@@ -24,34 +25,56 @@ export const useQuerySubscription = () => {
         case "updateOne":
           entity = data.entity[0];
           if (entity === "pages") {
-            // we have to do this because the usePageQuery cache key is the slugId.
-            queryKeyId = data.payload.slugId;
+            const pageById = queryClient.getQueryData<IPage>([
+              ...data.entity,
+              data.id,
+            ]);
+            const pageBySlug = queryClient.getQueryData<IPage>([
+              ...data.entity,
+              data.payload.slugId,
+            ]);
+
+            if (pageById) {
+              queryClient.setQueryData<IPage>([...data.entity, data.id], {
+                ...pageById,
+                ...data.payload,
+              });
+            }
+
+            if (pageBySlug) {
+              queryClient.setQueryData<IPage>(
+                [...data.entity, data.payload.slugId],
+                {
+                  ...pageBySlug,
+                  ...data.payload,
+                },
+              );
+            }
+
+            queryClient.invalidateQueries({
+              queryKey: ["pages", data.id],
+            });
+
+            if (data.payload.slugId) {
+              queryClient.invalidateQueries({
+                queryKey: ["pages", data.payload.slugId],
+              });
+            }
           } else {
             queryKeyId = data.id;
+            if (queryClient.getQueryData([...data.entity, queryKeyId])) {
+              queryClient.setQueryData([...data.entity, queryKeyId], {
+                ...queryClient.getQueryData([...data.entity, queryKeyId]),
+                ...data.payload,
+              });
+            }
           }
-
-          // only update if data was already in cache
-          if (queryClient.getQueryData([...data.entity, queryKeyId])) {
-            queryClient.setQueryData([...data.entity, queryKeyId], {
-              ...queryClient.getQueryData([...data.entity, queryKeyId]),
-              ...data.payload,
-            });
-          }
-
-          /*
-          queryClient.setQueriesData(
-            { queryKey: [data.entity, data.id] },
-            (oldData: any) => {
-              const update = (entity: Record<string, unknown>) =>
-                entity.id === data.id ? { ...entity, ...data.payload } : entity;
-              return Array.isArray(oldData)
-                ? oldData.map(update)
-                : update(oldData as Record<string, unknown>);
-            },
-          );
-      */
           break;
       }
     });
+
+    return () => {
+      socket?.off("message");
+    };
   }, [queryClient, socket]);
 };

@@ -312,6 +312,18 @@ export default function PageEditor({
     };
   }, [editor]);
 
+  useEffect(() => {
+    if (editor && content) {
+      const currentContent = editor.getJSON();
+      const isContentDifferent =
+        JSON.stringify(currentContent) !== JSON.stringify(content);
+
+      if (isContentDifferent) {
+        editor.commands.setContent(content);
+      }
+    }
+  }, [editor, content]);
+
   return isCollabReady ? (
     <div>
       <div ref={menuContainerRef}>
