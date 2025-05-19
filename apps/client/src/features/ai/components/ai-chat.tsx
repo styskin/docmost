@@ -392,14 +392,11 @@ export function AIChat() {
       segments: [{ type: "text", content: userInput }],
     };
 
-    const apiMessages = messages.concat(userMessage).map((m) => {
+    const apiMessages = [];
+
+    for (const m of messages.concat(userMessage)) {
       const baseMessage = {
-        role:
-          m.role === "user"
-            ? "user"
-            : m.role === "assistant"
-              ? "assistant"
-              : "system",
+        role: m.role,
         content: m.segments
           .filter((s) => s.type === "text")
           .map((s) => (s as TextSegment).content)
@@ -409,37 +406,36 @@ export function AIChat() {
       const toolCallSegments = m.segments.filter(
         (s) => s.type === "tool_call",
       ) as ToolCallSegment[];
+
       if (m.role === "assistant" && toolCallSegments.length > 0) {
         const toolCalls = toolCallSegments.map((segment) => ({
           id: segment.id,
           type: "function",
           function: {
             name: segment.name,
-            arguments: segment.data, // Should be a JSON string
+            arguments: segment.data,
           },
         }));
 
-        return {
+        apiMessages.push({
           ...baseMessage,
           tool_calls: toolCalls,
-        };
+        });
+      } else {
+        apiMessages.push(baseMessage);
       }
 
-      if (
-        m.role === "user" &&
-        toolCallSegments.length > 0 &&
-        toolCallSegments[0].result
-      ) {
-        const tool = toolCallSegments[0];
-        return {
-          role: "tool",
-          content: tool.result || "",
-          tool_call_id: tool.id,
-        };
+      for (const toolSegment of toolCallSegments) {
+        if (toolSegment.result) {
+          apiMessages.push({
+            role: "tool",
+            name: toolSegment.name,
+            content: toolSegment.result || "",
+            tool_call_id: toolSegment.id,
+          });
+        }
       }
-
-      return baseMessage;
-    });
+    }
 
     const systemMessage = {
       role: "system",
@@ -1091,7 +1087,7 @@ export function AIChat() {
         <Group mb="xs" gap="xs">
           {[
             "Execute instructions from this document",
-            "Summarize this document in 3 sentences"
+            "Summarize this document in 3 sentences",
           ].map((suggestion) => (
             <Button
               key={suggestion}
@@ -1104,7 +1100,10 @@ export function AIChat() {
                 setShouldAutoScroll(true);
                 setTimeout(() => {
                   const form = document.querySelector("form");
-                  const event = new Event("submit", { bubbles: true, cancelable: true });
+                  const event = new Event("submit", {
+                    bubbles: true,
+                    cancelable: true,
+                  });
                   form?.dispatchEvent(event);
                 }, 0);
               }}

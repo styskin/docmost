@@ -14,6 +14,9 @@ Creating a new document with the specified title and content.
 The content must be provided as a stringified JSON representing a YDoc.
 YDoc is a data structure used for collaborative editing.
 Do not include title in the content as a heading.
+By default, the new document will be created at the root of the space.
+If you want to create a document under a parent document, provide the slug ID of the parent document.
+Do not do this unless explicitly instructed to do so.
 Example of a simple YDoc structure:
 {
   "type": "doc",
@@ -146,7 +149,7 @@ Args:
 - content, string: The content of the new document, as a stringified JSON YDoc.
 - space, string: The slug of the space where the document will be created.
 - workspace, string: The ID of the workspace.
-- parentDocument, string, optional: The slug ID of the parent document. If provided, the new document will be nested under this document.
+- parentDocument, string, optional: The slug ID of the parent document.
 
 Returns:
 - documentId, string: The ID of the created document.
