@@ -1,11 +1,5 @@
 import "@/features/editor/styles/index.css";
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { IndexeddbPersistence } from "y-indexeddb";
 import * as Y from "yjs";
 import {
@@ -58,6 +52,7 @@ import {
   SuggestionPluginState,
 } from "./extensions/suggestion-mode/plugin";
 import { jwtDecode } from "jwt-decode";
+import { socketAtom } from "@/features/websocket/atoms/socket-atom.ts";
 
 interface PageEditorProps {
   pageId: string;
@@ -75,22 +70,24 @@ export default function PageEditor({
   const [, setEditor] = useAtom(pageEditorAtom);
   const [, setAsideState] = useAtom(asideStateAtom);
   const [, setActiveCommentId] = useAtom(activeCommentIdAtom);
+  const [, setYjsConnectionStatus] = useAtom(yjsConnectionStatusAtom);
   const [showCommentPopup, setShowCommentPopup] = useAtom(showCommentPopupAtom);
-  const ydoc = useMemo(() => new Y.Doc(), [pageId]);
+  const [socket] = useAtom(socketAtom);
+
   const [isLocalSynced, setLocalSynced] = useState(false);
   const [isRemoteSynced, setRemoteSynced] = useState(false);
-  const [yjsConnectionStatus, setYjsConnectionStatus] = useAtom(
-    yjsConnectionStatusAtom,
-  );
+  const [isCollabReady, setIsCollabReady] = useState(false);
+
   const menuContainerRef = useRef(null);
-  const documentName = `page.${pageId}`;
+  const shouldReconnectRef = useRef(false);
   const { data: collabQuery, refetch: refetchCollabToken } = useCollabToken();
   const { isIdle, resetIdle } = useIdle(FIVE_MINUTES, { initialState: false });
   const documentState = useDocumentVisibility();
-  const [isCollabReady, setIsCollabReady] = useState(false);
   const { pageSlug } = useParams();
   const slugId = extractPageSlugId(pageSlug);
 
+  const documentName = `page.${pageId}`;
+  const ydoc = useMemo(() => new Y.Doc(), [pageId]);
   const localProvider = useMemo(() => {
     const provider = new IndexeddbPersistence(documentName, ydoc);
 
@@ -100,6 +97,18 @@ export default function PageEditor({
 
     return provider;
   }, [pageId, ydoc]);
+
+  const updateCachedContent = useDebouncedCallback((newContent: any) => {
+    const pageData = queryClient.getQueryData<IPage>(["pages", slugId]);
+
+    if (pageData) {
+      queryClient.setQueryData(["pages", slugId], {
+        ...pageData,
+        content: newContent,
+        updatedAt: new Date(),
+      });
+    }
+  }, 300);
 
   const remoteProvider = useMemo(() => {
     const provider = new HocuspocusProvider({
@@ -126,10 +135,21 @@ export default function PageEditor({
 
     provider.on("synced", () => {
       setRemoteSynced(true);
+      if (editor) {
+        const editorJson = editor.getJSON();
+        updateCachedContent(editorJson);
+      }
     });
 
     provider.on("disconnect", () => {
       setYjsConnectionStatus(WebSocketStatus.Disconnected);
+    });
+
+    provider.on("update", () => {
+      if (editor) {
+        const editorJson = editor.getJSON();
+        updateCachedContent(editorJson);
+      }
     });
 
     return provider;
@@ -200,24 +220,50 @@ export default function PageEditor({
       onUpdate({ editor }) {
         if (editor.isEmpty) return;
         const editorJson = editor.getJSON();
-        //update local page cache to reduce flickers
-        debouncedUpdateContent(editorJson);
+        updateCachedContent(editorJson);
       },
     },
     [pageId, editable, remoteProvider?.status],
   );
 
-  const debouncedUpdateContent = useDebouncedCallback((newContent: any) => {
-    const pageData = queryClient.getQueryData<IPage>(["pages", slugId]);
+  useEffect(() => {
+    if (!socket) return;
 
-    if (pageData) {
-      queryClient.setQueryData(["pages", slugId], {
-        ...pageData,
-        content: newContent,
-        updatedAt: new Date(),
-      });
+    // Force a sync when a content update is received via WebSocket
+    const handleWebSocketMessage = (data) => {
+      if (
+        data.operation === "updateOne" &&
+        data.entity?.includes("pages") &&
+        (data.id === pageId || data.payload?.id === pageId)
+      ) {
+        if (
+          remoteProvider &&
+          remoteProvider.status !== WebSocketStatus.Connected
+        ) {
+          remoteProvider.connect();
+        } else if (remoteProvider.status === WebSocketStatus.Connected) {
+          shouldReconnectRef.current = true;
+          remoteProvider.disconnect();
+        }
+      }
+    };
+
+    socket.on("message", handleWebSocketMessage);
+
+    return () => {
+      socket.off("message", handleWebSocketMessage);
+    };
+  }, [socket, pageId, remoteProvider]);
+
+  useEffect(() => {
+    if (
+      shouldReconnectRef.current &&
+      remoteProvider?.status === WebSocketStatus.Disconnected
+    ) {
+      shouldReconnectRef.current = false;
+      remoteProvider.connect();
     }
-  }, 3000);
+  }, [remoteProvider?.status]);
 
   const handleActiveCommentEvent = (event) => {
     const { commentId } = event.detail;
@@ -311,6 +357,17 @@ export default function PageEditor({
       editor.off("transaction", updateState);
     };
   }, [editor]);
+
+  // Load effect - force a sync when collaboration is ready
+  useEffect(() => {
+    if (isCollabReady && remoteProvider?.status === WebSocketStatus.Connected) {
+      // Force a sync by sending a small update
+      remoteProvider.awareness.setLocalStateField("presence", {
+        synced: true,
+        user: currentUser?.user,
+      });
+    }
+  }, [isCollabReady, remoteProvider?.status]);
 
   return isCollabReady ? (
     <div>
