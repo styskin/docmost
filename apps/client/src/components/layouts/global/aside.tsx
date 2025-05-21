@@ -1,8 +1,8 @@
 import { Box, ScrollArea, Text } from "@mantine/core";
 import CommentList from "@/features/comment/components/comment-list.tsx";
 import { useAtom } from "jotai";
-import { asideStateAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
-import React, { ReactNode } from "react";
+import { effectiveAsideStateAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
+import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { TableOfContents } from "@/features/editor/components/table-of-contents/table-of-contents.tsx";
 import { useAtomValue } from "jotai";
@@ -10,7 +10,7 @@ import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms.ts";
 import { AIChat } from "@/features/ai/components/ai-chat.tsx";
 
 export default function Aside() {
-  const [{ tab }] = useAtom(asideStateAtom);
+  const [{ tab, isAsideOpen }] = useAtom(effectiveAsideStateAtom);
   const { t } = useTranslation();
   const pageEditor = useAtomValue(pageEditorAtom);
 

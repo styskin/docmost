@@ -2,9 +2,9 @@ import { AppShell, Container } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import SettingsSidebar from "@/components/settings/settings-sidebar.tsx";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
-  asideStateAtom,
+  effectiveAsideStateAtom,
   desktopSidebarAtom,
   mobileSidebarAtom,
   sidebarWidthAtom,
@@ -27,7 +27,8 @@ export default function GlobalAppShell({
   const [mobileOpened] = useAtom(mobileSidebarAtom);
   const toggleMobile = useToggleSidebar(mobileSidebarAtom);
   const [desktopOpened] = useAtom(desktopSidebarAtom);
-  const [{ isAsideOpen }] = useAtom(asideStateAtom);
+
+  const effectiveAsideState = useAtomValue(effectiveAsideStateAtom);
   const [sidebarWidth, setSidebarWidth] = useAtom(sidebarWidthAtom);
   const [asideWidth, setAsideWidth] = useAtom(asideWidthAtom);
   const [isSidebarResizing, setIsSidebarResizing] = useState(false);
@@ -35,6 +36,9 @@ export default function GlobalAppShell({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
+
+  const location = useLocation();
+
   const navbarOutsideRef = useClickOutside(() => {
     if (mobileOpened) {
       toggleMobile();
@@ -121,7 +125,6 @@ export default function GlobalAppShell({
     };
   }, [resizeSidebar, stopSidebarResizing, resizeAside, stopAsideResizing]);
 
-  const location = useLocation();
   const isSettingsRoute = location.pathname.startsWith("/settings");
   const isSpaceRoute = location.pathname.startsWith("/s/");
   const isHomeRoute = location.pathname.startsWith("/home");
@@ -144,7 +147,10 @@ export default function GlobalAppShell({
         isPageRoute && {
           width: asideWidth,
           breakpoint: "sm",
-          collapsed: { mobile: !isAsideOpen, desktop: !isAsideOpen },
+          collapsed: {
+            mobile: !effectiveAsideState.isAsideOpen,
+            desktop: !effectiveAsideState.isAsideOpen,
+          },
         }
       }
       padding="md"
@@ -183,7 +189,7 @@ export default function GlobalAppShell({
           withBorder={false}
           ref={asideRef}
         >
-          {isAsideOpen && (
+          {effectiveAsideState.isAsideOpen && (
             <div
               className={classes.asideResizeHandle}
               onMouseDown={startAsideResizing}

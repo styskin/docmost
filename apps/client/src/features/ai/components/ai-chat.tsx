@@ -9,6 +9,7 @@ import {
   Group,
   Collapse,
   Loader,
+  Tooltip,
 } from "@mantine/core";
 import {
   IconSend,
@@ -17,9 +18,11 @@ import {
   IconChevronRight,
   IconMicrophone,
   IconMicrophoneOff,
+  IconEraser,
 } from "@tabler/icons-react";
 import { MarkdownRenderer } from "../../../components/markdown-renderer";
 import { useAtom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import { workspaceAtom } from "@/features/user/atoms/current-user-atom";
 import { usePageQuery } from "@/features/page/queries/page-query";
 import { extractPageSlugId } from "@/lib";
@@ -110,6 +113,33 @@ interface ToolCallSegment {
   isOpen: boolean;
 }
 
+// Persistent chat state atoms
+const chatMessagesAtom = atomWithStorage<Message[]>("ai_chat_messages", [
+  {
+    id: "welcome-message",
+    role: "assistant",
+    segments: [{ type: "text", content: "How can I help you?" }],
+  },
+]);
+const currentAssistantMessageAtom = atomWithStorage<Message | null>(
+  "ai_chat_current_message",
+  null,
+);
+const pendingSuggestionsAtom = atomWithStorage<
+  {
+    toolCallId: string;
+    name: string;
+    data: string;
+    result?: string;
+  }[]
+>("ai_chat_pending_suggestions", []);
+
+// Store open tool call states
+const openToolCallsAtom = atomWithStorage<Record<string, boolean>>(
+  "ai_chat_open_tool_calls",
+  {},
+);
+
 export function AIChat() {
   // Get current context
   const [workspace] = useAtom(workspaceAtom);
@@ -125,33 +155,23 @@ export function AIChat() {
   // Get access to the main document editor
   const [mainEditor] = useAtom(pageEditorAtom);
 
-  // Conversation state
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome-message",
-      role: "assistant",
-      segments: [{ type: "text", content: "How can I help you?" }],
-    },
-  ]);
+  // Conversation state using persistent atoms
+  const [messages, setMessages] = useAtom(chatMessagesAtom);
+  const [currentAssistantMessage, setCurrentAssistantMessage] = useAtom(
+    currentAssistantMessageAtom,
+  );
+  const [pendingSuggestions, setPendingSuggestions] = useAtom(
+    pendingSuggestionsAtom,
+  );
+  const [openToolCalls, setOpenToolCalls] = useAtom(openToolCallsAtom);
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [currentAssistantMessage, setCurrentAssistantMessage] =
-    useState<Message | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [isRestartingRecognition, setIsRestartingRecognition] = useState(false);
-
-  // Check and apply pending suggestion diff calls when editor becomes available
-  const [pendingSuggestions, setPendingSuggestions] = useState<
-    {
-      toolCallId: string;
-      name: string;
-      data: string;
-      result?: string;
-    }[]
-  >([]);
 
   const toggleToolCall = (
     messageId: string,
@@ -164,6 +184,15 @@ export function AIChat() {
       setShouldAutoScroll(false);
     }
 
+    // Create a unique key for this tool call
+    const toolKey = `${messageId}:${toolId}`;
+
+    // Toggle the open state in the persistent atom
+    setOpenToolCalls((prev) => ({
+      ...prev,
+      [toolKey]: !prev[toolKey],
+    }));
+
     if (currentAssistantMessage && currentAssistantMessage.id === messageId) {
       setCurrentAssistantMessage((prev) => {
         if (!prev) return prev;
@@ -172,7 +201,7 @@ export function AIChat() {
           ...prev,
           segments: prev.segments.map((segment) => {
             if (segment.type === "tool_call" && segment.id === toolId) {
-              return { ...segment, isOpen: !segment.isOpen };
+              return { ...segment, isOpen: !openToolCalls[toolKey] };
             }
             return segment;
           }),
@@ -188,7 +217,7 @@ export function AIChat() {
             ...message,
             segments: message.segments.map((segment) => {
               if (segment.type === "tool_call" && segment.id === toolId) {
-                return { ...segment, isOpen: !segment.isOpen };
+                return { ...segment, isOpen: !openToolCalls[toolKey] };
               }
               return segment;
             }),
@@ -386,11 +415,17 @@ export function AIChat() {
       setIsListening(false);
     }
 
+    // Generate a unique ID for the new message
+    const newUserMessageId = `user-${Date.now()}`;
+
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: newUserMessageId,
       role: "user",
       segments: [{ type: "text", content: userInput }],
     };
+
+    // Update messages immediately to show user input
+    setMessages((prev) => [...prev, userMessage]);
 
     const apiMessages = [];
 
@@ -446,7 +481,6 @@ export function AIChat() {
     };
     const messagesWithSystem = [systemMessage, ...apiMessages];
 
-    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     setShouldAutoScroll(true);
 
@@ -503,12 +537,16 @@ export function AIChat() {
                     // New tool call with ID and name
                     if (chunk.id && chunk.name) {
                       currentToolId = chunk.id;
+                      const toolKey = `${prev.id}:${chunk.id}`;
+                      // Get initial isOpen state from persisted storage
+                      const isOpen = openToolCalls[toolKey] ?? false;
+
                       segments.push({
                         type: "tool_call",
                         id: chunk.id,
                         name: chunk.name,
                         data: chunk.args || "",
-                        isOpen: false,
+                        isOpen,
                       } as ToolCallSegment);
                     }
                     // Continuation of existing tool call
@@ -587,12 +625,16 @@ export function AIChat() {
                     if (item.type === "tool_use") {
                       if (item.id && item.name) {
                         currentToolId = item.id;
+                        const toolKey = `${prev.id}:${item.id}`;
+                        // Get initial isOpen state from persisted storage
+                        const isOpen = openToolCalls[toolKey] ?? false;
+
                         segments.push({
                           type: "tool_call",
                           id: item.id,
                           name: item.name,
                           data: item.partial_json || "",
-                          isOpen: false,
+                          isOpen,
                         } as ToolCallSegment);
                       } else if (item.partial_json !== undefined) {
                         for (let i = segments.length - 1; i >= 0; i--) {
@@ -687,17 +729,19 @@ export function AIChat() {
 
       setCurrentAssistantMessage((prev) => {
         if (!prev) return prev;
+        // Add the completed message to our messages list
         setMessages((messages) => [...messages, prev]);
         if (playResponseTTS) {
           ttsPlayer.finalizeStream(); // Finalize TTS stream only if it was played
         }
+        // Return null to clear the current message now that it's been added to the messages list
         return null;
       });
     } catch (error) {
       console.error("Error fetching AI response:", error);
 
       const errorMessage: Message = {
-        id: Date.now().toString(),
+        id: `assistant-error-${Date.now()}`,
         role: "assistant",
         segments: [
           {
@@ -871,7 +915,6 @@ export function AIChat() {
 
         toolCalls.forEach((toolCall) => {
           if (toolCall.name === "suggest_diff") {
-            console.log("Processing completed message with suggest_diff tool");
             processSuggestDiffTool(
               toolCall.id,
               toolCall.name,
@@ -895,6 +938,10 @@ export function AIChat() {
         );
       } else if (segment.type === "tool_call") {
         const toolSegment = segment as ToolCallSegment;
+        // Use the stored open state from the atom
+        const toolKey = `${messageId}:${toolSegment.id}`;
+        const isToolOpen = openToolCalls[toolKey] ?? toolSegment.isOpen;
+
         return (
           <Box
             key={toolSegment.id}
@@ -920,13 +967,13 @@ export function AIChat() {
                 {toolSegment.name === "suggest_diff" &&
                   " (Editing Suggestions)"}
               </Text>
-              {toolSegment.isOpen ? (
+              {isToolOpen ? (
                 <IconChevronDown size={16} />
               ) : (
                 <IconChevronRight size={16} />
               )}
             </Group>
-            <Collapse in={toolSegment.isOpen}>
+            <Collapse in={isToolOpen}>
               <Box
                 style={{
                   fontFamily: "monospace",
@@ -979,6 +1026,21 @@ export function AIChat() {
       }
       return null;
     });
+  };
+
+  // Function to reset chat history
+  const resetChat = () => {
+    setMessages([
+      {
+        id: "welcome-message",
+        role: "assistant",
+        segments: [{ type: "text", content: "How can I help you?" }],
+      },
+    ]);
+    setCurrentAssistantMessage(null);
+    setPendingSuggestions([]);
+    setInput("");
+    setShouldAutoScroll(true);
   };
 
   return (
@@ -1084,7 +1146,7 @@ export function AIChat() {
           width: "100%",
         }}
       >
-        <Group mb="xs" gap="xs">
+        <Group mb="xs" gap="xs" justify="flex-start">
           {[
             "Execute instructions from this document",
             "Summarize this document in 3 sentences",
@@ -1127,6 +1189,17 @@ export function AIChat() {
             minRows={4}
           />
           <Stack gap="xs" style={{ justifyContent: "center" }}>
+            <Tooltip label="Clear chat history">
+              <Button
+                variant="light"
+                size="xs"
+                onClick={resetChat}
+                color="gray"
+                px="xs"
+              >
+                <IconEraser size={16} />
+              </Button>
+            </Tooltip>
             <Button
               type="button"
               variant="light"
