@@ -172,6 +172,7 @@ export function AIChat() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [isRestartingRecognition, setIsRestartingRecognition] = useState(false);
+  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
 
   const toggleToolCall = (
     messageId: string,
@@ -251,6 +252,7 @@ export function AIChat() {
   useEffect(() => {
     // Initialize speech recognition
     if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
+      setIsSpeechRecognitionSupported(true);
       const SpeechRecognition =
         window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -1186,7 +1188,7 @@ export function AIChat() {
             disabled={isLoading}
             style={{ flex: 1, width: "100%" }}
             autosize
-            minRows={4}
+            minRows={5}
           />
           <Stack gap="xs" style={{ justifyContent: "center" }}>
             <Tooltip label="Clear chat history">
@@ -1196,34 +1198,41 @@ export function AIChat() {
                 onClick={resetChat}
                 color="gray"
                 px="xs"
+                disabled={isLoading || (messages.length === 1 && messages[0].id === "welcome-message")}
               >
                 <IconEraser size={16} />
               </Button>
             </Tooltip>
-            <Button
-              type="button"
-              variant="light"
-              color={isListening ? "red" : "blue"}
-              onClick={toggleListening}
-              disabled={isLoading}
-              size="xs"
-              px="xs"
-            >
-              {isListening ? (
-                <IconMicrophoneOff size={16} />
-              ) : (
-                <IconMicrophone size={16} />
-              )}
-            </Button>
-            <Button
-              type="submit"
-              variant="light"
-              disabled={isLoading || !input.trim()}
-              size="xs"
-              px="xs"
-            >
-              <IconSend size={16} />
-            </Button>
+            {isSpeechRecognitionSupported && (
+              <Tooltip label="Toggle voice input">
+                <Button
+                  type="button"
+                  variant="light"
+                  color={isListening ? "red" : "blue"}
+                  onClick={toggleListening}
+                  disabled={isLoading}
+                  size="xs"
+                  px="xs"
+                >
+                  {isListening ? (
+                    <IconMicrophoneOff size={16} />
+                  ) : (
+                    <IconMicrophone size={16} />
+                  )}
+                </Button>
+              </Tooltip>
+            )}
+            <Tooltip label="Send message">
+              <Button
+                type="submit"
+                variant="light"
+                disabled={isLoading || !input.trim()}
+                size="xs"
+                px="xs"
+              >
+                <IconSend size={16} />
+              </Button>
+            </Tooltip>
           </Stack>
         </form>
       </Box>
