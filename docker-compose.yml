@@ -69,3 +69,4 @@ volumes:
   docmost:
   db_data:
   redis_data:
+  manul_agent:
