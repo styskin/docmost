@@ -16,7 +16,7 @@ import { WsGateway } from '../../../ws/ws.gateway';
 export const APPEND_CONTENT_TOOL_DESCRIPTION = `
 Appends content to an existing document.
 The content to append must be provided as a stringified JSON representing a YDoc fragment.
-This will be added to the end of the current document.
+This will be added to the end or beginning of the current document, based on the position parameter.
 
 Example of a simple YDoc content structure to append:
 {
@@ -48,6 +48,7 @@ Args:
 - document, string: The document ID or slug ID of the document to append to.
 - content, string: The content to append, as a stringified JSON YDoc fragment.
 - workspace, string: The ID of the workspace.
+- position, string: Where to add the content - "top" or "bottom" (default: "bottom").
 
 Returns:
 - documentId, string: The ID of the updated document.
@@ -78,10 +79,14 @@ export class AppendContentTool {
             'The content to append, as a stringified JSON YDoc fragment.',
           ),
         workspace: z.string().describe('The ID of the workspace.'),
+        position: z
+          .enum(['top', 'bottom'])
+          .default('bottom')
+          .describe('Where to add the content - "top" or "bottom".'),
       },
       async (args: any) => {
         try {
-          const { document, content, workspace } = args;
+          const { document, content, workspace, position = 'bottom' } = args;
           if (!document || !content || !workspace) {
             return {
               content: [
@@ -158,8 +163,13 @@ export class AppendContentTool {
                 node instanceof Y.XmlElement || node instanceof Y.XmlText,
             )
             .map((node) => node.clone());
+
           if (nodesToPush.length > 0) {
-            mainRoot.push(nodesToPush);
+            if (position === 'top') {
+              mainRoot.insert(0, nodesToPush);
+            } else {
+              mainRoot.push(nodesToPush);
+            }
           }
           const mergedContent = TiptapTransformer.fromYdoc(ydoc, 'default');
           const ydocState = Buffer.from(Y.encodeStateAsUpdate(ydoc));
