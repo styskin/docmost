@@ -15,4 +15,8 @@ export class CreatePageDto {
 
   @IsUUID()
   spaceId: string;
+
+  @IsOptional()
+  @IsString()
+  type?: string;
 }

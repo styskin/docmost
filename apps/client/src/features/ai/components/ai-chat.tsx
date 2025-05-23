@@ -28,6 +28,7 @@ import { usePageQuery } from "@/features/page/queries/page-query";
 import { extractPageSlugId } from "@/lib";
 import { ttsPlayer } from "../utils/tts-player";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms";
+import { DocumentType } from "@/features/page/types/page.types.ts";
 
 // Add Web Speech API type declarations
 interface SpeechRecognitionEvent extends Event {
@@ -172,7 +173,8 @@ export function AIChat() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [isRestartingRecognition, setIsRestartingRecognition] = useState(false);
-  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] = useState(false);
+  const [isSpeechRecognitionSupported, setIsSpeechRecognitionSupported] =
+    useState(false);
 
   const toggleToolCall = (
     messageId: string,
@@ -1149,32 +1151,54 @@ export function AIChat() {
         }}
       >
         <Group mb="xs" gap="xs" justify="flex-start">
-          {[
-            "Execute instructions from this document",
-            "Summarize this document in 3 sentences",
-          ].map((suggestion) => (
-            <Button
-              key={suggestion}
-              variant="outline"
-              color="gray"
-              size="xs"
-              radius="xl"
-              onClick={() => {
-                setInput(suggestion);
-                setShouldAutoScroll(true);
-                setTimeout(() => {
-                  const form = document.querySelector("form");
-                  const event = new Event("submit", {
-                    bubbles: true,
-                    cancelable: true,
-                  });
-                  form?.dispatchEvent(event);
-                }, 0);
-              }}
-            >
-              {suggestion}
-            </Button>
-          ))}
+          {currentPage?.type &&
+            [
+              DocumentType.LLM_INSTRUCTION,
+              DocumentType.LLM_SCHEDULED_TASK,
+            ].includes(currentPage.type) && (
+              <Button
+                key="Execute instructions from this document"
+                variant="outline"
+                color="gray"
+                size="xs"
+                radius="xl"
+                onClick={() => {
+                  setInput("Execute instructions from this document");
+                  setShouldAutoScroll(true);
+                  setTimeout(() => {
+                    const form = document.querySelector("form");
+                    const event = new Event("submit", {
+                      bubbles: true,
+                      cancelable: true,
+                    });
+                    form?.dispatchEvent(event);
+                  }, 0);
+                }}
+              >
+                Execute instructions from this document
+              </Button>
+            )}
+          <Button
+            key="Summarize this document in 3 sentences"
+            variant="outline"
+            color="gray"
+            size="xs"
+            radius="xl"
+            onClick={() => {
+              setInput("Summarize this document in 3 sentences");
+              setShouldAutoScroll(true);
+              setTimeout(() => {
+                const form = document.querySelector("form");
+                const event = new Event("submit", {
+                  bubbles: true,
+                  cancelable: true,
+                });
+                form?.dispatchEvent(event);
+              }, 0);
+            }}
+          >
+            Summarize this document in 3 sentences
+          </Button>
         </Group>
         <form
           onSubmit={handleSubmit}
@@ -1198,7 +1222,11 @@ export function AIChat() {
                 onClick={resetChat}
                 color="gray"
                 px="xs"
-                disabled={isLoading || (messages.length === 1 && messages[0].id === "welcome-message")}
+                disabled={
+                  isLoading ||
+                  (messages.length === 1 &&
+                    messages[0].id === "welcome-message")
+                }
               >
                 <IconEraser size={16} />
               </Button>

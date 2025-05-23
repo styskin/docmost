@@ -1,5 +1,17 @@
 import { ISpace } from "@/features/space/types/space.types.ts";
 
+export enum DocumentType {
+  STANDARD = "standard",
+  LLM_INSTRUCTION = "llm_instruction",
+  LLM_SCHEDULED_TASK = "llm_scheduled_task",
+}
+
+export const DOCUMENT_TYPE_NAMES: Record<DocumentType, string> = {
+  [DocumentType.STANDARD]: "Standard document",
+  [DocumentType.LLM_INSTRUCTION]: "LLM Instruction",
+  [DocumentType.LLM_SCHEDULED_TASK]: "LLM Scheduled Task",
+};
+
 export interface IPage {
   id: string;
   slugId: string;
@@ -21,6 +33,7 @@ export interface IPage {
   creator: ICreator;
   lastUpdatedBy: ILastUpdatedBy;
   space: Partial<ISpace>;
+  type?: DocumentType;
 }
 
 interface ICreator {
@@ -60,6 +73,7 @@ export interface IPageInput {
   icon: string;
   coverPhoto: string;
   position: string;
+  type?: DocumentType;
 }
 
 export interface IExportPageParams {

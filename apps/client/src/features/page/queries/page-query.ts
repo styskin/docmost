@@ -28,15 +28,25 @@ import { buildTree } from "@/features/page/tree/utils";
 import { useEffect } from "react";
 import { validate as isValidUuid } from "uuid";
 import { useTranslation } from "react-i18next";
+import { DocumentType } from "@/features/page/types/page.types";
 
 export function usePageQuery(
   pageInput: Partial<IPageInput>,
 ): UseQueryResult<IPage, Error> {
-  const query = useQuery({
+  const query = useQuery<IPage, Error, IPage>({
     queryKey: ["pages", pageInput.pageId],
     queryFn: () => getPageById(pageInput),
     enabled: !!pageInput.pageId,
     staleTime: 5 * 60 * 1000,
+    select: (fetchedData) => {
+      if (fetchedData && fetchedData.type === null) {
+        return {
+          ...fetchedData,
+          type: DocumentType.STANDARD,
+        };
+      }
+      return fetchedData;
+    },
   });
 
   useEffect(() => {
@@ -68,22 +78,33 @@ export function useUpdatePageMutation() {
 
   return useMutation<IPage, Error, Partial<IPageInput>>({
     mutationFn: (data) => updatePage(data),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       const pageBySlug = queryClient.getQueryData<IPage>([
         "pages",
         data.slugId,
       ]);
       const pageById = queryClient.getQueryData<IPage>(["pages", data.id]);
 
+      const updatedPageData: Partial<IPage> = {
+        ...data,
+      };
+
+      if (variables.type) {
+        updatedPageData.type = variables.type;
+      }
+
       if (pageBySlug) {
         queryClient.setQueryData(["pages", data.slugId], {
           ...pageBySlug,
-          ...data,
+          ...updatedPageData,
         });
       }
 
       if (pageById) {
-        queryClient.setQueryData(["pages", data.id], { ...pageById, ...data });
+        queryClient.setQueryData(["pages", data.id], {
+          ...pageById,
+          ...updatedPageData,
+        });
       }
     },
   });
@@ -142,7 +163,6 @@ export function usePageBreadcrumbsQuery(
 }
 
 export async function fetchAncestorChildren(params: SidebarPagesParams) {
-  // not using a hook here, so we can call it inside a useEffect hook
   const response = await queryClient.fetchQuery({
     queryKey: ["sidebar-pages", params],
     queryFn: () => getSidebarPages(params),

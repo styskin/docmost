@@ -13,3 +13,19 @@
         display: none;
     }
 }
+
+.showOnDesktop {
+    display: inline-flex !important; /* Use inline-flex to align items like ActionIcon in Badge */
+}
+.showOnMobile {
+    display: none !important;
+}
+
+@media (max-width: 48em) {
+    .showOnDesktop {
+        display: none !important;
+    }
+    .showOnMobile {
+        display: inline-flex !important;
+    }
+}

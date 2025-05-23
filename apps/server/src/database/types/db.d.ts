@@ -187,6 +187,7 @@ export interface Pages {
   updatedAt: Generated<Timestamp>;
   workspaceId: string;
   ydoc: Buffer | null;
+  type: Generated<string | null>;
 }
 
 export interface Shares {
