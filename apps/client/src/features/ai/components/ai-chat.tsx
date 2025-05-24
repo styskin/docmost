@@ -126,6 +126,10 @@ const currentAssistantMessageAtom = atomWithStorage<Message | null>(
   "ai_chat_current_message",
   null,
 );
+const conversationIdAtom = atomWithStorage<string | null>(
+  "ai_chat_conversation_id",
+  null,
+);
 const pendingSuggestionsAtom = atomWithStorage<
   {
     toolCallId: string;
@@ -144,6 +148,14 @@ const openToolCallsAtom = atomWithStorage<Record<string, boolean>>(
 export function AIChat() {
   // Get current context
   const [workspace] = useAtom(workspaceAtom);
+  const [conversationId, setConversationId] = useAtom(conversationIdAtom);
+
+  useEffect(() => {
+    if (!conversationId) {
+      setConversationId(crypto.randomUUID());
+    }
+  }, [conversationId, setConversationId]);
+
   const pathParts = window.location.pathname.split("/");
   const pageSlugIndex = pathParts.indexOf("p") + 1;
   const pageSlug =
@@ -499,7 +511,10 @@ export function AIChat() {
       const response = await fetch("/api/manul/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: messagesWithSystem }),
+        body: JSON.stringify({
+          messages: messagesWithSystem,
+          conversationId: conversationId,
+        }),
       });
 
       if (!response.ok)
@@ -1045,6 +1060,7 @@ export function AIChat() {
     setPendingSuggestions([]);
     setInput("");
     setShouldAutoScroll(true);
+    setConversationId(crypto.randomUUID());
   };
 
   return (

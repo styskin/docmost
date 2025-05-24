@@ -26,15 +26,11 @@ export class ManulController {
         tool_calls?: any[];
         tool_call_id?: string;
       }[];
+      conversationId: string;
     },
     @Res() res: FastifyReply,
   ) {
     try {
-      console.log(
-        'ManulController: Processing query request with message count:',
-        body.messages?.length,
-      );
-
       if (
         !body.messages ||
         !Array.isArray(body.messages) ||
@@ -56,11 +52,11 @@ export class ManulController {
         }
       }
 
-      console.log(
-        'ManulController: Calling Manul API with messages:',
+      console.log('ManulController: Calling Manul API');
+      const stream = await this.manulService.contextCall(
         body.messages,
+        body.conversationId,
       );
-      const stream = await this.manulService.contextCall(body.messages);
 
       console.log('ManulController: Got stream response');
 
@@ -96,18 +92,6 @@ export class ManulController {
 
             const chunk = decoder.decode(value);
             chunkCount++;
-
-            if (chunkCount <= 3) {
-              console.log(
-                `ManulController: Chunk ${chunkCount} (${chunk.length} bytes):`,
-                chunk.substring(0, 100),
-              );
-            } else if (chunkCount % 10 === 0) {
-              console.log(
-                `ManulController: Processed ${chunkCount} chunks so far`,
-              );
-            }
-
             res.raw.write(chunk);
           }
         } catch (error) {

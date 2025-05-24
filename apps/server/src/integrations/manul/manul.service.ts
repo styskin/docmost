@@ -23,6 +23,7 @@ export class ManulService {
       tool_calls?: any[];
       tool_call_id?: string;
     }[],
+    conversationId?: string,
   ): Promise<ReadableStream<Uint8Array>> {
     try {
       console.log('ManulService: Calling Manul API with messages:', {
@@ -37,14 +38,8 @@ export class ManulService {
 
       const body = {
         messages: messages,
-        stream: true,
+        conversation_id: conversationId,
       };
-
-      // Log the payload for debugging
-      console.log(
-        'ManulService: Sending payload to server:',
-        JSON.stringify(body),
-      );
 
       const response = await fetch(url, {
         method: 'POST',
@@ -55,10 +50,6 @@ export class ManulService {
       });
 
       console.log('ManulService: Got response status:', response.status);
-      console.log(
-        'ManulService: Response headers:',
-        Object.fromEntries(response.headers.entries()),
-      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -73,9 +64,6 @@ export class ManulService {
 
         throw new ManulServiceError(errorMessage, response.status);
       }
-
-      // Always return the stream
-      console.log('ManulService: Returning stream');
       return response.body;
     } catch (error) {
       console.error('ManulService: Error:', error);
