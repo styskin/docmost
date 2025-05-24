@@ -22,7 +22,10 @@ import {
   extractPageMentions,
 } from '../../common/helpers/prosemirror/utils';
 import { isDeepStrictEqual } from 'node:util';
-import { IPageBacklinkJob } from '../../integrations/queue/constants/queue.interface';
+import {
+  IPageBacklinkJob,
+  IAgentFeedJob,
+} from '../../integrations/queue/constants/queue.interface';
 import { Page } from '@docmost/db/types/entity.types';
 
 @Injectable()
@@ -35,6 +38,8 @@ export class PersistenceExtension implements Extension {
     @InjectKysely() private readonly db: KyselyDB,
     private eventEmitter: EventEmitter2,
     @InjectQueue(QueueName.GENERAL_QUEUE) private generalQueue: Queue,
+    @InjectQueue(QueueName.AGENT_FEED_QUEUE)
+    private readonly agentFeedQueue: Queue<IAgentFeedJob>,
   ) {}
 
   async onLoadDocument(data: onLoadDocumentPayload) {
@@ -168,6 +173,20 @@ export class PersistenceExtension implements Extension {
         workspaceId: page.workspaceId,
         mentions: pageMentions,
       } as IPageBacklinkJob);
+
+      if (page.type === 'llm_scheduled_task') {
+        await this.agentFeedQueue.add(QueueJob.AGENT_FEED_DOCUMENT_EVENT, {
+          eventType: 'update_scheduled_task_document',
+          documentId: page.id,
+          documentType: 'llm_scheduled_task',
+          workspaceId: page.workspaceId,
+          payload: {
+            title: page.title,
+            icon: page.icon,
+            textContent: textContent,
+          },
+        });
+      }
     }
   }
 

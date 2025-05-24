@@ -21,6 +21,10 @@ import { DB } from '@docmost/db/types/db';
 import { generateSlugId } from '../../../common/helpers';
 import { executeTx } from '@docmost/db/utils';
 import { AttachmentRepo } from '@docmost/db/repos/attachment/attachment.repo';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { QueueName, QueueJob } from '../../../integrations/queue/constants';
+import { IAgentFeedJob } from '../../../integrations/queue/constants/queue.interface';
 
 @Injectable()
 export class PageService {
@@ -28,6 +32,8 @@ export class PageService {
     private pageRepo: PageRepo,
     private attachmentRepo: AttachmentRepo,
     @InjectKysely() private readonly db: KyselyDB,
+    @InjectQueue(QueueName.AGENT_FEED_QUEUE)
+    private readonly agentFeedQueue: Queue<IAgentFeedJob>,
   ) {}
 
   async findById(
@@ -142,13 +148,32 @@ export class PageService {
       page.id,
     );
 
-    return await this.pageRepo.findById(page.id, {
+    const updatedPage = await this.pageRepo.findById(page.id, {
       includeSpace: true,
       includeContent: true,
       includeCreator: true,
       includeLastUpdatedBy: true,
       includeContributors: true,
     });
+
+    if (
+      updatePageDto.type === 'llm_scheduled_task' ||
+      page.type === 'llm_scheduled_task'
+    ) {
+      await this.agentFeedQueue.add(QueueJob.AGENT_FEED_DOCUMENT_EVENT, {
+        eventType: 'update_scheduled_task_document',
+        documentId: page.id,
+        documentType: 'llm_scheduled_task',
+        workspaceId: page.workspaceId,
+        payload: {
+          title: updatePageDto.title || page.title,
+          icon: updatePageDto.icon,
+          textContent: updatedPage.textContent,
+        },
+      });
+    }
+
+    return updatedPage;
   }
 
   withHasChildren(eb: ExpressionBuilder<DB, 'pages'>) {

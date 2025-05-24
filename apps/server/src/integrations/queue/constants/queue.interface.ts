@@ -16,3 +16,11 @@ export interface IDiffAnalysisJob {
   userId: string;
   timestamp: number;
 }
+
+export interface IAgentFeedJob {
+  eventType: 'update_scheduled_task_document';
+  documentId: string;
+  documentType: string;
+  workspaceId: string;
+  payload?: Record<string, any>;
+}

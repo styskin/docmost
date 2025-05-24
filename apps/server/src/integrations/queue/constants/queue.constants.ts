@@ -4,6 +4,7 @@ export enum QueueName {
   GENERAL_QUEUE = '{general-queue}',
   BILLING_QUEUE = '{billing-queue}',
   DIFF_ANALYSIS_QUEUE = '{diff-analysis-queue}',
+  AGENT_FEED_QUEUE = '{agent-feed-queue}',
 }
 
 export enum QueueJob {
@@ -20,4 +21,5 @@ export enum QueueJob {
   TRIAL_ENDED = 'trial-ended',
   WELCOME_EMAIL = 'welcome-email',
   FIRST_PAYMENT_EMAIL = 'first-payment-email',
+  AGENT_FEED_DOCUMENT_EVENT = 'agent-feed-document-event',
 }

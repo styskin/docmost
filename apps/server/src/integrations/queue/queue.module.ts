@@ -53,6 +53,9 @@ import { DatabaseModule } from '../../database/database.module';
     BullModule.registerQueue({
       name: QueueName.BILLING_QUEUE,
     }),
+    BullModule.registerQueue({
+      name: QueueName.AGENT_FEED_QUEUE,
+    }),
     ManulModule,
     CommentModule,
     DatabaseModule,
