@@ -980,11 +980,13 @@ export function AIChat() {
                 background: "var(--mantine-color-gray-1)",
               }}
             >
-              <IconTools size={16} />
+              {toolSegment.result ? (
+                <IconTools size={16} />
+              ) : (
+                <Loader size={16} />
+              )}
               <Text size="sm" fw={500} style={{ flex: 1 }}>
                 Tool call: {toolSegment.name}
-                {toolSegment.name === "suggest_diff" &&
-                  " (Editing Suggestions)"}
               </Text>
               {isToolOpen ? (
                 <IconChevronDown size={16} />
