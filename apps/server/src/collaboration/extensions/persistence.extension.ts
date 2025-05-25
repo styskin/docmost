@@ -177,12 +177,12 @@ export class PersistenceExtension implements Extension {
       if (page.type === 'llm_scheduled_task') {
         await this.agentFeedQueue.add(QueueJob.AGENT_FEED_DOCUMENT_EVENT, {
           eventType: 'update_scheduled_task_document',
-          documentId: page.id,
+          documentId: page.slugId,
           documentType: 'llm_scheduled_task',
           workspaceId: page.workspaceId,
+          spaceId: page.spaceId,
           payload: {
             title: page.title,
-            icon: page.icon,
             textContent: textContent,
           },
         });

@@ -22,5 +22,6 @@ export interface IAgentFeedJob {
   documentId: string;
   documentType: string;
   workspaceId: string;
+  spaceId: string;
   payload?: Record<string, any>;
 }

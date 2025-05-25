@@ -162,12 +162,12 @@ export class PageService {
     ) {
       await this.agentFeedQueue.add(QueueJob.AGENT_FEED_DOCUMENT_EVENT, {
         eventType: 'update_scheduled_task_document',
-        documentId: page.id,
+        documentId: page.slugId,
         documentType: 'llm_scheduled_task',
         workspaceId: page.workspaceId,
+        spaceId: page.spaceId,
         payload: {
           title: updatePageDto.title || page.title,
-          icon: updatePageDto.icon,
           textContent: updatedPage.textContent,
         },
       });
