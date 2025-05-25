@@ -8,6 +8,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WsGateway } from '../../../ws/ws.gateway';
 import { PageService } from '../../../core/page/services/page.service';
+import { TiptapTransformer } from '@hocuspocus/transformer';
+import * as Y from 'yjs';
+import { tiptapExtensions } from '../../../collaboration/collaboration.util';
 
 export const CREATE_DOCUMENT_TOOL_DESCRIPTION = `
 Creating a new document with the specified title and content.
@@ -266,11 +269,36 @@ export class CreateDocumentTool {
             );
           }
 
+          // Form correct YDoc from content
+          let ydoc = new Y.Doc();
+          const contentJson = JSON.parse(content);
+          const fragmentYDoc = TiptapTransformer.toYdoc(
+            contentJson,
+            'default',
+            tiptapExtensions,
+          );
+          const fragmentRoot = fragmentYDoc.get(
+            'default',
+            Y.XmlFragment,
+          ) as Y.XmlFragment;
+          const fragmentNodes = Array.from(fragmentRoot.toArray());
+          const mainRoot = ydoc.get('default', Y.XmlFragment) as Y.XmlFragment;
+          const nodesToPush = fragmentNodes
+            .filter(
+              (node) =>
+                node instanceof Y.XmlElement || node instanceof Y.XmlText,
+            )
+            .map((node) => node.clone());
+          mainRoot.push(nodesToPush);
+          const ydocState = Buffer.from(Y.encodeStateAsUpdate(ydoc));
+
+          // Insert page into database
           const createdPage = await this.pageRepo.insertPage({
             slugId: generateSlugId(),
             title,
-            content: JSON.parse(content),
+            content: contentJson,
             textContent: content,
+            ydoc: ydocState,
             position: position,
             spaceId: spaceEntity.id,
             workspaceId: workspaceId,
