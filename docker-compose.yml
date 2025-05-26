@@ -56,7 +56,7 @@ services:
     volumes:
       - redis_data:/data
   manul_agent:
-    image: docker.io/styskin/manul_agents:latest
+    image: docker.io/phoenix120/manul_agents:latest
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
