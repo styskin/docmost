@@ -63,7 +63,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       REDIS_URL: 'redis://redis:6379'
       DATABASE_URL: 'postgresql+asyncpg://docmost:STRONG_DB_PASSWORD@db:5432/docmost?schema=public'
-      MCP_SERVER: 'http://docmost:3000'
+      MCP_SERVER: 'docmost:3000'
     volumes:
       - manul_agent:/logs
 
