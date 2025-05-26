@@ -29,6 +29,7 @@
     "@tanstack/react-query": "^5.61.4",
     "@tiptap/extension-character-count": "^2.11.5",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/uuid": "^10.0.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "emoji-mart": "^5.6.0",
@@ -60,6 +61,7 @@
     "socket.io-client": "^4.8.1",
     "tippy.js": "^6.3.7",
     "tiptap-extension-global-drag-handle": "^0.1.18",
+    "uuid": "^11.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

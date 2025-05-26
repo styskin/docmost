@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { v4 as uuidv4 } from 'uuid';
 import {
   Box,
   Button,
@@ -152,7 +153,7 @@ export function AIChat() {
 
   useEffect(() => {
     if (!conversationId) {
-      setConversationId(crypto.randomUUID());
+      setConversationId(uuidv4());
     }
   }, [conversationId, setConversationId]);
 
@@ -1062,7 +1063,7 @@ export function AIChat() {
     setPendingSuggestions([]);
     setInput("");
     setShouldAutoScroll(true);
-    setConversationId(crypto.randomUUID());
+    setConversationId(uuidv4());
   };
 
   return (
