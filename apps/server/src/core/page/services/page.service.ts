@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { CreatePageDto } from '../dto/create-page.dto';
 import { UpdatePageDto } from '../dto/update-page.dto';
@@ -28,6 +29,8 @@ import { IAgentFeedJob } from '../../../integrations/queue/constants/queue.inter
 
 @Injectable()
 export class PageService {
+  private readonly logger = new Logger(PageService.name);
+
   constructor(
     private pageRepo: PageRepo,
     private attachmentRepo: AttachmentRepo,
@@ -369,97 +372,66 @@ export class PageService {
   }
 
   async forceDelete(pageId: string): Promise<void> {
+    const scheduledTaskPages = await this.db
+      .withRecursive('page_descendants', (db) =>
+        db
+          .selectFrom('pages')
+          .select([
+            'pages.id',
+            'pages.slugId',
+            'pages.title',
+            'pages.textContent',
+            'pages.workspaceId',
+            'pages.spaceId',
+            'pages.type',
+            'pages.parentPageId'
+          ])
+          .where('pages.id', '=', pageId)
+          .unionAll((eb) =>
+            eb
+              .selectFrom('pages')
+              .select([
+                'pages.id',
+                'pages.slugId',
+                'pages.title',
+                'pages.textContent',
+                'pages.workspaceId',
+                'pages.spaceId',
+                'pages.type',
+                'pages.parentPageId'
+              ])
+              .innerJoin(
+                'page_descendants',
+                'pages.parentPageId',
+                'page_descendants.id'
+              )
+          )
+      )
+      .selectFrom('page_descendants')
+      .select([
+        'page_descendants.id',
+        'page_descendants.slugId',
+        'page_descendants.title',
+        'page_descendants.textContent',
+        'page_descendants.workspaceId',
+        'page_descendants.spaceId',
+        'page_descendants.type'
+      ])
+      .where('page_descendants.type', '=', 'llm_scheduled_task')
+      .execute();
+
+     const deletedPages = scheduledTaskPages.map((page) => page.slugId);
+     this.logger.debug(`Deleting scheduled task pages: ${deletedPages.join(', ')}`)
+     for (const page of scheduledTaskPages) {
+      await this.agentFeedQueue.add(QueueJob.AGENT_FEED_DOCUMENT_EVENT, {
+        eventType: 'delete_scheduled_task_document',
+        documentId: page.slugId,
+        documentType: 'llm_scheduled_task',
+        workspaceId: page.workspaceId,
+        spaceId: page.spaceId,
+      });
+    }
+
     await this.pageRepo.deletePage(pageId);
   }
 }
-
-/*
-  // TODO: page deletion and restoration
-  async delete(pageId: string): Promise<void> {
-    await this.dataSource.transaction(async (manager: EntityManager) => {
-      const page = await manager
-        .createQueryBuilder(Page, 'page')
-        .where('page.id = :pageId', { pageId })
-        .select(['page.id', 'page.workspaceId'])
-        .getOne();
-
-      if (!page) {
-        throw new NotFoundException(`Page not found`);
-      }
-      await this.softDeleteChildrenRecursive(page.id, manager);
-      await this.pageOrderingService.removePageFromHierarchy(page, manager);
-
-      await manager.softDelete(Page, pageId);
-    });
-  }
-
-  private async softDeleteChildrenRecursive(
-    parentId: string,
-    manager: EntityManager,
-  ): Promise<void> {
-    const childrenPage = await manager
-      .createQueryBuilder(Page, 'page')
-      .where('page.parentPageId = :parentId', { parentId })
-      .select(['page.id', 'page.title', 'page.parentPageId'])
-      .getMany();
-
-    for (const child of childrenPage) {
-      await this.softDeleteChildrenRecursive(child.id, manager);
-      await manager.softDelete(Page, child.id);
-    }
-  }
-
-  async restore(pageId: string): Promise<void> {
-    await this.dataSource.transaction(async (manager: EntityManager) => {
-      const isDeleted = await manager
-        .createQueryBuilder(Page, 'page')
-        .where('page.id = :pageId', { pageId })
-        .withDeleted()
-        .getCount();
-
-      if (!isDeleted) {
-        return;
-      }
-
-      await manager.recover(Page, { id: pageId });
-
-      await this.restoreChildrenRecursive(pageId, manager);
-
-      // Fetch the page details to find out its parent and workspace
-      const restoredPage = await manager
-        .createQueryBuilder(Page, 'page')
-        .where('page.id = :pageId', { pageId })
-        .select(['page.id', 'page.title', 'page.spaceId', 'page.parentPageId'])
-        .getOne();
-
-      if (!restoredPage) {
-        throw new NotFoundException(`Restored page not found.`);
-      }
-
-      // add page back to its hierarchy
-      await this.pageOrderingService.addPageToOrder(
-        restoredPage.spaceId,
-        pageId,
-        restoredPage.parentPageId,
-      );
-    });
-  }
-
-  private async restoreChildrenRecursive(
-    parentId: string,
-    manager: EntityManager,
-  ): Promise<void> {
-    const childrenPage = await manager
-      .createQueryBuilder(Page, 'page')
-      .setLock('pessimistic_write')
-      .where('page.parentPageId = :parentId', { parentId })
-      .select(['page.id', 'page.title', 'page.parentPageId'])
-      .withDeleted()
-      .getMany();
-
-    for (const child of childrenPage) {
-      await this.restoreChildrenRecursive(child.id, manager);
-      await manager.recover(Page, { id: child.id });
-    }
-  }
-*/

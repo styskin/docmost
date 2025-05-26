@@ -18,7 +18,9 @@ export interface IDiffAnalysisJob {
 }
 
 export interface IAgentFeedJob {
-  eventType: 'update_scheduled_task_document';
+  eventType:
+    | 'update_scheduled_task_document'
+    | 'delete_scheduled_task_document';
   documentId: string;
   documentType: string;
   workspaceId: string;

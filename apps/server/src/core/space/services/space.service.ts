@@ -17,6 +17,8 @@ import { SpaceRole } from '../../../common/helpers/types/permission';
 import { QueueJob, QueueName } from 'src/integrations/queue/constants';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
+import { Queue as BullQueue } from 'bullmq';
+import { IAgentFeedJob } from '../../../integrations/queue/constants/queue.interface';
 
 @Injectable()
 export class SpaceService {
@@ -25,6 +27,8 @@ export class SpaceService {
     private spaceMemberService: SpaceMemberService,
     @InjectKysely() private readonly db: KyselyDB,
     @InjectQueue(QueueName.ATTACHMENT_QUEUE) private attachmentQueue: Queue,
+    @InjectQueue(QueueName.AGENT_FEED_QUEUE)
+    private readonly agentFeedQueue: Queue<IAgentFeedJob>,
   ) {}
 
   async createSpace(
@@ -143,6 +147,30 @@ export class SpaceService {
     const space = await this.spaceRepo.findById(spaceId, workspaceId);
     if (!space) {
       throw new NotFoundException('Space not found');
+    }
+
+    const scheduledTaskPages = await this.db
+      .selectFrom('pages')
+      .select([
+        'id',
+        'slugId',
+        'title',
+        'textContent',
+        'workspaceId',
+        'spaceId',
+      ])
+      .where('spaceId', '=', spaceId)
+      .where('type', '=', 'llm_scheduled_task')
+      .execute();
+
+    for (const page of scheduledTaskPages) {
+      await this.agentFeedQueue.add(QueueJob.AGENT_FEED_DOCUMENT_EVENT, {
+        eventType: 'delete_scheduled_task_document',
+        documentId: page.slugId,
+        documentType: 'llm_scheduled_task',
+        workspaceId: page.workspaceId,
+        spaceId: page.spaceId,
+      });
     }
 
     await this.spaceRepo.deleteSpace(spaceId, workspaceId);
