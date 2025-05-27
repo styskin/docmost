@@ -1,0 +1,16 @@
+{
+  "name": "Manul.ai",
+  "short_name": "Manul.ai",
+  "description": "Manul.ai - Collaborative AI Workspace",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }
+  ]
+} 
