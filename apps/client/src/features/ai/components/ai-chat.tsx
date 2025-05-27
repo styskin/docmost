@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   Loader,
   Tooltip,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import {
   IconSend,
   IconTools,
@@ -30,6 +31,7 @@ import { extractPageSlugId } from "@/lib";
 import { ttsPlayer } from "../utils/tts-player";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms";
 import { DocumentType } from "@/features/page/types/page.types.ts";
+import { createPortal } from "react-dom";
 
 // Add Web Speech API type declarations
 interface SpeechRecognitionEvent extends Event {
@@ -146,7 +148,19 @@ const openToolCallsAtom = atomWithStorage<Record<string, boolean>>(
   {},
 );
 
-export function AIChat() {
+interface AIChatProps {
+  showInput?: boolean;
+  onLoadingChange?: (loading: boolean) => void;
+}
+
+export interface AIChatRef {
+  handleSubmit: (input: string) => Promise<void>;
+  resetChat: () => void;
+}
+
+export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, onLoadingChange }, ref) => {
+  const isMobile = useMediaQuery("(max-width: 48em)");
+  
   // Get current context
   const [workspace] = useAtom(workspaceAtom);
   const [conversationId, setConversationId] = useAtom(conversationIdAtom);
@@ -424,6 +438,15 @@ export function AIChat() {
     const userInput = input.trim();
     if (!userInput || isLoading) return;
 
+    await handleExternalSubmit(userInput);
+  };
+
+  const handleExternalSubmit = async (userInput: string) => {
+    // Check if STT was active when this request was initiated
+    const playResponseTTS = isListening;
+
+    if (!userInput || isLoading) return;
+
     // Clear input immediately after grabbing the value for submission
     setInput("");
 
@@ -499,6 +522,7 @@ export function AIChat() {
     const messagesWithSystem = [systemMessage, ...apiMessages];
 
     setIsLoading(true);
+    onLoadingChange?.(true);
     setShouldAutoScroll(true);
 
     const newMessageId = Date.now().toString();
@@ -777,6 +801,7 @@ export function AIChat() {
       // ttsPlayer state (enabled/disabled) is managed by isListening state now.
     } finally {
       setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -1066,223 +1091,253 @@ export function AIChat() {
     setConversationId(uuidv4());
   };
 
+  // Render input area
+  const renderInputArea = () => (
+    <Box>
+      <Group mb="xs" gap="xs" justify="flex-start">
+        {currentPage?.type &&
+          [
+            DocumentType.LLM_INSTRUCTION,
+            DocumentType.LLM_SCHEDULED_TASK,
+          ].includes(currentPage.type) && (
+            <Button
+              key="Execute instructions from this document"
+              variant="outline"
+              color="gray"
+              size="xs"
+              radius="xl"
+              onClick={() => {
+                setInput("Execute instructions from this document");
+                setShouldAutoScroll(true);
+                setTimeout(() => {
+                  const form = document.querySelector("form");
+                  const event = new Event("submit", {
+                    bubbles: true,
+                    cancelable: true,
+                  });
+                  form?.dispatchEvent(event);
+                }, 0);
+              }}
+            >
+              Execute instructions from this document
+            </Button>
+          )}
+        <Button
+          key="Summarize this document in 3 sentences"
+          variant="outline"
+          color="gray"
+          size="xs"
+          radius="xl"
+          onClick={() => {
+            setInput("Summarize this document in 3 sentences");
+            setShouldAutoScroll(true);
+            setTimeout(() => {
+              const form = document.querySelector("form");
+              const event = new Event("submit", {
+                bubbles: true,
+                cancelable: true,
+              });
+              form?.dispatchEvent(event);
+            }, 0);
+          }}
+        >
+          Summarize this document in 3 sentences
+        </Button>
+      </Group>
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: "flex", gap: "8px", width: "100%" }}
+      >
+        <Textarea
+          placeholder="Ask AI anything... (Press Enter to send, Cmd/Ctrl+Enter for new line)"
+          value={input}
+          onChange={(e) => setInput(e.currentTarget.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isLoading}
+          style={{ flex: 1, width: "100%" }}
+          autosize
+          minRows={2}
+          maxRows={4}
+        />
+        <Stack gap="xs" style={{ justifyContent: "center" }}>
+          <Tooltip label="Clear chat history">
+            <Button
+              variant="light"
+              size="xs"
+              onClick={resetChat}
+              color="gray"
+              px="xs"
+              disabled={
+                isLoading ||
+                (messages.length === 1 &&
+                  messages[0].id === "welcome-message")
+              }
+            >
+              <IconEraser size={16} />
+            </Button>
+          </Tooltip>
+          {isSpeechRecognitionSupported && (
+            <Tooltip label="Toggle voice input">
+              <Button
+                type="button"
+                variant="light"
+                color={isListening ? "red" : "blue"}
+                onClick={toggleListening}
+                disabled={isLoading}
+                size="xs"
+                px="xs"
+              >
+                {isListening ? (
+                  <IconMicrophoneOff size={16} />
+                ) : (
+                  <IconMicrophone size={16} />
+                )}
+              </Button>
+            </Tooltip>
+          )}
+          <Tooltip label="Send message">
+            <Button
+              type="submit"
+              variant="light"
+              disabled={isLoading || !input.trim()}
+              size="xs"
+              px="xs"
+            >
+              <IconSend size={16} />
+            </Button>
+          </Tooltip>
+        </Stack>
+      </form>
+    </Box>
+  );
+
+  useImperativeHandle(ref, () => ({
+    handleSubmit: handleExternalSubmit,
+    resetChat: resetChat,
+  }));
+
   return (
     <Box
       style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        height: "100%",
         display: "flex",
         flexDirection: "column",
-        padding: "0",
+        overflow: "hidden",
       }}
     >
-      <ScrollArea
-        style={{ flex: 1 }}
-        scrollbarSize={5}
-        type="scroll"
-        viewportRef={(ref) => {
-          scrollRef.current = ref;
-        }}
-      >
-        <Stack gap="xs" p="xs">
-          {messages.map((message) => (
-            <Box
-              key={message.id}
-              p="xs"
-              style={{
-                background:
-                  message.role === "user"
-                    ? "var(--mantine-color-blue-0)"
-                    : "transparent",
-                borderRadius: "8px",
-                maxWidth: "100%",
-                wordBreak: "break-word",
-              }}
-            >
-              <Text
-                size="xs"
-                fw={500}
-                mb={1}
-                style={{ fontSize: "13px", lineHeight: 1.2 }}
-              >
-                {message.role === "user" ? "You" : "AI Assistant"}
-              </Text>
-
-              {message.role === "user" ? (
-                <Box mt="xs">
-                  <Text size="sm" style={{ fontSize: "15px", lineHeight: 1.2 }}>
-                    {(message.segments[0] as TextSegment).content}
-                  </Text>
-                </Box>
-              ) : (
-                renderSegments(message.segments, message.id)
-              )}
-            </Box>
-          ))}
-
-          {currentAssistantMessage && (
-            <Box
-              p="xs"
-              style={{
-                borderRadius: "8px",
-                maxWidth: "100%",
-                wordBreak: "break-word",
-              }}
-            >
-              <Text
-                size="xs"
-                fw={500}
-                mb={1}
-                style={{ fontSize: "13px", lineHeight: 1.2 }}
-              >
-                AI Assistant
-              </Text>
-              {renderSegments(
-                currentAssistantMessage.segments,
-                currentAssistantMessage.id,
-              )}
-            </Box>
-          )}
-
-          {isLoading &&
-            (!currentAssistantMessage ||
-              currentAssistantMessage.segments.length === 0) && (
-              <Box p="xs">
-                <Group align="center" gap="xs">
-                  <Loader size="xs" />
-                  <Text size="sm" c="dimmed">
-                    Thinking...
-                  </Text>
-                </Group>
-              </Box>
-            )}
-        </Stack>
-      </ScrollArea>
-
-      <Box
-        p="md"
-        style={{
-          borderTop: "1px solid var(--mantine-color-gray-2)",
-          width: "100%",
-        }}
-      >
-        <Group mb="xs" gap="xs" justify="flex-start">
-          {currentPage?.type &&
-            [
-              DocumentType.LLM_INSTRUCTION,
-              DocumentType.LLM_SCHEDULED_TASK,
-            ].includes(currentPage.type) && (
-              <Button
-                key="Execute instructions from this document"
-                variant="outline"
-                color="gray"
-                size="xs"
-                radius="xl"
-                onClick={() => {
-                  setInput("Execute instructions from this document");
-                  setShouldAutoScroll(true);
-                  setTimeout(() => {
-                    const form = document.querySelector("form");
-                    const event = new Event("submit", {
-                      bubbles: true,
-                      cancelable: true,
-                    });
-                    form?.dispatchEvent(event);
-                  }, 0);
+      {/* Messages area - scrollable */}
+      <Box style={{ flex: 1, overflow: "hidden" }}>
+        <ScrollArea
+          style={{ 
+            height: "100%",
+          }}
+          scrollbarSize={5}
+          type="scroll"
+          viewportRef={(ref) => {
+            scrollRef.current = ref;
+          }}
+        >
+          <Stack gap="xs" p="xs" pb={showInput ? "160px" : "xs"}>
+            {messages.map((message) => (
+              <Box
+                key={message.id}
+                p="xs"
+                style={{
+                  background:
+                    message.role === "user"
+                      ? "var(--mantine-color-blue-0)"
+                      : "transparent",
+                  borderRadius: "8px",
+                  maxWidth: "100%",
+                  wordBreak: "break-word",
                 }}
               >
-                Execute instructions from this document
-              </Button>
-            )}
-          <Button
-            key="Summarize this document in 3 sentences"
-            variant="outline"
-            color="gray"
-            size="xs"
-            radius="xl"
-            onClick={() => {
-              setInput("Summarize this document in 3 sentences");
-              setShouldAutoScroll(true);
-              setTimeout(() => {
-                const form = document.querySelector("form");
-                const event = new Event("submit", {
-                  bubbles: true,
-                  cancelable: true,
-                });
-                form?.dispatchEvent(event);
-              }, 0);
-            }}
-          >
-            Summarize this document in 3 sentences
-          </Button>
-        </Group>
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", gap: "8px", width: "100%" }}
-        >
-          <Textarea
-            placeholder="Ask AI anything... (Press Enter to send, Cmd/Ctrl+Enter for new line)"
-            value={input}
-            onChange={(e) => setInput(e.currentTarget.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-            style={{ flex: 1, width: "100%" }}
-            autosize
-            minRows={5}
-          />
-          <Stack gap="xs" style={{ justifyContent: "center" }}>
-            <Tooltip label="Clear chat history">
-              <Button
-                variant="light"
-                size="xs"
-                onClick={resetChat}
-                color="gray"
-                px="xs"
-                disabled={
-                  isLoading ||
-                  (messages.length === 1 &&
-                    messages[0].id === "welcome-message")
-                }
-              >
-                <IconEraser size={16} />
-              </Button>
-            </Tooltip>
-            {isSpeechRecognitionSupported && (
-              <Tooltip label="Toggle voice input">
-                <Button
-                  type="button"
-                  variant="light"
-                  color={isListening ? "red" : "blue"}
-                  onClick={toggleListening}
-                  disabled={isLoading}
+                <Text
                   size="xs"
-                  px="xs"
+                  fw={500}
+                  mb={1}
+                  style={{ fontSize: "13px", lineHeight: 1.2 }}
                 >
-                  {isListening ? (
-                    <IconMicrophoneOff size={16} />
-                  ) : (
-                    <IconMicrophone size={16} />
-                  )}
-                </Button>
-              </Tooltip>
-            )}
-            <Tooltip label="Send message">
-              <Button
-                type="submit"
-                variant="light"
-                disabled={isLoading || !input.trim()}
-                size="xs"
-                px="xs"
+                  {message.role === "user" ? "You" : "AI Assistant"}
+                </Text>
+
+                {message.role === "user" ? (
+                  <Box mt="xs">
+                    <Text size="sm" style={{ fontSize: "15px", lineHeight: 1.2 }}>
+                      {(message.segments[0] as TextSegment).content}
+                    </Text>
+                  </Box>
+                ) : (
+                  renderSegments(message.segments, message.id)
+                )}
+              </Box>
+            ))}
+
+            {currentAssistantMessage && (
+              <Box
+                p="xs"
+                style={{
+                  borderRadius: "8px",
+                  maxWidth: "100%",
+                  wordBreak: "break-word",
+                }}
               >
-                <IconSend size={16} />
-              </Button>
-            </Tooltip>
+                <Text
+                  size="xs"
+                  fw={500}
+                  mb={1}
+                  style={{ fontSize: "13px", lineHeight: 1.2 }}
+                >
+                  AI Assistant
+                </Text>
+                {renderSegments(
+                  currentAssistantMessage.segments,
+                  currentAssistantMessage.id,
+                )}
+              </Box>
+            )}
+
+            {isLoading &&
+              (!currentAssistantMessage ||
+                currentAssistantMessage.segments.length === 0) && (
+                <Box p="xs">
+                  <Group align="center" gap="xs">
+                    <Loader size="xs" />
+                    <Text size="sm" c="dimmed">
+                      Thinking...
+                    </Text>
+                  </Group>
+                </Box>
+              )}
           </Stack>
-        </form>
+        </ScrollArea>
       </Box>
+
+      {/* Input area - fixed at bottom or rendered via portal */}
+      {showInput && (
+        <Box
+          p="md"
+          style={{
+            borderTop: "1px solid var(--mantine-color-gray-2)",
+            backgroundColor: "var(--mantine-color-body)",
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+          }}
+        >
+          {renderInputArea()}
+        </Box>
+      )}
+
+      {/* Render input via portal when showInput is false */}
+      {!showInput && typeof document !== 'undefined' && document.getElementById('ai-chat-input-container') &&
+        createPortal(
+          renderInputArea(),
+          document.getElementById('ai-chat-input-container')!
+        )
+      }
     </Box>
   );
-}
+});

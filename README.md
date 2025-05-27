@@ -1,62 +1,88 @@
-<div align="center">
-    <h1><b>Docmost</b></h1>
-    <p>
-        Open-source collaborative wiki and documentation software.
-        <br />
-        <a href="https://docmost.com"><strong>Website</strong></a> | 
-        <a href="https://docmost.com/docs"><strong>Documentation</strong></a> |
-        <a href="https://twitter.com/DocmostHQ"><strong>Twitter / X</strong></a>
-    </p>
-</div>
-<br />
+Development
+===========
 
-## Getting started
+Docmost is a monorepo which uses pnpm workspace and nx. This is a guide on how to set it up for local development.
 
-To get started with Docmost, please refer to our [documentation](https://docmost.com/docs) or try our [cloud version](https://docmost.com/pricing) .
+### Project structure[​](https://docmost.com/docs/self-hosting/development/#project-structure)
 
-## Features
+The frontend client is developed using Vite and React, with the user interface powered by the [Mantine](https://mantine.dev/) UI library. The backend server is built using the [Nest.js](https://nestjs.com/) framework.
 
-- Real-time collaboration
-- Diagrams (Draw.io, Excalidraw and Mermaid)
-- Spaces
-- Permissions management
-- Groups
-- Comments
-- Page history
-- Search
-- File attachments
-- Embeds (Airtable, Loom, Miro and more)
-- Translations (10+ languages)
+### Requirements[​](https://docmost.com/docs/self-hosting/development/#requirements)
 
-### Screenshots
+To run Docmost, you'll need the following:
 
-<p align="center">
-<img alt="home" src="https://docmost.com/screenshots/home.png" width="70%">
-<img alt="editor" src="https://docmost.com/screenshots/editor.png" width="70%">
-</p>
+*   **Node.js**: >= 20    
+*   **Postgres**: >= 14
+*   **Redis/Valkey**
+    
 
-### License
-Docmost core is licensed under the open-source AGPL 3.0 license.  
-Enterprise features are available under an enterprise license (Enterprise Edition).  
+### Development setup[​](https://docmost.com/docs/self-hosting/development/#development-setup)
 
-All files in the following directories are licensed under the Docmost Enterprise license defined in `packages/ee/License`.
-  - apps/server/src/ee
-  - apps/client/src/ee
-  - packages/ee
+Make sure you have pnpm installed npm install -g pnpm.
 
-### Contributing
+Plain 
+```bash
+$ git clone https://github.com/docmost/docmost
+$ cd docmost$ pnpm install
+$ cp .env.example .env
+```
+Make sure to update the .env file.
 
-See the [development documentation](https://docmost.com/docs/self-hosting/development)
+#### Build the editor package first[​](https://docmost.com/docs/self-hosting/development/#build-the-editor-package-first)
 
-## Thanks
-Special thanks to;
+```bash
+$ pnpm nx run @docmost/editor-ext:build
+```
 
-<img width="100" alt="Crowdin" src="https://github.com/user-attachments/assets/a6c3d352-e41b-448d-b6cd-3fbca3109f07" />
+#### Frontend[​](https://docmost.com/docs/self-hosting/development/#frontend)
 
-[Crowdin](https://crowdin.com/) for providing access to their localization platform.
+```bash
+# run in development watch mode
+$ pnpm nx run client:dev
+```
 
+#### Backend[​](https://docmost.com/docs/self-hosting/development/#backend)
 
-<img width="48" alt="Algolia-mark-square-white" src="https://github.com/user-attachments/assets/6ccad04a-9589-4965-b6a1-d5cb1f4f9e94" />
+```bash
+# run in watch mode
+$ pnpm nx run server:start:dev
+# development
+$ pnpm nx run server:start
+```
 
-[Algolia](https://www.algolia.com/) for providing full-text search to the docs.
+#### Build project[​](https://docmost.com/docs/self-hosting/development/#build-project)
 
+```bash
+$ pnpm build
+```
+
+This will build all the necessary packages. You can run the built server and client using pnpm nx run server:start. The project will run on http://localhost:3000.Check the package.json of each app to learn more about all the available commands.
+
+#### Migrations[​](https://docmost.com/docs/self-hosting/development/#migrations)
+
+In development mode, you have to run the latest migrations manually. These are the useful migration commands.
+
+```bash
+# To run all pending database migrations
+$ pnpm nx run server:migration:latest
+# To run one migration up
+$ pnpm nx run server:migration:up
+# To run one migration down
+$ pnpm nx run server:migration:down
+# To drop all migrations
+$ pnpm nx run server:migration:reset
+# To create new empty migration file. 
+$ pnpm nx run server:migration:create migration_name_here
+```
+
+Migrations are stored inside the apps/server/src/database/migrations directory.
+
+If you make changes to the database, e.g.creating a new table or column, you will have to regenerate the db types with
+
+```bash
+pnpm nx run server:migration:codegen
+```
+
+The project does not make use of any ORM. We use the [Kysely](https://github.com/kysely-org/kysely) query builder to build typesafe sql queries.
+
+**Ps:** If you wish to make code contributions to Docmost, you will need to accept our Contributor License Agreement (CLA) before your PR can be accepted.

@@ -2,7 +2,7 @@
   background-color: light-dark(#f6f7f9, var(--mantine-color-dark-8));
 }
 
-.navbar, .aside {
+.navbar {
   @media (max-width: $mantine-breakpoint-sm) {
     width: 350px;
   }
@@ -10,7 +10,15 @@
 
 .aside {
   @media (max-width: $mantine-breakpoint-sm) {
-    margin-top: 45px;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    height: 100vh;
+    margin-top: 0;
   }
 }
 
@@ -53,5 +61,7 @@
     var(--mantine-color-dark-5)
   );
 }
+
+
 
 

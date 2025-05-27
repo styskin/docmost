@@ -7,6 +7,7 @@ import {
   effectiveAsideStateAtom,
   desktopSidebarAtom,
   mobileSidebarAtom,
+  mobileAsideAtom,
   sidebarWidthAtom,
   asideWidthAtom,
 } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
@@ -15,8 +16,9 @@ import { AppHeader } from "@/components/layouts/global/app-header.tsx";
 import Aside from "@/components/layouts/global/aside.tsx";
 import classes from "./app-shell.module.css";
 import { useTrialEndAction } from "@/ee/hooks/use-trial-end-action.tsx";
-import { useClickOutside, useMergedRef } from "@mantine/hooks";
+import { useClickOutside, useMergedRef, useMediaQuery } from "@mantine/hooks";
 import { useToggleSidebar } from "@/components/layouts/global/hooks/hooks/use-toggle-sidebar.ts";
+import useToggleAside from "@/hooks/use-toggle-aside.tsx";
 
 export default function GlobalAppShell({
   children,
@@ -27,8 +29,11 @@ export default function GlobalAppShell({
   const [mobileOpened] = useAtom(mobileSidebarAtom);
   const toggleMobile = useToggleSidebar(mobileSidebarAtom);
   const [desktopOpened] = useAtom(desktopSidebarAtom);
+  const { closeAside } = useToggleAside();
+  const isMobile = useMediaQuery("(max-width: 48em)");
 
   const effectiveAsideState = useAtomValue(effectiveAsideStateAtom);
+  const [mobileAsideOpened] = useAtom(mobileAsideAtom);
   const [sidebarWidth, setSidebarWidth] = useAtom(sidebarWidthAtom);
   const [asideWidth, setAsideWidth] = useAtom(asideWidthAtom);
   const [isSidebarResizing, setIsSidebarResizing] = useState(false);
@@ -45,7 +50,14 @@ export default function GlobalAppShell({
     }
   });
 
+  const asideOutsideRef = useClickOutside(() => {
+    if (mobileAsideOpened) {
+      closeAside();
+    }
+  });
+
   const mergedRef = useMergedRef(sidebarRef, navbarOutsideRef);
+  const mergedAsideRef = useMergedRef(asideRef, asideOutsideRef);
 
   const startSidebarResizing = React.useCallback((mouseDownEvent) => {
     mouseDownEvent.preventDefault();
@@ -148,7 +160,7 @@ export default function GlobalAppShell({
           width: asideWidth,
           breakpoint: "sm",
           collapsed: {
-            mobile: !effectiveAsideState.isAsideOpen,
+            mobile: !mobileAsideOpened,
             desktop: !effectiveAsideState.isAsideOpen,
           },
         }
@@ -187,7 +199,26 @@ export default function GlobalAppShell({
           className={classes.aside}
           p={0}
           withBorder={false}
-          ref={asideRef}
+          ref={mergedAsideRef}
+          style={
+            isMobile
+              ? {
+                  width: "100vw",
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 1000,
+                  height: "100vh",
+                  marginTop: 0,
+                }
+              : {
+                  height: "calc(100vh - 45px)",
+                  display: "flex",
+                  flexDirection: "column",
+                }
+          }
         >
           {effectiveAsideState.isAsideOpen && (
             <div
@@ -195,7 +226,15 @@ export default function GlobalAppShell({
               onMouseDown={startAsideResizing}
             />
           )}
-          <div style={{ padding: "var(--mantine-spacing-md)" }}>
+          <div
+            style={{
+              flex: 1,
+              height: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
             <Aside />
           </div>
         </AppShell.Aside>
