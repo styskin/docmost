@@ -33,6 +33,6 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           cd /home/ec2-user/docmost/
-          docker-compose down
-          docker-compose pull
-          docker-compose up -d 
+          docker compose down
+          docker compose pull
+          docker compose up -d 
