@@ -10,6 +10,8 @@ import { InjectKysely } from 'nestjs-kysely';
 import { User, Workspace } from '@docmost/db/types/entity.types';
 import { GroupUserRepo } from '@docmost/db/repos/group/group-user.repo';
 import { UserRole } from '../../../common/helpers/types/permission';
+import { AGENT_USER_ID } from '../../../common/helpers/constants';
+import { hashPassword } from '../../../common/helpers';
 
 @Injectable()
 export class SignupService {
@@ -102,6 +104,25 @@ export class SignupService {
         );
 
         user.workspaceId = workspace.id;
+
+        // Create Agent user if it doesn't exist
+        const existingAgentUser = await this.userRepo.findById(AGENT_USER_ID, workspace.id);
+        if (!existingAgentUser) {
+          await this.userRepo.insertUser(
+            {
+              id: AGENT_USER_ID,
+              name: 'Agent',
+              email: 'agent@docmost.local',
+              password: await hashPassword('AgentPassword123!'),
+              role: UserRole.ADMIN,
+              workspaceId: workspace.id,
+              locale: 'en-US',
+              lastLoginAt: new Date(),
+            },
+            trx,
+          );
+        }
+
         return user;
       },
       trx,

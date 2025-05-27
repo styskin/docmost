@@ -4,8 +4,31 @@ import { UserRole } from '../../common/helpers/types/permission';
 import { AGENT_USER_ID } from '../../common/helpers/constants';
 
 export async function up(db: Kysely<any>): Promise<void> {
+  // Check if any workspaces exist (DB is initialized)
+  const anyWorkspace = await db
+    .selectFrom('workspaces')
+    .select('id')
+    .limit(1)
+    .executeTakeFirst();
+
+  if (!anyWorkspace) {
+    console.log('No workspaces exist, database is not initialized. Skipping Agent user creation.');
+    return;
+  }
+
+  // Check if Agent user already exists
+  const existingAgentUser = await db
+    .selectFrom('users')
+    .where('id', '=', AGENT_USER_ID)
+    .select('id')
+    .executeTakeFirst();
+
+  if (existingAgentUser) {
+    console.log('Agent user already exists, skipping creation');
+    return;
+  }
+
   // Create agent workspace
-  // TODO: impopsible to SETUP WORKSPACE
   const workspace = await db
     .insertInto('workspaces')
     .values({
