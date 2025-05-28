@@ -201,23 +201,13 @@ export default function GlobalAppShell({
           withBorder={false}
           ref={mergedAsideRef}
           style={
-            isMobile
+            !isMobile
               ? {
-                  width: "100vw",
-                  position: "fixed",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: 1000,
-                  height: "100vh",
-                  marginTop: 0,
-                }
-              : {
                   height: "calc(100vh - 45px)",
                   display: "flex",
                   flexDirection: "column",
                 }
+              : undefined
           }
         >
           {effectiveAsideState.isAsideOpen && (
@@ -229,7 +219,7 @@ export default function GlobalAppShell({
           <div
             style={{
               flex: 1,
-              height: "100vh",
+              height: isMobile ? "calc(100vh - 45px)" : "100vh",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",

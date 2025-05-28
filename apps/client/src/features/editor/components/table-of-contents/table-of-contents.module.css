@@ -28,10 +28,12 @@
     );
   }
 
-  @media (max-width: $mantine-breakpoint-sm) {
+  @media (max-width: 48em) {
     & {
       border: none !important;
-      padding-left: 0px;
+      padding: 12px 0px;
+      font-size: var(--mantine-font-size-md);
+      line-height: 1.3;
     }
   }
 }

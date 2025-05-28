@@ -49,6 +49,11 @@
         background-color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-6));
         color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
     }
+
+    @media (max-width: 48em) {
+        font-size: var(--mantine-font-size-md);
+        padding: rem(8px) var(--mantine-spacing-sm);
+    }
 }
 
 .menuItemInner {
@@ -72,6 +77,12 @@
     padding-left: calc(var(--mantine-spacing-md) + rem(2px));
     padding-right: var(--mantine-spacing-md);
     margin-bottom: rem(5px);
+
+    @media (max-width: 48em) {
+        padding-left: var(--mantine-spacing-md);
+        padding-right: var(--mantine-spacing-md);
+        margin-bottom: rem(8px);
+    }
 }
 
 .pageLink {
@@ -87,6 +98,12 @@
     &:hover {
         background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
         color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+    }
+
+    @media (max-width: 48em) {
+        font-size: var(--mantine-font-size-sm);
+        padding: rem(12px) var(--mantine-spacing-sm);
+        line-height: 1.2;
     }
 }
 

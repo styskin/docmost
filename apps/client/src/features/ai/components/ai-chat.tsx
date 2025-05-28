@@ -990,8 +990,8 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
         return (
           <Box
             key={toolSegment.id}
-            mt="xs"
-            mb="xs"
+            mt={isMobile ? "sm" : "xs"}
+            mb={isMobile ? "sm" : "xs"}
             style={{
               border: "1px solid var(--mantine-color-gray-3)",
               borderRadius: "4px",
@@ -999,7 +999,7 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
             }}
           >
             <Group
-              p="xs"
+              p={isMobile ? "sm" : "xs"}
               onClick={(e) => toggleToolCall(messageId, toolSegment.id, e)}
               style={{
                 cursor: "pointer",
@@ -1007,17 +1007,17 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
               }}
             >
               {toolSegment.result ? (
-                <IconTools size={16} />
+                <IconTools size={isMobile ? 18 : 16} />
               ) : (
-                <Loader size={16} />
+                <Loader size={isMobile ? 18 : 16} />
               )}
-              <Text size="sm" fw={500} style={{ flex: 1 }}>
+              <Text size={isMobile ? "md" : "sm"} fw={500} style={{ flex: 1 }}>
                 Tool call: {toolSegment.name}
               </Text>
               {isToolOpen ? (
-                <IconChevronDown size={16} />
+                <IconChevronDown size={isMobile ? 18 : 16} />
               ) : (
-                <IconChevronRight size={16} />
+                <IconChevronRight size={isMobile ? 18 : 16} />
               )}
             </Group>
             <Collapse in={isToolOpen}>
@@ -1028,38 +1028,38 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
                 }}
               >
                 <Box
-                  p="xs"
+                  p={isMobile ? "sm" : "xs"}
                   style={{
                     borderBottom: toolSegment.result
                       ? "1px solid var(--mantine-color-gray-3)"
                       : "none",
                   }}
                 >
-                  <Text size="xs" fw={500} pb={2}>
+                  <Text size={isMobile ? "sm" : "xs"} fw={500} pb={2}>
                     Arguments:
                   </Text>
                   <Text
-                    size="xs"
+                    size={isMobile ? "sm" : "xs"}
                     style={{
                       wordBreak: "break-word",
                       whiteSpace: "pre-wrap",
-                      lineHeight: 1.1,
+                      lineHeight: isMobile ? 1.3 : 1.1,
                     }}
                   >
                     {toolSegment.data}
                   </Text>
                 </Box>
                 {toolSegment.result && (
-                  <Box p="xs">
-                    <Text size="xs" fw={500} pb={2}>
+                  <Box p={isMobile ? "sm" : "xs"}>
+                    <Text size={isMobile ? "sm" : "xs"} fw={500} pb={2}>
                       Result:
                     </Text>
                     <Text
-                      size="xs"
+                      size={isMobile ? "sm" : "xs"}
                       style={{
                         wordBreak: "break-word",
                         whiteSpace: "pre-wrap",
-                        lineHeight: 1.1,
+                        lineHeight: isMobile ? 1.3 : 1.1,
                       }}
                     >
                       {toolSegment.result}
@@ -1231,17 +1231,17 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
           style={{ 
             height: "100%",
           }}
-          scrollbarSize={5}
+          scrollbarSize={isMobile ? 8 : 5}
           type="scroll"
           viewportRef={(ref) => {
             scrollRef.current = ref;
           }}
         >
-          <Stack gap="xs" p="xs" pb={showInput ? "160px" : "xs"}>
+          <Stack gap={isMobile ? "md" : "xs"} p={isMobile ? "md" : "xs"} pb={showInput ? (isMobile ? "180px" : "160px") : (isMobile ? "md" : "xs")}>
             {messages.map((message) => (
               <Box
                 key={message.id}
-                p="xs"
+                p={isMobile ? "md" : "xs"}
                 style={{
                   background:
                     message.role === "user"
@@ -1253,17 +1253,17 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
                 }}
               >
                 <Text
-                  size="xs"
+                  size={isMobile ? "sm" : "xs"}
                   fw={500}
-                  mb={1}
-                  style={{ fontSize: "13px", lineHeight: 1.2 }}
+                  mb={isMobile ? "sm" : 1}
+                  style={{ fontSize: isMobile ? "15px" : "13px", lineHeight: 1.2 }}
                 >
                   {message.role === "user" ? "You" : "AI Assistant"}
                 </Text>
 
                 {message.role === "user" ? (
-                  <Box mt="xs">
-                    <Text size="sm" style={{ fontSize: "15px", lineHeight: 1.2 }}>
+                  <Box mt={isMobile ? "sm" : "xs"}>
+                    <Text size={isMobile ? "md" : "sm"} style={{ fontSize: isMobile ? "16px" : "15px", lineHeight: isMobile ? 1.4 : 1.2 }}>
                       {(message.segments[0] as TextSegment).content}
                     </Text>
                   </Box>
@@ -1275,7 +1275,7 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
 
             {currentAssistantMessage && (
               <Box
-                p="xs"
+                p={isMobile ? "md" : "xs"}
                 style={{
                   borderRadius: "8px",
                   maxWidth: "100%",
@@ -1283,10 +1283,10 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
                 }}
               >
                 <Text
-                  size="xs"
+                  size={isMobile ? "sm" : "xs"}
                   fw={500}
-                  mb={1}
-                  style={{ fontSize: "13px", lineHeight: 1.2 }}
+                  mb={isMobile ? "sm" : 1}
+                  style={{ fontSize: isMobile ? "15px" : "13px", lineHeight: 1.2 }}
                 >
                   AI Assistant
                 </Text>
@@ -1300,10 +1300,10 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
             {isLoading &&
               (!currentAssistantMessage ||
                 currentAssistantMessage.segments.length === 0) && (
-                <Box p="xs">
-                  <Group align="center" gap="xs">
-                    <Loader size="xs" />
-                    <Text size="sm" c="dimmed">
+                <Box p={isMobile ? "md" : "xs"}>
+                  <Group align="center" gap={isMobile ? "sm" : "xs"}>
+                    <Loader size={isMobile ? "sm" : "xs"} />
+                    <Text size={isMobile ? "md" : "sm"} c="dimmed">
                       Thinking...
                     </Text>
                   </Group>

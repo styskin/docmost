@@ -1,5 +1,9 @@
 .wrapper {
     padding: var(--mantine-spacing-sm);
+    
+    @media (max-width: 48em) {
+        padding: var(--mantine-spacing-md);
+    }
 }
 
 .focused-thread {
@@ -11,6 +15,11 @@
     border-left: 2px solid var(--mantine-color-gray-6);
     padding: 8px;
     background: var(--mantine-color-gray-light);
+    
+    @media (max-width: 48em) {
+        padding: 12px;
+        margin-top: 8px;
+    }
 }
 
 .commentEditor {
@@ -29,6 +38,14 @@
         margin-top: 2px;
         margin-bottom: 2px;
         overflow: hidden auto;
+        
+        @media (max-width: 48em) {
+            padding-left: 12px;
+            padding-right: 12px;
+            margin-top: 4px;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
     }
 
     :global(.ProseMirror p) {

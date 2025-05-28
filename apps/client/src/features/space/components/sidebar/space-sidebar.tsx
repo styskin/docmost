@@ -14,6 +14,7 @@ import {
   IconPlus,
   IconSearch,
   IconSettings,
+  IconX,
 } from "@tabler/icons-react";
 import classes from "./space-sidebar.module.css";
 import React from "react";
@@ -22,7 +23,7 @@ import { SearchSpotlight } from "@/features/search/search-spotlight.tsx";
 import { treeApiAtom } from "@/features/page/tree/atoms/tree-api-atom.ts";
 import { Link, useLocation, useParams } from "react-router-dom";
 import clsx from "clsx";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import SpaceSettingsModal from "@/features/space/components/settings-modal.tsx";
 import { useGetSpaceBySlugQuery } from "@/features/space/queries/space-query.ts";
 import { getSpaceUrl } from "@/lib/config.ts";
@@ -48,6 +49,7 @@ export function SpaceSidebar() {
     useDisclosure(false);
   const [mobileSidebarOpened] = useAtom(mobileSidebarAtom);
   const toggleMobileSidebar = useToggleSidebar(mobileSidebarAtom);
+  const isMobile = useMediaQuery("(max-width: 48em)");
 
   const { spaceSlug } = useParams();
   const { data: space } = useGetSpaceBySlugQuery(spaceSlug);
@@ -61,6 +63,15 @@ export function SpaceSidebar() {
 
   function handleCreatePage() {
     tree?.create({ parentId: null, type: "internal", index: 0 });
+    if (mobileSidebarOpened) {
+      toggleMobileSidebar();
+    }
+  }
+
+  function handleMenuItemClick() {
+    if (mobileSidebarOpened) {
+      toggleMobileSidebar();
+    }
   }
 
   return (
@@ -74,7 +85,13 @@ export function SpaceSidebar() {
             marginBottom: 3,
           }}
         >
-          <SwitchSpace spaceName={space?.name} spaceSlug={space?.slug} />
+          <Group justify="space-between" mb="xs">
+            <SwitchSpace 
+              spaceName={space?.name} 
+              spaceSlug={space?.slug}
+              onSpaceChange={handleMenuItemClick}
+            />
+          </Group>
         </div>
 
         <div className={classes.section}>
@@ -88,6 +105,7 @@ export function SpaceSidebar() {
                   ? classes.activeButton
                   : "",
               )}
+              onClick={handleMenuItemClick}
             >
               <div className={classes.menuItemInner}>
                 <IconHome
@@ -101,7 +119,10 @@ export function SpaceSidebar() {
 
             <UnstyledButton
               className={classes.menu}
-              onClick={searchSpotlight.open}
+              onClick={() => {
+                searchSpotlight.open();
+                handleMenuItemClick();
+              }}
             >
               <div className={classes.menuItemInner}>
                 <IconSearch
@@ -113,7 +134,13 @@ export function SpaceSidebar() {
               </div>
             </UnstyledButton>
 
-            <UnstyledButton className={classes.menu} onClick={openSettings}>
+            <UnstyledButton 
+              className={classes.menu} 
+              onClick={() => {
+                openSettings();
+                handleMenuItemClick();
+              }}
+            >
               <div className={classes.menuItemInner}>
                 <IconSettings
                   size={18}
@@ -130,12 +157,7 @@ export function SpaceSidebar() {
             ) && (
               <UnstyledButton
                 className={classes.menu}
-                onClick={() => {
-                  handleCreatePage();
-                  if (mobileSidebarOpened) {
-                    toggleMobileSidebar();
-                  }
-                }}
+                onClick={handleCreatePage}
               >
                 <div className={classes.menuItemInner}>
                   <IconPlus

@@ -73,9 +73,12 @@ export function SpaceSelect({
       onSearchChange={setSearchValue}
       clearable={clearable}
       variant="filled"
-      onChange={(slug) =>
-        onChange(spaces.items?.find((item) => item.slug === slug))
-      }
+      onChange={(slug) => {
+        const selectedSpace = spaces?.items?.find((item) => item.slug === slug);
+        if (selectedSpace) {
+          onChange(selectedSpace);
+        }
+      }}
       // duct tape
       onClick={(e) => e.stopPropagation()}
       nothingFoundMessage={t("No space found")}

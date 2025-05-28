@@ -107,8 +107,16 @@ export default function Aside() {
         }}
       >
         {/* Header */}
-        <Group justify="space-between" p="md" pb="sm" style={{ flexShrink: 0 }}>
-          <Text fw={500}>
+        <Group 
+          justify="space-between" 
+          p={isMobile ? "lg" : "md"} 
+          pb={isMobile ? "md" : "sm"} 
+          style={{ 
+            flexShrink: 0,
+            borderBottom: isMobile ? "1px solid var(--mantine-color-gray-3)" : "none"
+          }}
+        >
+          <Text fw={500} size={isMobile ? "lg" : "md"}>
             {t(title)}
           </Text>
           {isMobile && (
@@ -117,8 +125,9 @@ export default function Aside() {
               color="gray"
               onClick={closeAside}
               aria-label={t("Close")}
+              size="lg"
             >
-              <IconX size={16} />
+              <IconX size={20} />
             </ActionIcon>
           )}
         </Group>
@@ -130,7 +139,7 @@ export default function Aside() {
 
         {/* Input area - truly positioned at aside bottom */}
         <Box
-          p="md"
+          p={isMobile ? "lg" : "md"}
           style={{
             borderTop: "1px solid var(--mantine-color-gray-2)",
             backgroundColor: "var(--mantine-color-body)",
@@ -138,15 +147,16 @@ export default function Aside() {
             zIndex: 100,
           }}
         >
-          <Group mb="xs" gap="xs" justify="flex-start">
+          <Group mb={isMobile ? "md" : "xs"} gap={isMobile ? "sm" : "xs"} justify="flex-start">
             {currentPage?.type &&
               [DocumentType.LLM_INSTRUCTION, DocumentType.LLM_SCHEDULED_TASK].includes(currentPage.type) && (
                 <Button
                   variant="outline"
                   color="gray"
-                  size="xs"
+                  size={isMobile ? "sm" : "xs"}
                   radius="xl"
                   onClick={() => handleQuickAction("Execute instructions from this document")}
+                  style={{ fontSize: isMobile ? "14px" : undefined }}
                 >
                   Execute instructions from this document
                 </Button>
@@ -154,9 +164,10 @@ export default function Aside() {
             <Button
               variant="outline"
               color="gray"
-              size="xs"
+              size={isMobile ? "sm" : "xs"}
               radius="xl"
               onClick={() => handleQuickAction("Summarize this document in 3 sentences")}
+              style={{ fontSize: isMobile ? "14px" : undefined }}
             >
               Summarize this document in 3 sentences
             </Button>
@@ -168,22 +179,26 @@ export default function Aside() {
               onChange={(e) => setAiInput(e.currentTarget.value)}
               onKeyDown={handleAiKeyDown}
               disabled={isAiLoading}
-              style={{ flex: 1, width: "100%" }}
+              style={{ 
+                flex: 1, 
+                width: "100%",
+                fontSize: isMobile ? "16px" : undefined
+              }}
               autosize
-              minRows={2}
-              maxRows={4}
+              minRows={isMobile ? 3 : 2}
+              maxRows={isMobile ? 5 : 4}
             />
-            <Stack gap="xs" style={{ justifyContent: "center" }}>
+            <Stack gap={isMobile ? "sm" : "xs"} style={{ justifyContent: "center" }}>
               <Tooltip label="Clear chat history">
                 <Button
                   variant="light"
-                  size="xs"
+                  size={isMobile ? "sm" : "xs"}
                   onClick={() => aiChatRef.current?.resetChat()}
                   color="gray"
-                  px="xs"
+                  px={isMobile ? "sm" : "xs"}
                   disabled={isAiLoading}
                 >
-                  <IconEraser size={16} />
+                  <IconEraser size={isMobile ? 18 : 16} />
                 </Button>
               </Tooltip>
               <Tooltip label="Send message">
@@ -191,10 +206,10 @@ export default function Aside() {
                   type="submit"
                   variant="light"
                   disabled={isAiLoading || !aiInput.trim()}
-                  size="xs"
-                  px="xs"
+                  size={isMobile ? "sm" : "xs"}
+                  px={isMobile ? "sm" : "xs"}
                 >
-                  <IconSend size={16} />
+                  <IconSend size={isMobile ? 18 : 16} />
                 </Button>
               </Tooltip>
             </Stack>
@@ -207,15 +222,22 @@ export default function Aside() {
   // Default handling for other components
   return (
     <Box 
-      p="md"
+      p={isMobile ? "lg" : "md"}
       style={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
       }}
     >
-      <Group justify="space-between" mb="md">
-        <Text fw={500}>
+      <Group 
+        justify="space-between" 
+        mb={isMobile ? "lg" : "md"}
+        style={{
+          borderBottom: isMobile ? "1px solid var(--mantine-color-gray-3)" : "none",
+          paddingBottom: isMobile ? "md" : 0
+        }}
+      >
+        <Text fw={500} size={isMobile ? "lg" : "md"}>
           {t(title)}
         </Text>
         {isMobile && (
@@ -224,8 +246,9 @@ export default function Aside() {
             color="gray"
             onClick={closeAside}
             aria-label={t("Close")}
+            size="lg"
           >
-            <IconX size={16} />
+            <IconX size={20} />
           </ActionIcon>
         )}
       </Group>
@@ -235,10 +258,10 @@ export default function Aside() {
           height: "100%",
           flex: 1,
         }}
-        scrollbarSize={5}
+        scrollbarSize={isMobile ? 8 : 5}
         type="scroll"
       >
-        <div style={{ paddingBottom: isMobile ? "80px" : "20px" }}>
+        <div style={{ paddingBottom: isMobile ? "40px" : "20px" }}>
           {component}
         </div>
       </ScrollArea>

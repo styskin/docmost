@@ -2,23 +2,44 @@
   background-color: light-dark(#f6f7f9, var(--mantine-color-dark-8));
 }
 
-.navbar {
-  @media (max-width: $mantine-breakpoint-sm) {
-    width: 350px;
-  }
-}
-
-.aside {
-  @media (max-width: $mantine-breakpoint-sm) {
-    width: 100vw;
+.header {
+  @media (max-width: 48em) {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
+    z-index: 1001;
+    width: 100vw;
+  }
+}
+
+.navbar {
+  @media (max-width: 48em) {
+    width: 100vw;
+    position: fixed;
+    top: 45px;
+    left: 0;
+    right: 0;
     bottom: 0;
     z-index: 1000;
-    height: 100vh;
+    height: calc(100vh - 45px);
     margin-top: 0;
+    padding: 0;
+  }
+}
+
+.aside {
+  @media (max-width: 48em) {
+    width: 100vw;
+    position: fixed;
+    top: 45px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    height: calc(100vh - 45px);
+    margin-top: 0;
+    padding: 0;
   }
 }
 

@@ -26,6 +26,10 @@
         /*background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));*/
      }
 
+    @media (max-width: 48em) {
+        min-height: 40px;
+        padding: 0 rem(4px);
+    }
 
     .actions {
         visibility: hidden;
@@ -99,6 +103,12 @@
     text-overflow: ellipsis;
     font-size: rem(14px);
     font-weight: 500;
+
+    @media (max-width: 48em) {
+        font-size: var(--mantine-font-size-md);
+        line-height: 1.3;
+        font-weight: 500;
+    }
 }
 
 .arrow {
@@ -107,4 +117,9 @@
 
 [role="treeitem"] {
     padding-bottom: 2px;
+
+    @media (max-width: 48em) {
+        padding-bottom: 6px;
+        padding-top: 4px;
+    }
 }

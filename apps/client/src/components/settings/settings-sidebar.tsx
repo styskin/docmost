@@ -12,6 +12,7 @@ import {
   IconLock,
   IconKey,
   IconWorld,
+  IconX,
 } from "@tabler/icons-react";
 import { Link, useLocation } from "react-router-dom";
 import classes from "./settings.module.css";
@@ -33,6 +34,7 @@ import AppVersion from "@/components/settings/app-version.tsx";
 import { mobileSidebarAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
 import { useToggleSidebar } from "@/components/layouts/global/hooks/hooks/use-toggle-sidebar.ts";
 import { useSettingsNavigation } from "@/hooks/use-settings-navigation";
+import { useMediaQuery } from "@mantine/hooks";
 
 interface DataItem {
   label: string;
@@ -111,6 +113,7 @@ export default function SettingsSidebar() {
   const [workspace] = useAtom(workspaceAtom);
   const [mobileSidebarOpened] = useAtom(mobileSidebarAtom);
   const toggleMobileSidebar = useToggleSidebar(mobileSidebarAtom);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     setActive(location.pathname);
@@ -209,21 +212,23 @@ export default function SettingsSidebar() {
 
   return (
     <div className={classes.navbar}>
-      <Group className={classes.title} justify="flex-start">
-        <ActionIcon
-          onClick={() => {
-            goBack();
-            if (mobileSidebarOpened) {
-              toggleMobileSidebar();
-            }
-          }}
-          variant="transparent"
-          c="gray"
-          aria-label="Back"
-        >
-          <IconArrowLeft stroke={2} />
-        </ActionIcon>
-        <Text fw={500}>{t("Settings")}</Text>
+      <Group className={classes.title} justify="space-between">
+        <Group>
+          <ActionIcon
+            onClick={() => {
+              goBack();
+              if (mobileSidebarOpened) {
+                toggleMobileSidebar();
+              }
+            }}
+            variant="transparent"
+            c="gray"
+            aria-label="Back"
+          >
+            <IconArrowLeft stroke={2} />
+          </ActionIcon>
+          <Text fw={500}>{t("Settings")}</Text>
+        </Group>
       </Group>
 
       <ScrollArea w="100%">{menuItems}</ScrollArea>
