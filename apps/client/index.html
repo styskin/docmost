@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon-128x128.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" id="theme-color-meta" content="#ffffff" />
     <meta name="description" content="Manul.ai - Your AI Documentation Assistant" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/favicon-128x128.png" />
@@ -18,6 +18,19 @@
 
     <script type="module" src="/src/main.tsx"></script>
     <script>
+      // Update theme color based on system preference
+      function updateThemeColor() {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const metaThemeColor = document.getElementById('theme-color-meta');
+        metaThemeColor.setAttribute('content', isDark ? '#1A1B1E' : '#ffffff');
+      }
+
+      // Initial update
+      updateThemeColor();
+
+      // Listen for theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateThemeColor);
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
