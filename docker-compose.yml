@@ -28,6 +28,7 @@ services:
       SMTP_SECURE: ${SMTP_SECURE}
       MAIL_FROM_ADDRESS: no-reply@manul.ai
       MAIL_FROM_NAME: Manul.ai
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     ports:
       - "3000:3000"
