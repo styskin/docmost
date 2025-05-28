@@ -133,7 +133,13 @@ export default function Aside() {
         </Group>
 
         {/* AI Chat content area - takes remaining space minus input area */}
-        <Box style={{ flex: 1, overflow: "hidden", position: "relative", minHeight: 0 }}>
+        <Box style={{ 
+          flex: 1, 
+          overflow: "hidden", 
+          position: "relative", 
+          minHeight: 0,
+          paddingBottom: isMobile ? "180px" : 0 // Add padding to prevent content from being hidden behind input
+        }}>
           {component}
         </Box>
 
@@ -145,6 +151,14 @@ export default function Aside() {
             backgroundColor: "var(--mantine-color-body)",
             flexShrink: 0,
             zIndex: 100,
+            ...(isMobile ? {
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              paddingBottom: "env(safe-area-inset-bottom, 16px)", // Account for Safari omnibox
+              maxHeight: "50vh", // Prevent input from taking too much space
+            } : {})
           }}
         >
           <Group mb={isMobile ? "md" : "xs"} gap={isMobile ? "sm" : "xs"} justify="flex-start">
