@@ -3,7 +3,11 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon-128x128.png'
+  '/favicon-128x128.png',
+  '/favicon-192x192.png',
+  '/favicon-512x512.png',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -33,12 +37,12 @@ self.addEventListener('fetch', (event) => {
               return response;
             }
             
-            // Clone the response before caching
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+            // TODO: decide what to cache. + Clone the response before caching
+            // const responseToCache = response.clone();
+            // caches.open(CACHE_NAME)
+            //   .then((cache) => {
+            //     cache.put(event.request, responseToCache);
+            //   });
             return response;
           });
       })
