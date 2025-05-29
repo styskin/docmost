@@ -15,6 +15,8 @@ import { workspaceAtom } from "@/features/user/atoms/current-user-atom";
 import { usePageQuery } from "@/features/page/queries/page-query";
 import { extractPageSlugId } from "@/lib";
 import { DocumentType } from "@/features/page/types/page.types.ts";
+import { useASR } from "../../../features/ai/utils/asr";
+import { ttsPlayer } from "@/features/ai/utils/tts-player";
 
 export default function Aside() {
   const [{ tab, isAsideOpen }] = useAtom(effectiveAsideStateAtom);
@@ -27,6 +29,92 @@ export default function Aside() {
   const [aiInput, setAiInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const aiChatRef = useRef<{ handleSubmit: (input: string) => Promise<void>; resetChat: () => void } | null>(null);
+  
+  // Track TTS completion to trigger re-evaluation of TTS state
+  const [ttsCompletionCounter, setTtsCompletionCounter] = useState(0);
+  
+  // Track whether we should resume listening after TTS completes
+  const [shouldResumeListening, setShouldResumeListening] = useState(false);
+  const shouldResumeListeningRef = useRef(false);
+  
+  // Update ref when state changes
+  useEffect(() => {
+    shouldResumeListeningRef.current = shouldResumeListening;
+  }, [shouldResumeListening]);
+
+  // Speech recognition using the new ASR utility
+  const asr = useASR({
+    onTranscriptChange: setAiInput,
+    onFinalTranscript: (transcript) => {
+      const timestamp = new Date().toISOString().substr(11, 12);
+      console.log(`[ASIDE ${timestamp}] Final transcript received, submitting form`);
+      
+      // Set flag to resume listening after TTS
+      setShouldResumeListening(true);
+      
+      const form = document.querySelector("form");
+      if (form) {
+        const formEvent = new Event("submit", {
+          cancelable: true,
+          bubbles: true,
+        });
+        form.dispatchEvent(formEvent);
+      }
+    },
+  });
+
+  // Log state changes for debugging
+  useEffect(() => {
+    const timestamp = new Date().toISOString().substr(11, 12);
+    console.log(`[ASIDE ${timestamp}] State change - listening: ${asr.isListening}, loading: ${isAiLoading}, ttsCompletion: ${ttsCompletionCounter}, shouldResume: ${shouldResumeListening}`);
+  }, [asr.isListening, isAiLoading, ttsCompletionCounter, shouldResumeListening]);
+
+  // Setup TTS integration with speech recognition - run once on mount
+  useEffect(() => {
+    // Set up TTS playback complete callback to restart speech recognition
+    ttsPlayer.setOnPlaybackComplete(() => {
+      const timestamp = new Date().toISOString().substr(11, 12);
+      console.log(`[ASIDE ${timestamp}] TTS playback complete`);
+      
+      // Trigger re-evaluation of TTS state
+      setTtsCompletionCounter(prev => prev + 1);
+      
+      // Check if this was the final audio chunk and we should resume listening
+      setTimeout(() => {
+        const hasPendingAudio = ttsPlayer.hasPendingAudio();
+        const shouldResume = shouldResumeListeningRef.current; // Use ref for current value
+        console.log(`[ASIDE ${timestamp}] Checking if should restart ASR - pendingAudio: ${hasPendingAudio}, shouldResume: ${shouldResume}`);
+        
+        if (!hasPendingAudio && shouldResume) {
+          console.log(`[ASIDE ${timestamp}] All TTS complete, restarting speech recognition`);
+          setShouldResumeListening(false);
+          asr.startListening();
+        }
+      }, 100); // Small delay to let TTS state update
+    });
+
+    // Cleanup function - only runs on actual component unmount
+    return () => {
+      const timestamp = new Date().toISOString().substr(11, 12);
+      console.log(`[ASIDE ${timestamp}] Aside component unmounting - disabling TTS`);
+      ttsPlayer.disable();
+    };
+  }, []); // Empty dependency array - only run once on mount/unmount
+
+  // Enable/disable TTS based on listening state OR loading state OR pending audio
+  // Keep TTS enabled until all audio finishes playing
+  useEffect(() => {
+    const shouldEnableTTS = asr.isListening || isAiLoading || ttsPlayer.hasPendingAudio();
+    const timestamp = new Date().toISOString().substr(11, 12);
+    
+    if (shouldEnableTTS) {
+      console.log(`[ASIDE ${timestamp}] Enabling TTS (listening: ${asr.isListening}, loading: ${isAiLoading}, pendingAudio: ${ttsPlayer.hasPendingAudio()})`);
+      ttsPlayer.enable();
+    } else {
+      console.log(`[ASIDE ${timestamp}] Disabling TTS (listening: ${asr.isListening}, loading: ${isAiLoading}, pendingAudio: ${ttsPlayer.hasPendingAudio()})`);
+      ttsPlayer.disable();
+    }
+  }, [asr.isListening, isAiLoading, ttsCompletionCounter]);
   
   // Get current context for AI
   const [workspace] = useAtom(workspaceAtom);
@@ -64,15 +152,27 @@ export default function Aside() {
   const handleAiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const timestamp = new Date().toISOString().substr(11, 12);
     const userInput = aiInput.trim();
-    if (!userInput || isAiLoading || !aiChatRef.current) return;
+    if (!userInput || isAiLoading || !aiChatRef.current) {
+      console.log(`[ASIDE ${timestamp}] Submit blocked - input: "${userInput}", loading: ${isAiLoading}, chatRef: ${!!aiChatRef.current}`);
+      return;
+    }
 
+    console.log(`[ASIDE ${timestamp}] Starting AI submission - input: "${userInput}"`);
     setAiInput("");
+    
+    // Stop listening when submitting
+    if (asr.isListening) {
+      console.log(`[ASIDE ${timestamp}] Stopping listening before submission`);
+      asr.stopListening();
+    }
     
     try {
       await aiChatRef.current.handleSubmit(userInput);
+      console.log(`[ASIDE ${timestamp}] AI submission completed`);
     } catch (error) {
-      console.error("Error submitting AI message:", error);
+      console.error(`[ASIDE ${timestamp}] Error submitting AI message:`, error);
     }
   };
 
@@ -199,8 +299,8 @@ export default function Aside() {
                 fontSize: isMobile ? "16px" : undefined
               }}
               autosize
-              minRows={isMobile ? 3 : 2}
-              maxRows={isMobile ? 5 : 4}
+              minRows={isMobile ? 4 : 4}
+              maxRows={isMobile ? 6 : 5}
             />
             <Stack gap={isMobile ? "sm" : "xs"} style={{ justifyContent: "center" }}>
               <Tooltip label="Clear chat history">
@@ -215,6 +315,35 @@ export default function Aside() {
                   <IconEraser size={isMobile ? 18 : 16} />
                 </Button>
               </Tooltip>
+              {asr.isSupported && (
+                <Tooltip label="Toggle voice input">
+                  <Button
+                    type="button"
+                    variant="light"
+                    color={asr.isListening ? "red" : "blue"}
+                    onClick={() => {
+                      const timestamp = new Date().toISOString().substr(11, 12);
+                      console.log(`[ASIDE ${timestamp}] Manual microphone toggle - currently listening: ${asr.isListening}`);
+                      
+                      if (asr.isListening) {
+                        // User is manually stopping listening - clear resume flag
+                        setShouldResumeListening(false);
+                      }
+                      
+                      asr.toggleListening();
+                    }}
+                    disabled={isAiLoading}
+                    size={isMobile ? "sm" : "xs"}
+                    px={isMobile ? "sm" : "xs"}
+                  >
+                    {asr.isListening ? (
+                      <IconMicrophoneOff size={isMobile ? 18 : 16} />
+                    ) : (
+                      <IconMicrophone size={isMobile ? 18 : 16} />
+                    )}
+                  </Button>
+                </Tooltip>
+              )}
               <Tooltip label="Send message">
                 <Button
                   type="submit"

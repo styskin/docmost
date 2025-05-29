@@ -432,8 +432,8 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if STT was active when this request was initiated
-    const playResponseTTS = isListening;
+    // Check if STT was active when this request was initiated, or if TTS is globally enabled
+    const playResponseTTS = isListening || ttsPlayer.getIsEnabled();
 
     const userInput = input.trim();
     if (!userInput || isLoading) return;
@@ -442,8 +442,8 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(({ showInput = true, on
   };
 
   const handleExternalSubmit = async (userInput: string) => {
-    // Check if STT was active when this request was initiated
-    const playResponseTTS = isListening;
+    // Check if STT was active when this request was initiated, or if TTS is globally enabled
+    const playResponseTTS = isListening || ttsPlayer.getIsEnabled();
 
     if (!userInput || isLoading) return;
 
