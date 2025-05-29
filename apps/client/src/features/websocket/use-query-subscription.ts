@@ -3,6 +3,7 @@ import { socketAtom } from "@/features/websocket/atoms/socket-atom.ts";
 import { useAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 import { WebSocketEvent } from "@/features/websocket/types";
+import { RQ_KEY } from "../comment/queries/comment-query";
 import { IPage } from "@/features/page/types/page.types";
 
 export const useQuerySubscription = () => {
@@ -20,6 +21,11 @@ export const useQuerySubscription = () => {
         case "invalidate":
           queryClient.invalidateQueries({
             queryKey: [...data.entity, data.id].filter(Boolean),
+          });
+          break;
+        case "invalidateComment":
+          queryClient.invalidateQueries({
+            queryKey: RQ_KEY(data.pageId),
           });
           break;
         case "updateOne":

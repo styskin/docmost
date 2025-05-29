@@ -58,6 +58,7 @@ import ExcalidrawView from "@/features/editor/components/excalidraw/excalidraw-v
 import EmbedView from "@/features/editor/components/embed/embed-view.tsx";
 import plaintext from "highlight.js/lib/languages/plaintext";
 import powershell from "highlight.js/lib/languages/powershell";
+import abap from "highlightjs-sap-abap";
 import elixir from "highlight.js/lib/languages/elixir";
 import erlang from "highlight.js/lib/languages/erlang";
 import dockerfile from "highlight.js/lib/languages/dockerfile";
@@ -81,7 +82,7 @@ import { SuggestionInsert, SuggestionDelete } from "./suggestion-mode/marks";
 const lowlight = createLowlight(common);
 lowlight.register("mermaid", plaintext);
 lowlight.register("powershell", powershell);
-lowlight.register("powershell", powershell);
+lowlight.register("abap", abap);
 lowlight.register("erlang", erlang);
 lowlight.register("elixir", elixir);
 lowlight.register("dockerfile", dockerfile);

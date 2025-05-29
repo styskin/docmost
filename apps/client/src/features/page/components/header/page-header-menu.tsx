@@ -13,7 +13,7 @@ import {
   IconTrash,
   IconWifiOff,
 } from "@tabler/icons-react";
-import React, { useEffect } from "react";
+import React from "react";
 import useToggleAside from "@/hooks/use-toggle-aside.tsx";
 import { useAtom } from "jotai";
 import { historyAtoms } from "@/features/page-history/atoms/history-atoms.ts";
@@ -117,7 +117,7 @@ function PageActionMenu({ readOnly }: PageActionMenuProps) {
     { open: openMovePageModal, close: closeMoveSpaceModal },
   ] = useDisclosure(false);
   const [pageEditor] = useAtom(pageEditorAtom);
-  const pageUpdatedAt = useTimeAgo(page.updatedAt);
+  const pageUpdatedAt = useTimeAgo(page?.updatedAt);
 
   const handleCopyLink = () => {
     const pageUrl =
