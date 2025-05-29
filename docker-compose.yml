@@ -45,9 +45,21 @@ services:
     restart: unless-stopped
     ports:
       - "5432:5432"
-
     volumes:
       - db_data:/var/lib/postgresql/data
+
+  phoenix:
+    image: arizephoenix/phoenix:version-10.2.1
+    restart: unless-stopped
+    ports:
+      - "6006:6006"  # PHOENIX_PORT
+      - "4317:4317"  # PHOENIX_GRPC_PORT
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+      PHOENIX_ENABLE_AUTH: true
+      PHOENIX_SECRET: ${PHOENIX_SECRET}
+    volumes:
+      - phoenix_data:/mnt/data
 
   redis:
     image: redis:7.2-alpine
@@ -56,6 +68,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
   manul_agent:
     image: docker.io/phoenix120/manul_agents:latest
     environment:
@@ -72,4 +85,5 @@ volumes:
   docmost:
   db_data:
   redis_data:
+  phoenix_data:
   manul_agent:
