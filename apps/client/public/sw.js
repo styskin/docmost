@@ -1,7 +1,5 @@
-const CACHE_NAME = 'manul-cache-v2';
+const CACHE_NAME = 'manul-cache-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/favicon-128x128.png',
   '/favicon-192x192.png',
@@ -58,6 +56,27 @@ self.addEventListener('fetch', (event) => {
       url.pathname.startsWith('/socket.io/') || 
       url.pathname.startsWith('/collab/')) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  if (url.pathname === '/' || 
+      url.pathname.endsWith('.html') ||
+      url.pathname.endsWith('/') ||
+      (!url.pathname.includes('.') && !url.pathname.startsWith('/assets/'))) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            console.log('Service Worker: Serving fresh HTML for', url.pathname);
+            return response;
+          }
+          return caches.match(event.request);
+        })
+        .catch(() => {
+          console.log('Service Worker: Network failed, trying cache for HTML', url.pathname);
+          return caches.match(event.request);
+        })
+    );
     return;
   }
 
