@@ -38,6 +38,7 @@ import { ttsPlayer } from "../utils/tts-player";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms";
 import { DocumentType } from "@/features/page/types/page.types.ts";
 import { createPortal } from "react-dom";
+import { json } from "stream/consumers";
 
 // Add Web Speech API type declarations
 interface SpeechRecognitionEvent extends Event {
@@ -670,9 +671,16 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(
                           const lastSegment = segments[
                             segments.length - 1
                           ] as TextSegment;
+                          // Fix for the CodeAct agent
+                          const newText = lastSegment.content + item.text;
+                          const codeIndex = newText.indexOf("Code:");
+                          const finalText =
+                            codeIndex !== -1
+                              ? newText.substring(0, codeIndex + 5)
+                              : newText;
                           segments[segments.length - 1] = {
                             ...lastSegment,
-                            content: lastSegment.content + item.text,
+                            content: finalText,
                           };
                         }
                         // Otherwise create a new text segment
@@ -770,9 +778,16 @@ export const AIChat = forwardRef<AIChatRef, AIChatProps>(
                       const lastSegment = segments[
                         segments.length - 1
                       ] as TextSegment;
+                      // Fix for the CodeAct agent
+                      const newText = lastSegment.content + jsonData.content;
+                      const codeIndex = newText.indexOf("Code:");
+                      const finalText =
+                        codeIndex !== -1
+                          ? newText.substring(0, codeIndex + 5)
+                          : newText;
                       segments[segments.length - 1] = {
                         ...lastSegment,
-                        content: lastSegment.content + jsonData.content,
+                        content: finalText,
                       };
                     } else {
                       segments.push({
