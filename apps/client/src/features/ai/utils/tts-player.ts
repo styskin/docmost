@@ -29,7 +29,7 @@ class TTSPlayer {
   }
 
   public enable() {
-    this.log(`Enabling TTS (was ${this.isEnabled ? 'enabled' : 'disabled'})`);
+    this.log(`Enabling TTS (was ${this.isEnabled ? "enabled" : "disabled"})`);
     this.isEnabled = true;
     if (this.audioContext && this.audioContext.state === "suspended") {
       this.audioContext
@@ -44,7 +44,7 @@ class TTSPlayer {
   }
 
   public disable() {
-    this.log(`Disabling TTS (was ${this.isEnabled ? 'enabled' : 'disabled'})`);
+    this.log(`Disabling TTS (was ${this.isEnabled ? "enabled" : "disabled"})`);
     this.isEnabled = false;
     this.stop();
   }
@@ -54,11 +54,13 @@ class TTSPlayer {
   }
 
   public hasPendingAudio(): boolean {
-    return this.isPlayingAudio || 
-           this.audioPlaybackQueue.length > 0 || 
-           this.textToSpeakQueue.length > 0 ||
-           this.isFetchingFromApi ||
-           this.textBuffer.trim().length > 0;
+    return (
+      this.isPlayingAudio ||
+      this.audioPlaybackQueue.length > 0 ||
+      this.textToSpeakQueue.length > 0 ||
+      this.isFetchingFromApi ||
+      this.textBuffer.trim().length > 0
+    );
   }
 
   public addText(textChunk: string) {
@@ -167,7 +169,9 @@ class TTSPlayer {
         return;
       }
 
-      this.log(`Audio data received, queuing for playback (${audioData.byteLength} bytes)`);
+      this.log(
+        `Audio data received, queuing for playback (${audioData.byteLength} bytes)`,
+      );
       this.audioPlaybackQueue.push(audioData);
       this.isFetchingFromApi = false;
       this.tryPlayNextAudio();

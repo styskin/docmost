@@ -86,8 +86,8 @@ export function SpaceSidebar() {
           }}
         >
           <Group justify="space-between" mb="xs">
-            <SwitchSpace 
-              spaceName={space?.name} 
+            <SwitchSpace
+              spaceName={space?.name}
               spaceSlug={space?.slug}
               onSpaceChange={handleMenuItemClick}
             />
@@ -134,8 +134,8 @@ export function SpaceSidebar() {
               </div>
             </UnstyledButton>
 
-            <UnstyledButton 
-              className={classes.menu} 
+            <UnstyledButton
+              className={classes.menu}
               onClick={() => {
                 openSettings();
                 handleMenuItemClick();

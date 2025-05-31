@@ -170,7 +170,13 @@ export function useASR(options: ASRHookOptions): ASRHookReturn {
         safelyRestartRecognition();
       }
     };
-  }, [isListening, isRestarting, onTranscriptChange, onFinalTranscript, isSupported]);
+  }, [
+    isListening,
+    isRestarting,
+    onTranscriptChange,
+    onFinalTranscript,
+    isSupported,
+  ]);
 
   const safelyRestartRecognition = () => {
     if (isRestarting || !recognitionRef.current) return;
@@ -232,7 +238,7 @@ export function useASR(options: ASRHookOptions): ASRHookReturn {
   };
 
   const toggleListening = () => {
-    asrLog(`Toggling listening (currently ${isListening ? 'on' : 'off'})`);
+    asrLog(`Toggling listening (currently ${isListening ? "on" : "off"})`);
     if (isListening) {
       stopListening();
     } else {
@@ -248,4 +254,4 @@ export function useASR(options: ASRHookOptions): ASRHookReturn {
     startListening,
     stopListening,
   };
-} 
+}

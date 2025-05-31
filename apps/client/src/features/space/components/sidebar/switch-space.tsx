@@ -12,7 +12,11 @@ interface SwitchSpaceProps {
   onSpaceChange?: () => void;
 }
 
-export function SwitchSpace({ spaceName, spaceSlug, onSpaceChange }: SwitchSpaceProps) {
+export function SwitchSpace({
+  spaceName,
+  spaceSlug,
+  onSpaceChange,
+}: SwitchSpaceProps) {
   const navigate = useNavigate();
   const [opened, { close, open, toggle }] = useDisclosure(false);
   const isMobile = useMediaQuery("(max-width: 48em)");
@@ -75,7 +79,12 @@ export function SwitchSpace({ spaceName, spaceSlug, onSpaceChange }: SwitchSpace
               variant="filled"
               name={spaceName}
             />
-            <Text className={classes.spaceName} size="md" fw={500} lineClamp={1}>
+            <Text
+              className={classes.spaceName}
+              size="md"
+              fw={500}
+              lineClamp={1}
+            >
               {spaceName}
             </Text>
           </Group>

@@ -24,7 +24,7 @@ const useToggleAside = () => {
       setAiChatOpen(false);
     }
     setAsideState({ tab: toogledTab, isAsideOpen: newIsOpen });
-    
+
     // On mobile, also set the mobile aside state
     if (isMobile) {
       setMobileAsideOpen(newIsOpen);

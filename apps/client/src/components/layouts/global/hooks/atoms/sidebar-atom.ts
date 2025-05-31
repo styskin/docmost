@@ -33,7 +33,7 @@ export const effectiveAsideStateAtom = atom((get) => {
   const asideState = get(asideStateAtom);
   const aiChatOpen = get(aiChatOpenStateAtom);
   const mobileAsideOpen = get(mobileAsideAtom);
-  
+
   if (aiChatOpen) {
     return { tab: "ai", isAsideOpen: true, isMobileAsideOpen: mobileAsideOpen };
   }

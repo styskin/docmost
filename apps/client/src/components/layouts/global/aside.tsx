@@ -1,4 +1,14 @@
-import { ActionIcon, Box, Group, ScrollArea, Text, Textarea, Button, Stack, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  Group,
+  ScrollArea,
+  Text,
+  Textarea,
+  Button,
+  Stack,
+  Tooltip,
+} from "@mantine/core";
 import CommentList from "@/features/comment/components/comment-list.tsx";
 import { useAtom } from "jotai";
 import { effectiveAsideStateAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
@@ -8,7 +18,13 @@ import { TableOfContents } from "@/features/editor/components/table-of-contents/
 import { useAtomValue } from "jotai";
 import { pageEditorAtom } from "@/features/editor/atoms/editor-atoms.ts";
 import { AIChat } from "@/features/ai/components/ai-chat.tsx";
-import { IconX, IconSend, IconEraser, IconMicrophone, IconMicrophoneOff } from "@tabler/icons-react";
+import {
+  IconX,
+  IconSend,
+  IconEraser,
+  IconMicrophone,
+  IconMicrophoneOff,
+} from "@tabler/icons-react";
 import { useMediaQuery } from "@mantine/hooks";
 import useToggleAside from "@/hooks/use-toggle-aside.tsx";
 import { workspaceAtom } from "@/features/user/atoms/current-user-atom";
@@ -24,19 +40,22 @@ export default function Aside() {
   const pageEditor = useAtomValue(pageEditorAtom);
   const isMobile = useMediaQuery("(max-width: 48em)");
   const { closeAside } = useToggleAside();
-  
+
   // AI Chat input state - managed at aside level
   const [aiInput, setAiInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const aiChatRef = useRef<{ handleSubmit: (input: string) => Promise<void>; resetChat: () => void } | null>(null);
-  
+  const aiChatRef = useRef<{
+    handleSubmit: (input: string) => Promise<void>;
+    resetChat: () => void;
+  } | null>(null);
+
   // Track TTS completion to trigger re-evaluation of TTS state
   const [ttsCompletionCounter, setTtsCompletionCounter] = useState(0);
-  
+
   // Track whether we should resume listening after TTS completes
   const [shouldResumeListening, setShouldResumeListening] = useState(false);
   const shouldResumeListeningRef = useRef(false);
-  
+
   // Update ref when state changes
   useEffect(() => {
     shouldResumeListeningRef.current = shouldResumeListening;
@@ -47,11 +66,13 @@ export default function Aside() {
     onTranscriptChange: setAiInput,
     onFinalTranscript: (transcript) => {
       const timestamp = new Date().toISOString().substr(11, 12);
-      console.log(`[ASIDE ${timestamp}] Final transcript received, submitting form`);
-      
+      console.log(
+        `[ASIDE ${timestamp}] Final transcript received, submitting form`,
+      );
+
       // Set flag to resume listening after TTS
       setShouldResumeListening(true);
-      
+
       const form = document.querySelector("form");
       if (form) {
         const formEvent = new Event("submit", {
@@ -66,8 +87,15 @@ export default function Aside() {
   // Log state changes for debugging
   useEffect(() => {
     const timestamp = new Date().toISOString().substr(11, 12);
-    console.log(`[ASIDE ${timestamp}] State change - listening: ${asr.isListening}, loading: ${isAiLoading}, ttsCompletion: ${ttsCompletionCounter}, shouldResume: ${shouldResumeListening}`);
-  }, [asr.isListening, isAiLoading, ttsCompletionCounter, shouldResumeListening]);
+    console.log(
+      `[ASIDE ${timestamp}] State change - listening: ${asr.isListening}, loading: ${isAiLoading}, ttsCompletion: ${ttsCompletionCounter}, shouldResume: ${shouldResumeListening}`,
+    );
+  }, [
+    asr.isListening,
+    isAiLoading,
+    ttsCompletionCounter,
+    shouldResumeListening,
+  ]);
 
   // Setup TTS integration with speech recognition - run once on mount
   useEffect(() => {
@@ -75,18 +103,22 @@ export default function Aside() {
     ttsPlayer.setOnPlaybackComplete(() => {
       const timestamp = new Date().toISOString().substr(11, 12);
       console.log(`[ASIDE ${timestamp}] TTS playback complete`);
-      
+
       // Trigger re-evaluation of TTS state
-      setTtsCompletionCounter(prev => prev + 1);
-      
+      setTtsCompletionCounter((prev) => prev + 1);
+
       // Check if this was the final audio chunk and we should resume listening
       setTimeout(() => {
         const hasPendingAudio = ttsPlayer.hasPendingAudio();
         const shouldResume = shouldResumeListeningRef.current; // Use ref for current value
-        console.log(`[ASIDE ${timestamp}] Checking if should restart ASR - pendingAudio: ${hasPendingAudio}, shouldResume: ${shouldResume}`);
-        
+        console.log(
+          `[ASIDE ${timestamp}] Checking if should restart ASR - pendingAudio: ${hasPendingAudio}, shouldResume: ${shouldResume}`,
+        );
+
         if (!hasPendingAudio && shouldResume) {
-          console.log(`[ASIDE ${timestamp}] All TTS complete, restarting speech recognition`);
+          console.log(
+            `[ASIDE ${timestamp}] All TTS complete, restarting speech recognition`,
+          );
           setShouldResumeListening(false);
           asr.startListening();
         }
@@ -96,7 +128,9 @@ export default function Aside() {
     // Cleanup function - only runs on actual component unmount
     return () => {
       const timestamp = new Date().toISOString().substr(11, 12);
-      console.log(`[ASIDE ${timestamp}] Aside component unmounting - disabling TTS`);
+      console.log(
+        `[ASIDE ${timestamp}] Aside component unmounting - disabling TTS`,
+      );
       ttsPlayer.disable();
     };
   }, []); // Empty dependency array - only run once on mount/unmount
@@ -104,23 +138,31 @@ export default function Aside() {
   // Enable/disable TTS based on listening state OR loading state OR pending audio
   // Keep TTS enabled until all audio finishes playing
   useEffect(() => {
-    const shouldEnableTTS = asr.isListening || isAiLoading || ttsPlayer.hasPendingAudio();
+    const shouldEnableTTS =
+      asr.isListening || isAiLoading || ttsPlayer.hasPendingAudio();
     const timestamp = new Date().toISOString().substr(11, 12);
-    
+
     if (shouldEnableTTS) {
-      console.log(`[ASIDE ${timestamp}] Enabling TTS (listening: ${asr.isListening}, loading: ${isAiLoading}, pendingAudio: ${ttsPlayer.hasPendingAudio()})`);
+      console.log(
+        `[ASIDE ${timestamp}] Enabling TTS (listening: ${asr.isListening}, loading: ${isAiLoading}, pendingAudio: ${ttsPlayer.hasPendingAudio()})`,
+      );
       ttsPlayer.enable();
     } else {
-      console.log(`[ASIDE ${timestamp}] Disabling TTS (listening: ${asr.isListening}, loading: ${isAiLoading}, pendingAudio: ${ttsPlayer.hasPendingAudio()})`);
+      console.log(
+        `[ASIDE ${timestamp}] Disabling TTS (listening: ${asr.isListening}, loading: ${isAiLoading}, pendingAudio: ${ttsPlayer.hasPendingAudio()})`,
+      );
       ttsPlayer.disable();
     }
   }, [asr.isListening, isAiLoading, ttsCompletionCounter]);
-  
+
   // Get current context for AI
   const [workspace] = useAtom(workspaceAtom);
   const pathParts = window.location.pathname.split("/");
   const pageSlugIndex = pathParts.indexOf("p") + 1;
-  const pageSlug = pageSlugIndex > 0 && pageSlugIndex < pathParts.length ? pathParts[pageSlugIndex] : null;
+  const pageSlug =
+    pageSlugIndex > 0 && pageSlugIndex < pathParts.length
+      ? pathParts[pageSlugIndex]
+      : null;
   const pageId = pageSlug ? extractPageSlugId(pageSlug) : null;
   const { data: currentPage } = usePageQuery({ pageId });
 
@@ -137,7 +179,13 @@ export default function Aside() {
       title = "Table of contents";
       break;
     case "ai":
-      component = <AIChat showInput={false} ref={aiChatRef} onLoadingChange={setIsAiLoading} />;
+      component = (
+        <AIChat
+          showInput={false}
+          ref={aiChatRef}
+          onLoadingChange={setIsAiLoading}
+        />
+      );
       title = "Chat with AI";
       break;
     default:
@@ -151,23 +199,27 @@ export default function Aside() {
 
   const handleAiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const timestamp = new Date().toISOString().substr(11, 12);
     const userInput = aiInput.trim();
     if (!userInput || isAiLoading || !aiChatRef.current) {
-      console.log(`[ASIDE ${timestamp}] Submit blocked - input: "${userInput}", loading: ${isAiLoading}, chatRef: ${!!aiChatRef.current}`);
+      console.log(
+        `[ASIDE ${timestamp}] Submit blocked - input: "${userInput}", loading: ${isAiLoading}, chatRef: ${!!aiChatRef.current}`,
+      );
       return;
     }
 
-    console.log(`[ASIDE ${timestamp}] Starting AI submission - input: "${userInput}"`);
+    console.log(
+      `[ASIDE ${timestamp}] Starting AI submission - input: "${userInput}"`,
+    );
     setAiInput("");
-    
+
     // Stop listening when submitting
     if (asr.isListening) {
       console.log(`[ASIDE ${timestamp}] Stopping listening before submission`);
       asr.stopListening();
     }
-    
+
     try {
       await aiChatRef.current.handleSubmit(userInput);
       console.log(`[ASIDE ${timestamp}] AI submission completed`);
@@ -177,7 +229,13 @@ export default function Aside() {
   };
 
   const handleAiKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey &&
+      !e.altKey &&
+      !e.metaKey &&
+      !e.ctrlKey
+    ) {
       e.preventDefault();
       handleAiSubmit(e as unknown as React.FormEvent);
     }
@@ -197,7 +255,7 @@ export default function Aside() {
   // Special handling for AI chat to allow sticky input at aside level
   if (tab === "ai") {
     return (
-      <Box 
+      <Box
         style={{
           flex: 1,
           display: "flex",
@@ -207,13 +265,15 @@ export default function Aside() {
         }}
       >
         {/* Header */}
-        <Group 
-          justify="space-between" 
-          p={isMobile ? "lg" : "md"} 
-          pb={isMobile ? "md" : "sm"} 
-          style={{ 
+        <Group
+          justify="space-between"
+          p={isMobile ? "lg" : "md"}
+          pb={isMobile ? "md" : "sm"}
+          style={{
             flexShrink: 0,
-            borderBottom: isMobile ? "1px solid var(--mantine-color-gray-3)" : "none"
+            borderBottom: isMobile
+              ? "1px solid var(--mantine-color-gray-3)"
+              : "none",
           }}
         >
           <Text fw={500} size={isMobile ? "lg" : "md"}>
@@ -233,13 +293,15 @@ export default function Aside() {
         </Group>
 
         {/* AI Chat content area - takes remaining space minus input area */}
-        <Box style={{ 
-          flex: 1, 
-          overflow: "hidden", 
-          position: "relative", 
-          minHeight: 0,
-          paddingBottom: isMobile ? "180px" : 0 // Add padding to prevent content from being hidden behind input
-        }}>
+        <Box
+          style={{
+            flex: 1,
+            overflow: "hidden",
+            position: "relative",
+            minHeight: 0,
+            paddingBottom: isMobile ? "180px" : 0, // Add padding to prevent content from being hidden behind input
+          }}
+        >
           {component}
         </Box>
 
@@ -251,25 +313,36 @@ export default function Aside() {
             backgroundColor: "var(--mantine-color-body)",
             flexShrink: 0,
             zIndex: 100,
-            ...(isMobile ? {
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              paddingBottom: "env(safe-area-inset-bottom, 16px)", // Account for Safari omnibox
-              maxHeight: "50vh", // Prevent input from taking too much space
-            } : {})
+            ...(isMobile
+              ? {
+                  position: "fixed",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  paddingBottom: "env(safe-area-inset-bottom, 16px)", // Account for Safari omnibox
+                  maxHeight: "50vh", // Prevent input from taking too much space
+                }
+              : {}),
           }}
         >
-          <Group mb={isMobile ? "md" : "xs"} gap={isMobile ? "sm" : "xs"} justify="flex-start">
+          <Group
+            mb={isMobile ? "md" : "xs"}
+            gap={isMobile ? "sm" : "xs"}
+            justify="flex-start"
+          >
             {currentPage?.type &&
-              [DocumentType.LLM_INSTRUCTION, DocumentType.LLM_SCHEDULED_TASK].includes(currentPage.type) && (
+              [
+                DocumentType.LLM_INSTRUCTION,
+                DocumentType.LLM_SCHEDULED_TASK,
+              ].includes(currentPage.type) && (
                 <Button
                   variant="outline"
                   color="gray"
                   size={isMobile ? "sm" : "xs"}
                   radius="xl"
-                  onClick={() => handleQuickAction("Execute instructions from this document")}
+                  onClick={() =>
+                    handleQuickAction("Execute instructions from this document")
+                  }
                   style={{ fontSize: isMobile ? "14px" : undefined }}
                 >
                   Execute instructions from this document
@@ -280,29 +353,37 @@ export default function Aside() {
               color="gray"
               size={isMobile ? "sm" : "xs"}
               radius="xl"
-              onClick={() => handleQuickAction("Summarize this document in 3 sentences")}
+              onClick={() =>
+                handleQuickAction("Summarize this document in 3 sentences")
+              }
               style={{ fontSize: isMobile ? "14px" : undefined }}
             >
               Summarize this document in 3 sentences
             </Button>
           </Group>
-          <form onSubmit={handleAiSubmit} style={{ display: "flex", gap: "8px", width: "100%" }}>
+          <form
+            onSubmit={handleAiSubmit}
+            style={{ display: "flex", gap: "8px", width: "100%" }}
+          >
             <Textarea
               placeholder="Ask AI anything... (Press Enter to send, Cmd/Ctrl+Enter for new line)"
               value={aiInput}
               onChange={(e) => setAiInput(e.currentTarget.value)}
               onKeyDown={handleAiKeyDown}
               disabled={isAiLoading}
-              style={{ 
-                flex: 1, 
+              style={{
+                flex: 1,
                 width: "100%",
-                fontSize: isMobile ? "16px" : undefined
+                fontSize: isMobile ? "16px" : undefined,
               }}
               autosize
               minRows={isMobile ? 4 : 4}
               maxRows={isMobile ? 6 : 5}
             />
-            <Stack gap={isMobile ? "sm" : "xs"} style={{ justifyContent: "center" }}>
+            <Stack
+              gap={isMobile ? "sm" : "xs"}
+              style={{ justifyContent: "center" }}
+            >
               <Tooltip label="Clear chat history">
                 <Button
                   variant="light"
@@ -323,13 +404,15 @@ export default function Aside() {
                     color={asr.isListening ? "red" : "blue"}
                     onClick={() => {
                       const timestamp = new Date().toISOString().substr(11, 12);
-                      console.log(`[ASIDE ${timestamp}] Manual microphone toggle - currently listening: ${asr.isListening}`);
-                      
+                      console.log(
+                        `[ASIDE ${timestamp}] Manual microphone toggle - currently listening: ${asr.isListening}`,
+                      );
+
                       if (asr.isListening) {
                         // User is manually stopping listening - clear resume flag
                         setShouldResumeListening(false);
                       }
-                      
+
                       asr.toggleListening();
                     }}
                     disabled={isAiLoading}
@@ -364,7 +447,7 @@ export default function Aside() {
 
   // Default handling for other components
   return (
-    <Box 
+    <Box
       p={isMobile ? "lg" : "md"}
       style={{
         flex: 1,
@@ -372,12 +455,14 @@ export default function Aside() {
         flexDirection: "column",
       }}
     >
-      <Group 
-        justify="space-between" 
+      <Group
+        justify="space-between"
         mb={isMobile ? "lg" : "md"}
         style={{
-          borderBottom: isMobile ? "1px solid var(--mantine-color-gray-3)" : "none",
-          paddingBottom: isMobile ? "md" : 0
+          borderBottom: isMobile
+            ? "1px solid var(--mantine-color-gray-3)"
+            : "none",
+          paddingBottom: isMobile ? "md" : 0,
         }}
       >
         <Text fw={500} size={isMobile ? "lg" : "md"}>
