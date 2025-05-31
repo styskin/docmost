@@ -545,7 +545,7 @@ export class PageService {
             'pages.workspaceId',
             'pages.spaceId',
             'pages.type',
-            'pages.parentPageId'
+            'pages.parentPageId',
           ])
           .where('pages.id', '=', pageId)
           .unionAll((eb) =>
@@ -559,14 +559,14 @@ export class PageService {
                 'pages.workspaceId',
                 'pages.spaceId',
                 'pages.type',
-                'pages.parentPageId'
+                'pages.parentPageId',
               ])
               .innerJoin(
                 'page_descendants',
                 'pages.parentPageId',
-                'page_descendants.id'
-              )
-          )
+                'page_descendants.id',
+              ),
+          ),
       )
       .selectFrom('page_descendants')
       .select([
@@ -576,14 +576,16 @@ export class PageService {
         'page_descendants.textContent',
         'page_descendants.workspaceId',
         'page_descendants.spaceId',
-        'page_descendants.type'
+        'page_descendants.type',
       ])
       .where('page_descendants.type', '=', 'llm_scheduled_task')
       .execute();
 
-     const deletedPages = scheduledTaskPages.map((page) => page.slugId);
-     this.logger.debug(`Deleting scheduled task pages: ${deletedPages.join(', ')}`)
-     for (const page of scheduledTaskPages) {
+    const deletedPages = scheduledTaskPages.map((page) => page.slugId);
+    this.logger.debug(
+      `Deleting scheduled task pages: ${deletedPages.join(', ')}`,
+    );
+    for (const page of scheduledTaskPages) {
       await this.agentFeedQueue.add(QueueJob.AGENT_FEED_DOCUMENT_EVENT, {
         eventType: 'delete_scheduled_task_document',
         documentId: page.slugId,

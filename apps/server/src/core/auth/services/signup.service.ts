@@ -106,7 +106,10 @@ export class SignupService {
         user.workspaceId = workspace.id;
 
         // Create Agent user if it doesn't exist
-        const existingAgentUser = await this.userRepo.findById(AGENT_USER_ID, workspace.id);
+        const existingAgentUser = await this.userRepo.findById(
+          AGENT_USER_ID,
+          workspace.id,
+        );
         if (!existingAgentUser) {
           await this.userRepo.insertUser(
             {

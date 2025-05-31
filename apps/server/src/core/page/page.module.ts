@@ -8,6 +8,6 @@ import { StorageModule } from '../../integrations/storage/storage.module';
   controllers: [PageController],
   providers: [PageService, PageHistoryService],
   exports: [PageService, PageHistoryService],
-  imports: [StorageModule]
+  imports: [StorageModule],
 })
 export class PageModule {}

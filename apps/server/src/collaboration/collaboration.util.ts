@@ -57,7 +57,7 @@ export const tiptapExtensions = [
     codeBlock: false,
   }),
   Comment,
-  TextAlign.configure({ types: ["heading", "paragraph"] }),
+  TextAlign.configure({ types: ['heading', 'paragraph'] }),
   TaskList,
   TaskItem,
   Underline,

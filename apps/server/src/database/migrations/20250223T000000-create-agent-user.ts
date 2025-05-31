@@ -12,7 +12,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .executeTakeFirst();
 
   if (!anyWorkspace) {
-    console.log('No workspaces exist, database is not initialized. Skipping Agent user creation.');
+    console.log(
+      'No workspaces exist, database is not initialized. Skipping Agent user creation.',
+    );
     return;
   }
 
