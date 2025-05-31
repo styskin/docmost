@@ -67,7 +67,11 @@ function CommentList() {
       >
         <div>
           <CommentListItem comment={comment} pageId={page?.id} />
-          <MemoizedChildComments comments={comments} parentId={comment.id} pageId={page?.id} />
+          <MemoizedChildComments
+            comments={comments}
+            parentId={comment.id}
+            pageId={page?.id}
+          />
         </div>
 
         <Divider my={4} />

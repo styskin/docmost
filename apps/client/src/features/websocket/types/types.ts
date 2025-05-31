@@ -57,4 +57,11 @@ export type DeleteTreeNodeEvent = {
   };
 };
 
-export type WebSocketEvent = InvalidateEvent | InvalidateCommentsEvent | UpdateEvent | DeleteEvent | AddTreeNodeEvent | MoveTreeNodeEvent | DeleteTreeNodeEvent;
+export type WebSocketEvent =
+  | InvalidateEvent
+  | InvalidateCommentsEvent
+  | UpdateEvent
+  | DeleteEvent
+  | AddTreeNodeEvent
+  | MoveTreeNodeEvent
+  | DeleteTreeNodeEvent;

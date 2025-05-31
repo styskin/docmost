@@ -52,7 +52,7 @@ function CommentListItem({ comment, pageId }: CommentListItemProps) {
   const emit = useQueryEmit();
 
   useEffect(() => {
-    setContent(comment.content)
+    setContent(comment.content);
   }, [comment]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -97,7 +97,9 @@ function CommentListItem({ comment, pageId }: CommentListItemProps) {
   }
 
   function handleCommentClick(comment: IComment) {
-    const el = document.querySelector(`.comment-mark[data-comment-id="${comment.id}"]`);
+    const el = document.querySelector(
+      `.comment-mark[data-comment-id="${comment.id}"]`,
+    );
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       el.classList.add("comment-highlight");
@@ -192,7 +194,10 @@ function CommentListItem({ comment, pageId }: CommentListItemProps) {
 
       <div>
         {!comment.parentCommentId && comment?.selection && (
-          <Box className={classes.textSelection} onClick={() => handleCommentClick(comment)}>
+          <Box
+            className={classes.textSelection}
+            onClick={() => handleCommentClick(comment)}
+          >
             <Text size="sm">{comment?.selection}</Text>
           </Box>
         )}

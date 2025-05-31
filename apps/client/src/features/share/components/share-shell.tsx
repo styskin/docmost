@@ -36,7 +36,7 @@ import {
 } from "@/features/search/components/search-control.tsx";
 import { ShareSearchSpotlight } from "@/features/search/share-search-spotlight";
 import { shareSearchSpotlight } from "@/features/search/constants";
-import ShareBranding from '@/features/share/components/share-branding.tsx';
+import ShareBranding from "@/features/share/components/share-branding.tsx";
 
 const MemoizedSharedTree = React.memo(SharedTree);
 

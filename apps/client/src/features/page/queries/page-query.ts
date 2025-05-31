@@ -74,10 +74,7 @@ export function useCreatePageMutation() {
 }
 
 export function updatePageData(data: IPage) {
-  const pageBySlug = queryClient.getQueryData<IPage>([
-    "pages",
-    data.slugId,
-  ]);
+  const pageBySlug = queryClient.getQueryData<IPage>(["pages", data.slugId]);
   const pageById = queryClient.getQueryData<IPage>(["pages", data.id]);
 
   if (pageBySlug) {
