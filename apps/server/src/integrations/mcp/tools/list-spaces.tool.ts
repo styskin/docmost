@@ -10,8 +10,7 @@ This tool returns information about all available spaces, including their IDs, s
 Args:
 - workspace, string: The ID of the workspace.
 
-Returns:
-An array of space objects, each containing:
+Returns an array of document objects, each containing:
 - id, string: The unique identifier of the space.
 - slug, string: The slug of the space, used in URLs.
 - name, string: The display name of the space.

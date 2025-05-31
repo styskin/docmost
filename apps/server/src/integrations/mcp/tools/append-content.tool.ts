@@ -8,49 +8,35 @@ import { TiptapTransformer } from '@hocuspocus/transformer';
 import {
   jsonToText,
   tiptapExtensions,
+  htmlToJson,
 } from '../../../collaboration/collaboration.util';
 import { JSONContent } from '@tiptap/core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WsGateway } from '../../../ws/ws.gateway';
+import { markdownToHtml } from '@docmost/editor-ext';
 
 export const APPEND_CONTENT_TOOL_DESCRIPTION = `
 Appends content to an existing document.
-The content to append must be provided as a stringified JSON representing a YDoc fragment.
+The content to append should be provided as Markdown text, which will be automatically converted to the appropriate document format.
 This will be added to the end or beginning of the current document, based on the position parameter.
 
-Example of a simple YDoc content structure to append:
-{
-  "type": "doc",
-  "content": [
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "This text will be appended to the existing document."
-        }
-      ]
-    },
-    {
-      "type": "heading",
-      "attrs": { "level": 2 },
-      "content": [
-        {
-          "type": "text",
-          "text": "New appended section"
-        }
-      ]
-    }
-  ]
-}
+Markdown supports most popular features including:
+- Headers (# ## ### etc.)
+- Bold (**text**) and italic (*text*) formatting
+- Lists (ordered and unordered)
+- Links [text](url)
+- Code blocks and inline code
+- Tables
+- Task lists with checkboxes
+- Block quotes
 
 Args:
 - document, string: The document ID or slug ID of the document to append to.
-- content, string: The content to append, as a stringified JSON YDoc fragment.
+- content, string: The content to append in Markdown format.
 - workspace, string: The ID of the workspace.
 - position, string: Where to add the content - "top" or "bottom" (default: "bottom").
 
-Returns:
+Returns an object with the following properties:
 - documentId, string: The ID of the updated document.
 - message, string: A success message.
 `;
@@ -75,9 +61,7 @@ export class AppendContentTool {
           .describe('The document ID or slug ID of the document to append to.'),
         content: z
           .string()
-          .describe(
-            'The content to append, as a stringified JSON YDoc fragment.',
-          ),
+          .describe('The content to append in Markdown format.'),
         workspace: z.string().describe('The ID of the workspace.'),
         position: z
           .enum(['top', 'bottom'])
@@ -113,15 +97,24 @@ export class AppendContentTool {
             };
           }
 
+          // Convert Markdown to ProseMirror JSON
           let contentToAppend: JSONContent;
           try {
-            contentToAppend = JSON.parse(content);
+            // Convert Markdown to HTML
+            const html = await markdownToHtml(content);
+
+            // Convert HTML to ProseMirror JSON
+            contentToAppend = htmlToJson(html);
           } catch (error: any) {
+            this.logger.error(
+              `Failed to convert Markdown to ProseMirror JSON: ${error.message}`,
+              error.stack,
+            );
             return {
               content: [
                 {
                   type: 'text',
-                  text: `Invalid JSON content: ${error.message}`,
+                  text: `Error converting Markdown content: ${error.message}`,
                 },
               ],
               isError: true,

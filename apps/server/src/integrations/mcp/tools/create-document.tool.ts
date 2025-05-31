@@ -10,155 +10,44 @@ import { WsGateway } from '../../../ws/ws.gateway';
 import { PageService } from '../../../core/page/services/page.service';
 import { TiptapTransformer } from '@hocuspocus/transformer';
 import * as Y from 'yjs';
-import { tiptapExtensions } from '../../../collaboration/collaboration.util';
+import {
+  tiptapExtensions,
+  htmlToJson,
+  jsonToText,
+} from '../../../collaboration/collaboration.util';
+import { markdownToHtml } from '@docmost/editor-ext';
 
 export const CREATE_DOCUMENT_TOOL_DESCRIPTION = `
-Creating a new document with the specified title and content.
-The content must be provided as a stringified JSON representing a YDoc.
-YDoc is a data structure used for collaborative editing.
-Do not include title in the content as a heading.
+Creating a new document with the specified title and Markdown content.
+The content should be provided as Markdown text, which will be automatically converted to the appropriate document format.
+Markdown supports most popular features including:
+- Headers (# ## ### etc.)
+- Bold (**text**) and italic (*text*) formatting
+- Lists (ordered and unordered)
+- Links [text](url)
+- Code blocks and inline code
+- Tables
+- Task lists with checkboxes
+- Block quotes
+
+Do not include the title as a heading in the content since the title is specified separately.
 By default, the new document will be created at the root of the space.
 If you want to create a document under a parent document, provide the slug ID of the parent document.
 Do not do this unless explicitly instructed to do so.
-Example of a simple YDoc structure:
-{
-  "type": "doc",
-  "content": [
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "A paragraph of text"
-        }
-      ]
-    },
-    {
-      "type": "heading",
-      "attrs": { "level": 2 },
-      "content": [
-        {
-          "type": "text",
-          "text": "New section"
-        }
-      ]
-    },
-    {
-      "type": "table",
-      "content": [
-        {
-          "type": "tableRow",
-          "content": [
-            {
-              "type": "tableHeader",
-              "attrs": {
-                "colspan": 1,
-                "rowspan": 1
-              },
-              "content": [
-                {
-                  "type": "paragraph",
-                  "attrs": {
-                    "textAlign": "left"
-                  },
-                  "content": [
-                    {
-                      "text": "Column 1",
-                      "type": "text"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "tableHeader",
-              "attrs": {
-                "colspan": 1,
-                "rowspan": 1
-              },
-              "content": [
-                {
-                  "type": "paragraph",
-                  "attrs": {
-                    "textAlign": "left"
-                  },
-                  "content": [
-                    {
-                      "text": "Header2",
-                      "type": "text"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "tableRow",
-          "content": [
-            {
-              "type": "tableCell",
-              "attrs": {
-                "colspan": 1,
-                "rowspan": 1
-              },
-              "content": [
-                {
-                  "type": "paragraph",
-                  "attrs": {
-                    "textAlign": "left"
-                  },
-                  "content": [
-                    {
-                      "text": "row 1, column1",
-                      "type": "text"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "tableCell",
-              "attrs": {
-                "colspan": 1,
-                "rowspan": 1
-              },
-              "content": [
-                {
-                  "type": "paragraph",
-                  "attrs": {
-                    "textAlign": "left"
-                  },
-                  "content": [
-                    {
-                      "text": "row 1, column2",
-                      "type": "text"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-  
-Ensure the provided content string is a valid JSON representation of a YDoc.
 
 Args:
 - title, string: The title of the new document.
-- content, string: The content of the new document, as a stringified JSON YDoc.
+- content, string: The content of the new document in Markdown format.
 - space, string: The slug of the space where the document will be created.
 - workspace, string: The ID of the workspace.
 - parentDocument, string, optional: The slug ID of the parent document.
 
-Returns:
+Returns a JSON object with the following properties:
 - documentId, string: The ID of the created document.
 - slugId, string: The slug ID of the created document.
 - title, string: The title of the created document.
 - message, string: A success message.
+- parentId, string, optional: The slug ID of the parent document, if any.
 `;
 
 @Injectable()
@@ -181,9 +70,7 @@ export class CreateDocumentTool {
         title: z.string().describe('The title for the new document.'),
         content: z
           .string()
-          .describe(
-            'The content of the new document, as a stringified JSON YDoc.',
-          ),
+          .describe('The content of the new document in Markdown format.'),
         space: z
           .string()
           .describe(
@@ -269,9 +156,32 @@ export class CreateDocumentTool {
             );
           }
 
+          // Convert Markdown to ProseMirror JSON
+          let contentJson = null;
+          try {
+            // Convert Markdown to HTML
+            const html = await markdownToHtml(content);
+
+            // Convert HTML to ProseMirror JSON
+            contentJson = htmlToJson(html);
+          } catch (error: any) {
+            this.logger.error(
+              `Failed to convert Markdown to ProseMirror JSON: ${error.message}`,
+              error.stack,
+            );
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Error converting Markdown content: ${error.message}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+
           // Form correct YDoc from content
           let ydoc = new Y.Doc();
-          const contentJson = JSON.parse(content);
           const fragmentYDoc = TiptapTransformer.toYdoc(
             contentJson,
             'default',
@@ -297,7 +207,7 @@ export class CreateDocumentTool {
             slugId: generateSlugId(),
             title,
             content: contentJson,
-            textContent: content,
+            textContent: jsonToText(contentJson),
             ydoc: ydocState,
             position: position,
             spaceId: spaceEntity.id,

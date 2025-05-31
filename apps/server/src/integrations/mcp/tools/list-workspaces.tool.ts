@@ -9,8 +9,7 @@ This tool returns information about all workspaces, including their IDs, names, 
 Args:
 None - This tool does not require any parameters.
 
-Returns:
-An array of workspace objects, each containing:
+Returns an array of document objects, each containing:
 - id, string: The unique identifier of the workspace.
 - name, string: The display name of the workspace.
 - hostname, string: The hostname of the workspace.

@@ -2,21 +2,21 @@ import { z } from 'zod';
 import { Injectable, Logger } from '@nestjs/common';
 import { PageRepo } from '@docmost/db/repos/page/page.repo';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { jsonToHtml } from '../../../collaboration/collaboration.util';
+import { turndown } from '../../export/turndown-utils';
 
 export const GET_DOCUMENT_TOOL_DESCRIPTION = `
 Retrieve a specific document by its unique slug ID.
-This tool fetches detailed information about a document including its content and metadata.
+This tool fetches detailed information about a document including its content in Markdown format and metadata.
 
 Args:
 - slugId, string: The unique slug ID of the document to retrieve.
 
-Returns:
-A document object containing:
+Returns an object with the following properties:
 - id, string: The unique identifier of the document.
 - slugId, string: The slug ID of the document, used in URLs.
 - title, string: The title of the document.
-- content, object: The full structured content of the document as a YDoc.
-- textContent, string: The plain text representation of the document content.
+- content, string: The document content in Markdown format.
 - spaceId, string: The ID of the space containing this document.
 - workspaceId, string: The ID of the workspace containing this document.
 - parentId, string: The ID of the parent document, if any.
@@ -68,6 +68,25 @@ export class GetDocumentTool {
             };
           }
 
+          // Convert document content to Markdown
+          let markdownContent = '';
+          try {
+            if (document.content) {
+              const html = jsonToHtml(document.content);
+              // Remove colgroup elements that can cause issues with Markdown conversion
+              const cleanHtml = html.replace(
+                /<colgroup[^>]*>[\s\S]*?<\/colgroup>/gim,
+                '',
+              );
+              markdownContent = turndown(cleanHtml);
+            }
+          } catch (error: any) {
+            this.logger.warn(
+              `Failed to convert document content to Markdown: ${error.message}`,
+            );
+            markdownContent = document.textContent || '';
+          }
+
           this.logger.log(`Retrieved document with slug ID: ${slugId}`);
           return {
             content: [
@@ -78,8 +97,7 @@ export class GetDocumentTool {
                     id: document.id,
                     slugId: document.slugId,
                     title: document.title,
-                    content: document.content,
-                    textContent: document.textContent,
+                    content: markdownContent,
                     spaceId: document.spaceId,
                     workspaceId: document.workspaceId,
                     parentId: document.parentPageId || null,

@@ -13,8 +13,7 @@ Args:
 - space, string: The slug of the space to list documents from.
 - workspace, string: The ID of the workspace.
 
-Returns:
-An array of document objects, each containing:
+Returns an array of document objects, each containing:
 - id, string: The unique identifier of the document.
 - slugId, string: The slug ID of the document, used in URLs.
 - title, string: The title of the document.
