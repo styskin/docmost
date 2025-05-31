@@ -73,9 +73,32 @@ export function useCreatePageMutation() {
   });
 }
 
-export function useUpdatePageMutation() {
-  const queryClient = useQueryClient();
+export function updatePageData(data: IPage) {
+  const pageBySlug = queryClient.getQueryData<IPage>([
+    "pages",
+    data.slugId,
+  ]);
+  const pageById = queryClient.getQueryData<IPage>(["pages", data.id]);
 
+  if (pageBySlug) {
+    queryClient.setQueryData(["pages", data.slugId], {
+      ...pageBySlug,
+      ...data,
+    });
+  }
+
+  if (pageById) {
+    queryClient.setQueryData(["pages", data.id], { ...pageById, ...data });
+  }
+}
+
+export function useUpdateTitlePageMutation() {
+  return useMutation<IPage, Error, Partial<IPageInput>>({
+    mutationFn: (data) => updatePage(data),
+  });
+}
+
+export function useUpdatePageMutation() {
   return useMutation<IPage, Error, Partial<IPageInput>>({
     mutationFn: (data) => updatePage(data),
     onSuccess: (data, variables) => {
@@ -106,6 +129,7 @@ export function useUpdatePageMutation() {
           ...updatedPageData,
         });
       }
+      updatePage(data);
     },
   });
 }

@@ -84,7 +84,7 @@ export function SpaceSelect({
       nothingFoundMessage={t("No space found")}
       limit={50}
       checkIconPosition="right"
-      comboboxProps={{ width, withinPortal: false }}
+      comboboxProps={{ width, withinPortal: true, position: "bottom" }}
       dropdownOpened={opened}
     />
   );

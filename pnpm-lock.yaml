@@ -308,6 +308,9 @@ importers:
       handsontable:
         specifier: ^15.3.0
         version: 15.3.0
+      highlightjs-sap-abap:
+        specifier: ^0.3.0
+        version: 0.3.0
       hyperformula:
         specifier: ^3.0.0
         version: 3.0.0
@@ -6466,6 +6469,9 @@ packages:
   highlight.js@11.10.0:
     resolution: {integrity: sha512-SYVnVFswQER+zu1laSya563s+F8VDGt7o35d4utbamowvUNLLMovFqwCLSocpZTz3MgaSRA1IbqRWZv97dtErQ==}
     engines: {node: '>=12.0.0'}
+
+  highlightjs-sap-abap@0.3.0:
+    resolution: {integrity: sha512-nSiUvEOCycjtFA3pHaTowrbAAk5+lciBHyoVkDsd6FTRBtW9sT2dt42o2jAKbXjZVUidtacdk+j0Y2xnd233Mw==}
 
   highlightjs-vue@1.0.0:
     resolution: {integrity: sha512-PDEfEF102G23vHmPhLyPboFCD+BkMGu+GuJe2d9/eH4FsCwvgBpnc9n0pGE+ffKdph38s6foEZiEjdgHdzp+IA==}
@@ -17016,6 +17022,8 @@ snapshots:
   highlight.js@10.7.3: {}
 
   highlight.js@11.10.0: {}
+
+  highlightjs-sap-abap@0.3.0: {}
 
   highlightjs-vue@1.0.0: {}
 
